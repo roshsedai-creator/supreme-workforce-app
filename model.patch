@@ -1,166 +1,191 @@
-diff --git a/test_result.md b/test_result.md
-index ac108a8..9138d3f 100644
---- a/test_result.md
-+++ b/test_result.md
-@@ -107,99 +107,123 @@ user_problem_statement: "Build a mobile-first Timesheet & Workforce Management a
- backend:
-   - task: "Authentication API with mock PIN login"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented POST /api/auth/login with phone/email + PIN authentication. Returns user object and mock token. Tested manually with curl - working."
-+      - working: true
-+        agent: "testing"
-+        comment: "Comprehensive testing completed. All authentication scenarios working: valid login with phone (200), valid login with email (200), invalid PIN rejection (401), non-existent user rejection (404). Returns proper user object and token."
-   
-   - task: "User management APIs (CRUD)"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented GET/POST /api/users with role filtering. Created seed data with 5 users (admin, supervisor, 3 employees)."
-+      - working: true
-+        agent: "testing"
-+        comment: "User APIs tested successfully. GET /api/users returns all 5 users correctly. Role filtering works: GET /api/users?role=employee returns 3 employees, GET /api/users?role=supervisor returns 1 supervisor. All responses properly formatted."
-   
-   - task: "Site management APIs"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented GET/POST /api/sites. Created 3 seed sites (Novotel, Ibis, Hotel Grand Chancellor) with GPS coordinates."
-+      - working: true
-+        agent: "testing"
-+        comment: "Site APIs working correctly. GET /api/sites returns all 3 sites with proper GPS coordinates and metadata. Site data includes Novotel Brisbane, Ibis Brisbane, and Hotel Grand Chancellor with correct addresses and GPS coordinates."
-   
-   - task: "Clock-in API with GPS validation"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented POST /api/timesheets/clock-in. Creates timesheet with GPS coordinates. Prevents double clock-in."
-+      - working: true
-+        agent: "testing"
-+        comment: "Clock-in API fully functional. Successfully creates timesheet with GPS coordinates (-27.4698, 153.0251). Correctly prevents double clock-in with 400 error 'Already clocked in. Please clock out first.' Returns timesheet ID for subsequent operations."
-   
-   - task: "Clock-out API"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented POST /api/timesheets/clock-out. Calculates total hours minus break time."
-+      - working: true
-+        agent: "testing"
-+        comment: "Clock-out API working correctly. Successfully completes timesheet with GPS coordinates. Calculates total hours properly (accounting for break time). Returns updated timesheet with clock_out timestamp and total_hours calculation."
-   
-   - task: "Break management API"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "medium"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented POST /api/timesheets/break with start/end actions. Tracks break duration."
-+      - working: true
-+        agent: "testing"
-+        comment: "Break management API fully functional. Successfully starts break (200), prevents double break start (400), ends break (200), and tracks break minutes. Proper error handling for invalid operations like ending non-existent breaks."
-   
-   - task: "Timesheet approval API"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented POST /api/timesheets/approve. Allows supervisors to approve/reject with notes."
-+      - working: true
-+        agent: "testing"
-+        comment: "Timesheet approval workflow working perfectly. GET /api/timesheets?approval_status=pending returns pending timesheets correctly. POST /api/timesheets/approve successfully approves and rejects timesheets with supervisor notes. Status updates properly to 'approved' or 'rejected'."
-   
-   - task: "Supervisor dashboard API"
-     implemented: true
--    working: "unknown"
-+    working: true
-     file: "server.py"
-     stuck_count: 0
-     priority: "high"
--    needs_retesting: true
-+    needs_retesting: false
-     status_history:
-       - working: "unknown"
-         agent: "main"
-         comment: "Implemented GET /api/dashboard/supervisor. Returns active employees and pending approvals."
-+      - working: true
-+        agent: "testing"
-+        comment: "Supervisor dashboard API working correctly. Returns all required fields: active_employees, pending_approvals, active_timesheets, pending_timesheets. Site filtering with ?site_id parameter works properly. Currently shows 2 active employees and 2 pending approvals."
- 
- frontend:
-   - task: "Login screen with mock PIN authentication"
-@@ -294,14 +318,14 @@ metadata:
- 
- test_plan:
-   current_focus:
--    - "Authentication API"
--    - "Clock-in/out flow"
--    - "Break management"
--    - "Supervisor approval workflow"
-+    - "Employee home screen with clock-in/out"
-+    - "Supervisor approval dashboard"
-   stuck_tasks: []
-   test_all: false
-   test_priority: "high_first"
- 
- agent_communication:
-   - agent: "main"
--    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
-\ No newline at end of file
-+    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
-+  - agent: "testing"
-+    message: "Backend testing completed successfully! All 8 backend APIs are working correctly: Authentication (login with phone/email, proper error handling), User/Site management (CRUD operations, role filtering), Clock-in/out flow (GPS tracking, double clock-in prevention, hours calculation), Break management (start/end breaks, duration tracking), Timesheet approval (supervisor approve/reject with notes), Dashboard (active employees, pending approvals, site filtering). All test scenarios passed with proper HTTP status codes and data validation. Backend is production-ready."
-\ No newline at end of file
+diff --git a/frontend/app/(tabs)/_layout.tsx b/frontend/app/(tabs)/_layout.tsx
+index 8290d5a..21ee2aa 100644
+--- a/frontend/app/(tabs)/_layout.tsx
++++ b/frontend/app/(tabs)/_layout.tsx
+@@ -49,6 +49,15 @@ export default function TabsLayout() {
+           ),
+         }}
+       />
++      <Tabs.Screen
++        name="leave"
++        options={{
++          title: 'Leave',
++          tabBarIcon: ({ color, size }) => (
++            <Ionicons name="calendar" size={size} color={color} />
++          ),
++        }}
++      />
+       {isSupervisor && (
+         <Tabs.Screen
+           name="supervisor"
+diff --git a/model.patch b/model.patch
+index 50b5667..e69de29 100644
+--- a/model.patch
++++ b/model.patch
+@@ -1,166 +0,0 @@
+-diff --git a/test_result.md b/test_result.md
+-index ac108a8..9138d3f 100644
+---- a/test_result.md
+-+++ b/test_result.md
+-@@ -107,99 +107,123 @@ user_problem_statement: "Build a mobile-first Timesheet & Workforce Management a
+- backend:
+-   - task: "Authentication API with mock PIN login"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented POST /api/auth/login with phone/email + PIN authentication. Returns user object and mock token. Tested manually with curl - working."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Comprehensive testing completed. All authentication scenarios working: valid login with phone (200), valid login with email (200), invalid PIN rejection (401), non-existent user rejection (404). Returns proper user object and token."
+-   
+-   - task: "User management APIs (CRUD)"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented GET/POST /api/users with role filtering. Created seed data with 5 users (admin, supervisor, 3 employees)."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "User APIs tested successfully. GET /api/users returns all 5 users correctly. Role filtering works: GET /api/users?role=employee returns 3 employees, GET /api/users?role=supervisor returns 1 supervisor. All responses properly formatted."
+-   
+-   - task: "Site management APIs"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented GET/POST /api/sites. Created 3 seed sites (Novotel, Ibis, Hotel Grand Chancellor) with GPS coordinates."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Site APIs working correctly. GET /api/sites returns all 3 sites with proper GPS coordinates and metadata. Site data includes Novotel Brisbane, Ibis Brisbane, and Hotel Grand Chancellor with correct addresses and GPS coordinates."
+-   
+-   - task: "Clock-in API with GPS validation"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented POST /api/timesheets/clock-in. Creates timesheet with GPS coordinates. Prevents double clock-in."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Clock-in API fully functional. Successfully creates timesheet with GPS coordinates (-27.4698, 153.0251). Correctly prevents double clock-in with 400 error 'Already clocked in. Please clock out first.' Returns timesheet ID for subsequent operations."
+-   
+-   - task: "Clock-out API"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented POST /api/timesheets/clock-out. Calculates total hours minus break time."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Clock-out API working correctly. Successfully completes timesheet with GPS coordinates. Calculates total hours properly (accounting for break time). Returns updated timesheet with clock_out timestamp and total_hours calculation."
+-   
+-   - task: "Break management API"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "medium"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented POST /api/timesheets/break with start/end actions. Tracks break duration."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Break management API fully functional. Successfully starts break (200), prevents double break start (400), ends break (200), and tracks break minutes. Proper error handling for invalid operations like ending non-existent breaks."
+-   
+-   - task: "Timesheet approval API"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented POST /api/timesheets/approve. Allows supervisors to approve/reject with notes."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Timesheet approval workflow working perfectly. GET /api/timesheets?approval_status=pending returns pending timesheets correctly. POST /api/timesheets/approve successfully approves and rejects timesheets with supervisor notes. Status updates properly to 'approved' or 'rejected'."
+-   
+-   - task: "Supervisor dashboard API"
+-     implemented: true
+--    working: "unknown"
+-+    working: true
+-     file: "server.py"
+-     stuck_count: 0
+-     priority: "high"
+--    needs_retesting: true
+-+    needs_retesting: false
+-     status_history:
+-       - working: "unknown"
+-         agent: "main"
+-         comment: "Implemented GET /api/dashboard/supervisor. Returns active employees and pending approvals."
+-+      - working: true
+-+        agent: "testing"
+-+        comment: "Supervisor dashboard API working correctly. Returns all required fields: active_employees, pending_approvals, active_timesheets, pending_timesheets. Site filtering with ?site_id parameter works properly. Currently shows 2 active employees and 2 pending approvals."
+- 
+- frontend:
+-   - task: "Login screen with mock PIN authentication"
+-@@ -294,14 +318,14 @@ metadata:
+- 
+- test_plan:
+-   current_focus:
+--    - "Authentication API"
+--    - "Clock-in/out flow"
+--    - "Break management"
+--    - "Supervisor approval workflow"
+-+    - "Employee home screen with clock-in/out"
+-+    - "Supervisor approval dashboard"
+-   stuck_tasks: []
+-   test_all: false
+-   test_priority: "high_first"
+- 
+- agent_communication:
+-   - agent: "main"
+--    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
+-\ No newline at end of file
+-+    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
+-+  - agent: "testing"
+-+    message: "Backend testing completed successfully! All 8 backend APIs are working correctly: Authentication (login with phone/email, proper error handling), User/Site management (CRUD operations, role filtering), Clock-in/out flow (GPS tracking, double clock-in prevention, hours calculation), Break management (start/end breaks, duration tracking), Timesheet approval (supervisor approve/reject with notes), Dashboard (active employees, pending approvals, site filtering). All test scenarios passed with proper HTTP status codes and data validation. Backend is production-ready."
+-\ No newline at end of file
