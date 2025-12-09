@@ -1,290 +1,196 @@
 <analysis>
 
-**original_problem_statement**: Build a mobile-first Timesheet & Workforce Management app for a hospitality outsourcing company.
+**original_problem_statement**: Build a mobile-first Timesheet & Workforce Management app for a hospitality outsourcing company. The user has provided numerous feature requests and bug reports throughout the conversation to enhance an existing MVP, aiming for a top-notch professional application similar to competitors like Employment Hero.
 
 **PRODUCT REQUIREMENTS**:
-- **Core Features**: Staff login (mock OTP), Clock-in/out with GPS, break tracking, timesheet creation, supervisor approval/rejection/editing, job assignments, role-based access, payroll-ready CSV export, pay-rate engine, supervisor notes, leave requests.
-- **Admin Panel**: Manage sites, employees, pay rates, and view reports.
-- **Phase 1 (MVP)**: Core clock-in/out, basic timesheets, supervisor approval. (Completed)
-- **Phase 2 (Trial)**: Leave request module, Payroll Export to CSV, Pay Rate Engine. (Partially Implemented)
+- **Core Features**: Staff login, Clock-in/out with GPS and geo-fencing, break tracking, timesheet creation, supervisor approval/rejection/editing, job assignments, role-based access control, payroll export (CSV/Excel), pay-rate engine, supervisor notes, leave requests.
+- **Admin Panel**: Manage sites, employees (create/edit), pay rates, and view reports (payroll).
 - **User-Requested Features**:
     - **Branding**: Use company logo and brand colors. (Implemented)
-    - **UI/UX Fixes**: Fix bottom tab navigation overlapping with mobile OS buttons. (Implemented)
-    - **GPS Visibility**: Show GPS coordinates on clock-in/out. (Implemented)
-    - **Pay/Earnings Visibility**: Show total pay on approved timesheets and an earnings summary in the Admin panel. (Implemented)
-    - **Contract/Invoice Management**: Send employment contracts and generate invoices for ABN employees. (Partially Implemented)
-    - **Manual Timesheet Edits**: Allow employees to manually edit timesheets and attach photos. (Backend Implemented, Frontend Pending)
-    - **Access Level Management**: Admin should be able to set employee access levels. (Pending)
-    - **Detailed Payroll View**: A new screen to view all approved timesheets with filtering by employee and site. (Pending)
+    - **UI/UX Fixes**: Numerous UI/UX fixes including safe area adjustments, professional modal design, and converting long lists to dropdowns. (Mostly Implemented, further polish needed)
+    - **GPS & Address Visibility**: Show GPS coordinates and site address on clock-in. (Implemented)
+    - **Pay/Earnings Visibility Control**: Show pay on approved timesheets for admins/supervisors but hide it from employees. (Implemented)
+    - **Contract/Invoice Management**: Generate and send contracts/invoices (mock email implemented).
+    - **Manual Timesheet Edits**: Allow employees and supervisors to manually edit timesheets and attach photos (from camera or gallery). (Implemented)
+    - **Access Level Management**: An admin-configurable permission system to control user capabilities. (Implemented)
+    - **Detailed Payroll View**: A new screen to view all approved timesheets with filtering. (Implemented)
+    - **Digital Signatures**: A simple signature pad for signing documents. (Partially Implemented)
+    - **OTP Login**: Mock OTP login flow. (Implemented)
 
 **User's preferred language**: English
 
 **what currently exists?**
-A functional Phase 1 MVP of the Expo mobile app with a FastAPI backend. Key features include mock user authentication (phone/PIN), role-based access (Admin, Supervisor, Employee), clock-in/out, timesheet viewing, and supervisor approval flows. Several Phase 2 and user-requested features have been added, such as a leave request system, a pay rate engine, an employee earnings summary, and preliminary UI for contract/invoice generation. The app has been updated with the user's logo and brand colors, and the UI has been adjusted to respect safe areas. Backend APIs for most features, including manual timesheet edits and photo uploads, have been created.
+A comprehensive full-stack application with a React Native (Expo) frontend and a Python (FastAPI) backend. Most of the user's extensive feature requests have been implemented, including a sophisticated permissions system, manual and supervisor timesheet editing, photo attachments (from camera/gallery), a redesigned Employment Hero style timesheet screen, a dedicated payroll screen with filters, geo-fencing on clock-in, and mock implementations for OTP login and email sending. The UI has been significantly overhauled multiple times to use dropdowns for long lists and improve modal design to meet the user's top-notch quality standard.
 
-**Last working item**: (The agent was working on a large batch of user requests from message #261)
-    - Last item agent was working: The agent started implementing a comprehensive payroll screen as requested by the user. It created the file  but did not add any content to it. This was the first step in addressing a multi-part feature request.
-    - Status: NOT STARTED
+**Last working item**:
+    - Last item agent was working: The user requested a deployment readiness check. The agent invoked a Deployer Agent which performed a health check on the codebase. The health check identified several critical issues related to UI consistency, state management, and component structure and provided a git diff with the necessary fixes.
+    - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? Frontend testing agent
+    - Which testing method agent to use? The next agent must first apply the patch provided by the deployer agent. Afterwards, a combination of frontend testing agent and manual testing (using screenshot tool) is recommended to verify the UI/UX fixes across the affected screens (, , ).
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Payroll screen with filtering is not implemented (P0)
-  - Issue 2: Employee details cannot be edited from the frontend (P1)
-  - Issue 3: Automated invoice sending for ABN contractors is not implemented (P1)
-  - Issue 4: Send Employment Contract modal has formatting issues and is not fully functional (P2)
-  - Issue 5: Frontend UI for manual timesheet editing and photo uploads is missing (P2)
-  - Issue 6: Admin cannot manage employee access levels (P2)
-  - Issue 7: Total pay is not displayed on the employee's timesheet after supervisor approval (P3)
+  - Issue 1: Apply fixes from the Deployer Agent's Health Check (P0)
+  - Issue 2: Verify Admin clock-in/out functionality (P2)
   
   Issues Detail:
-  - Issue 1: **Payroll screen with filtering is not implemented (P0)**
-     - Attempted fixes: The agent created the file  but did not proceed with implementation.
-     - Next debug checklist: 
-        1. Implement the UI for the new payroll screen in .
-        2. Add state management for filters (employee, site, date range).
-        3. Create a new backend endpoint or modify an existing one to fetch approved timesheets based on the filters.
-        4. Populate the screen with the filtered data.
-        5. Add the  screen to the tab navigation in , likely visible only to Admins.
-     - Why fix this issue and what will be achieved with the fix? This is a direct user request to allow admins to easily review and verify payroll data before export.
+  - Issue 1: **Apply fixes from the Deployer Agent's Health Check (P0)**
+     - Attempted fixes: The Deployer Agent generated a diff containing fixes for UI inconsistencies, state management bugs, missing  wrappers, and styling issues across , , and . The previous agent was terminated before it could apply these changes.
+     - Next debug checklist:
+        1. Carefully review the diff provided in .
+        2. Apply the patch to the respective files.
+        3. Restart both backend and frontend services.
+        4. Thoroughly test the Admin, Supervisor, and Timesheet screens to ensure the fixes have resolved the issues and not introduced any regressions.
+     - Why fix this issue and what will be achieved with the fix? This is a critical step for code quality and stability, directly addressing the user's request for a top-notch app and preparing it for deployment. It fixes multiple underlying bugs and improves user experience.
      - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: None
-
-  - Issue 2: **Employee details cannot be edited from the frontend (P1)**
-     - Attempted fixes: None. The agent implemented adding employees but not editing them.
-     - Next debug checklist:
-        1. Create a Edit button on each employee card in .
-        2. Clicking Edit should open the existing  populated with that employee's data.
-        3. The ABN field and a toggle for ABN Contractor should be present in the modal, as partially implemented before.
-        4. Create a new backend  endpoint  to handle updates.
-        5. Wire the frontend modal's Save button to call this new endpoint.
-        6. Refresh the employee list upon successful update.
-     - Why fix this issue and what will be achieved with the fix? To allow admins to correct employee information, manage ABN details, and update roles or pay levels without database access.
-     - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: None
-
-  - Issue 3: **Automated invoice sending for ABN contractors is not implemented (P1)**
-     - Attempted fixes: The agent created UI placeholders and backend logic to generate an invoice from a template, but there's no mechanism to send it. The employee selection in the modal was also just recently fixed.
-     - Next debug checklist:
-        1. Implement an email sending service (e.g., using SendGrid, for which a placeholder API key might be needed).
-        2. In the  function in , after generating the invoice, use the email service to send it to .
-        3. The modal for generating invoices should correctly filter and show ONLY employees marked as ABN contractors. This was attempted but might need verification.
-     - Why fix this issue and what will be achieved with the fix? This automates a key business process for managing contractors.
-     - Status: IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Backend
-     - Blocked on other issue: None
-
-  - Issue 4: **Send Employment Contract modal has formatting issues and is not fully functional (P2)**
-     - Attempted fixes: The agent acknowledged the formatting was messed up but did not fix it.
-     - Next debug checklist:
-        1. Review the UI of the  in .
-        2. Apply professional styling using , ensuring components are well-spaced and aligned.
-        3. Implement the actual contract sending logic, similar to the invoice sending (emailing a generated document).
-     - Why fix this issue and what will be achieved with the fix? Improves user experience and professionalism, a key user concern.
-     - Status: IN PROGRESS
-     - Is recurring issue? Y (User has repeatedly complained about unprofessional formatting).
+     - Is recurring issue? Y (The user has repeatedly complained about UI/UX issues, which this patch aims to resolve comprehensively).
      - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None
 
-  - Issue 5: **Frontend UI for manual timesheet editing and photo uploads is missing (P2)**
-     - Attempted fixes: The agent created the backend endpoints ( and ) but did not build the corresponding frontend UI.
+  - Issue 2: **Verify Admin clock-in/out functionality (P2)**
+     - Attempted fixes: The user reported they could not check out from the admin account (). The agent suspected a Metro bundler cache issue and restarted the services. This is not a guaranteed fix.
      - Next debug checklist:
-        1. In , add Edit and Attach Photo buttons to each timesheet card.
-        2. Create a new modal for editing a timesheet's clock-in/out times.
-        3. Implement image picking functionality using  for the photo upload.
-        4. Call the respective backend endpoints to save the changes.
-        5. Ensure the UI refreshes to show the updated data, including a thumbnail of the uploaded photo.
-     - Why fix this issue and what will be achieved with the fix? Fulfills a direct user request for employees to correct their own timesheets and provide evidence for manual entries.
-     - Status: NOT STARTED
+        1. Log in using the Admin credentials.
+        2. Navigate to the Home screen.
+        3. Attempt to perform a full clock-in and clock-out cycle.
+        4. If it fails, inspect the backend logs () and frontend console for specific errors. The error might be related to the admin user not being assigned a default  or another validation rule failing.
+     - Why fix this issue and what will be achieved with the fix? To ensure all user roles, including admin, have the expected core functionality.
+     - Status: USER VERIFICATION PENDING
      - Is recurring issue? N
      - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: None
-
-  - Issue 6: **Admin cannot manage employee access levels (P2)**
-     - Attempted fixes: None.
-     - Next debug checklist:
-        1. The concept of access level needs to be defined. It could mean the  (Admin, Supervisor, Employee) or a new field. Assume it means .
-        2. Add a  or dropdown in the employee edit modal (from Issue 2) to change the user's role.
-        3. The backend update endpoint () must be updated to handle role changes.
-     - Why fix this issue and what will be achieved with the fix? Allows admins to promote/demote users and manage permissions dynamically.
-     - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Both
-     - Blocked on other issue: Issue 2
-
-  - Issue 7: **Total pay is not displayed on the employee's timesheet after supervisor approval (P3)**
-     - Attempted fixes: Agent updated the approval endpoint to calculate  but did not implement the UI to display it.
-     - Next debug checklist:
-        1. The  endpoint now returns .
-        2. Update the  type in the frontend to include the optional  field.
-        3. In , modify the timesheet card component to display the  if the status is Approved.
-     - Why fix this issue and what will be achieved with the fix? Provides employees with transparent earnings information, a direct user request.
-     - Status: IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? Frontend
      - Blocked on other issue: None
 
 **In progress Task List**:
-- Task 1: Complete the implementation of all features requested in user message #261.
-    - Where to resume: Start by building the UI in . Then, proceed to the other pending issues.
-    - What will be achieved with this? A fully-featured, professional application that meets all current user requirements.
+- Task 1: Prepare the application for deployment
+    - Where to resume: Start by applying the critical fixes generated by the Deployer Agent's health check ().
+    - What will be achieved with this? A stable, robust, and polished application that is ready for user acceptance testing and eventual deployment.
     - Status: IN PROGRESS
     - Should Test frontend/backend/both after fix? Both
-    - Blocked on something: None.
+    - Blocked on something: Issue 1.
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - (P0) Implement UI for the Payroll screen with filters ().
-    - (P1) Implement UI for editing employee details ().
-    - (P1) Implement UI for manual timesheet editing and photo upload ().
-    - (P2) Implement actual email sending for contracts and invoices.
-    - (P3) Add an option for the admin to upload/manage contract and invoice templates.
+    - (P1) **Implement Real Email Integration**: The current system uses a mock email service. The next step is to integrate a real email provider like SendGrid. This will require obtaining an API key from the user.
+    - (P1) **Implement Real OTP Integration**: The current login uses a mock OTP shown in an alert. To enhance security, this should be replaced with a real SMS service like Twilio, which will also require a user-provided API key.
+    - (P2) **Complete Digital Signature Flow**: A signature pad component and a backend endpoint exist, but the full workflow (presenting a contract document, capturing the signature, and embedding it into the final document) needs to be implemented.
 - **Future Tasks:**
-    - (Phase 2 from original plan) Geo-fence clock-in.
-    - (Phase 2 from original plan) AI shift forecasting.
-    - (Phase 2 from original plan) Hotel client access login.
-    - (Phase 2 from original plan) Integrations with Xero, MYOB.
-    - (Phase 2 from original plan) Digital contract signing.
-    - Integrate a real OTP/SMS service (like Twilio) to replace the mock PIN login.
+    - AI-based shift forecasting.
+    - A dedicated login portal for hotel clients to view reports.
+    - Integration with accounting software like Xero or MYOB.
 
 **Completed work in this session**
-- **Core Functionality (Phase 1)**: User login (mock), role-based navigation, clock-in/out, timesheet lists, supervisor approval dashboard, and basic admin panel for viewing sites/employees.
-- **Data Seeding**: A  script populates the database with test users, sites, roles, pay rates, and timesheets.
-- **Leave Management**: Backend and frontend for employees to request and view leave.
-- **Pay Rate & Earnings Engine**: Backend calculates pay based on award levels. Admin panel has sections to view pay rates and total employee earnings.
-- **Branding & UI Refresh**: Integrated user's logo and brand colors (, ). Fixed bottom tab bar to respect safe areas. Added GPS coordinate display on the home screen.
-- **Contract/Invoice Stubs**: Created backend templates (, ) and frontend modals with employee selection for sending contracts and invoices.
-- **ABN Field**: Added  and  fields to the Employee model and seed data.
-- **Backend for Manual Edits**: Created endpoints for manual timesheet editing and photo uploads.
-- **Template Viewing**: Created endpoints to view the HTML templates for contracts and invoices.
-
-**Earlier issues found/mentioned but not fixed**
-   - Issue 1: **General UI/UX Professionalism**
-     - Debug checklist: The user has repeatedly stated the formatting is not professional. This requires a holistic review of the app's UI, focusing on spacing, alignment, font sizes, and component consistency. The modals in  are a good place to start.
-     - Why to solve this issue and what will be achieved with this? This is a primary concern for the user and is crucial for their satisfaction with the final product.
-     - Should Test frontend/backend/both after fix: Frontend
-     - Is recurring issue? Y
+- **UI/UX Overhaul**: Redesigned multiple screens for a more professional feel, converting long lists to dropdown pickers () in the Admin and Payroll screens.
+- **Timesheet v2**: Completely redesigned the employee timesheet screen to be more intuitive and similar to Employment Hero, fixing numerous editing and photo upload bugs.
+- **Supervisor Editing**: Enabled supervisors to edit timesheets before approval, directly from the supervisor dashboard.
+- **Camera Functionality**: Added an option for users to take a photo directly from the camera, in addition to selecting from the gallery, when attaching proof for timesheets.
+- **Access Control System**: Implemented a robust permissions model. Pay information is now hidden from employees by default, and admins can manage specific permissions (e.g., View Own Pay) for each user via a new Manage Permissions modal.
+- **Admin Panel Enhancements**: Added functionality to edit existing employee details, including ABN and site assignment. Fixed numerous layout and styling issues.
+- **Geo-fencing & Address Display**: Implemented a 100m geo-fence validation on clock-in/out and now prominently displays the user's assigned site address on the home screen.
+- **Enhanced Profile Screen**: Created a new profile screen with user statistics (hours worked, shifts completed) and a professional design.
+- **Backend Features**: Added numerous endpoints to support Excel exports (), mock OTP generation, mock email sending, user updates, and supervisor edits.
+- **File Cleanup**: Removed multiple old, duplicate, and backup files () that were causing navigation and display issues.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: None, this is the first fork. However, within this session, there was a recurring problem.
-  - Recurrence count: 3+
-  - Status: RESOLVED (by agent learning)
-  - Note: The agent repeatedly failed to make frontend changes visible to the user. The issue was that the Expo development server needed to be fully restarted, and sometimes the cache needed to be cleared ([03:30:23] Starting project at /app/frontend), to reflect new files or significant changes in navigation (). The next agent must be mindful of this and always ensure the service is properly restarted and rebuilt after frontend changes.
+  - **Issue recurrence in previous fork**: The previous agent repeatedly struggled with frontend changes not appearing, requiring full server restarts or clearing the Metro cache ([07:55:14] Starting project at /app/frontend).
+  - **Recurrence count**: This behavior persisted throughout the current session. The agent frequently had to restart the Expo server (expo: ERROR (not running)
+expo: started) to apply changes, especially after adding new files or modifying navigation.
+  - **Status**: RESOLVED (by agent learning). The current agent is aware of this environmental quirk and includes server restarts as a standard part of its workflow. The next agent must continue this practice.
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Frontend**: React Native with Expo, Expo Router (file-based routing), TypeScript
+- **Frontend**: React Native with Expo, Expo Router, TypeScript
 - **Backend**: Python with FastAPI
 - **Database**: MongoDB
-- **State Management**: Zustand for global auth state
-- **Styling**:  for all components.
-- **Authentication**: Mock authentication using a phone number/email and a 4-digit PIN.
+- **State Management**: Zustand
+- **UI Libraries**: , , 
+- **Data Export**:  for Excel generation on the backend.
 
 **key DB schema**
-(Inferred from  and )
-- **Sites**: , , , 
-- **Roles**: , 
-- **PayRates**: , , , , 
-- **Employees**: , , , , , , ,  (bool),  (str)
-- **Shifts**: , , , , 
-- **Timesheets**: , , , , , ,  (, ), , , , , 
-- **LeaveRequests**: , , , , , 
-
-**changes in tech stack**
-None.
+- **Employees**: , , , , , , , ,  (Array of strings, e.g., )
+- **Timesheets**: , , , , , , , 
+- **OTPs**: Temporary storage for mock OTPs (implemented as a dictionary in ).
 
 **All files of reference**
-- : Contains all backend logic, API endpoints, and Pydantic models. Has been extensively modified.
-- : The most complex frontend screen, containing multiple modals and data displays for admin functions. It is the focus of many recent user requests.
-- : Defines the tab structure and icons. Was recently modified to add a 'Leave' tab and needs modification for the 'Payroll' tab.
-- : Needs to be updated with UI for manual edits and photo uploads.
-- : The main login screen, updated with the company logo.
-- : Crucial for testing, as it creates the entire test environment of users and data.
-- : Template for contracts.
-- : Template for invoices.
+- : Heavily modified to include employee editing, dropdowns, and permission management modals. Awaiting a patch from the deployer agent.
+- : Completely rewritten to a v2 design. Awaiting a patch from the deployer agent.
+- : Modified to add timesheet editing capabilities. Awaiting a patch from the deployer agent.
+- : Significantly expanded with new endpoints for OTP, user updates, geo-fencing, email, and Excel export.
+- : Updated to include default permissions for seeded user roles.
+- : New component for the admin panel.
 
 **Areas that need refactoring**:
-- ****: This file is becoming very large and complex with multiple modals, state variables, and data fetching functions. It should be broken down into smaller components (e.g., , , ).
-- **Styling**: Styles are sometimes defined inline or are inconsistent. A pass to consolidate styles and ensure a consistent design language is needed to address the user's not professional feedback.
+- ****: The main backend file has grown to over 800 lines. It should be modularized by splitting API routes into separate files (e.g., , ) using FastAPI's .
+- ** and **: These files now contain large, complex modals for editing. The timesheet editing modal logic is duplicated. A shared, reusable  component should be created and used in both  and .
 
 **key api endpoints**
-- : Authenticates user with phone/email and PIN.
-- , , : Data fetching for Admin panel.
-- : Create a new employee.
-- : Get current user's active timesheet.
-- , : Manage clock state.
-- : For supervisor dashboard.
-- : Supervisor approval, calculates .
-- : Exports approved timesheets as CSV data.
-- : Calculates earnings for all employees.
-- , : Generates documents.
-- : For manual timesheet edits by employees.
-- : For attaching photos to timesheets.
-- , : To view the HTML templates.
+- : Request a mock OTP for login.
+- : Verify OTP and log in.
+- : Update user details, including role, site, and permissions.
+- : Get details for a single site.
+- : Now includes geo-fence validation.
+- : New endpoint to export payroll data as an  file.
+- : Mock endpoint to send employment contracts.
+- : Mock endpoint to send ABN invoices.
 
 **Critical Info for New Agent**
-- The user is very focused on achieving a **professional** look and feel. Pay close attention to UI/UX, formatting, and alignment.
-- **Mock Authentication is in use**. The login system uses a simple PIN check against the database. No real OTP service is integrated.
-- **Frontend changes might not appear immediately**. After making changes, especially to new files or navigation in , you MUST restart the Expo server. If issues persist, clear the Metro bundler cache with [03:30:23] Starting project at /app/frontend.
-- **Start with the user's latest, most comprehensive request** (from message #261). It outlines several high-priority tasks that need to be implemented. Break them down and tackle them one by one, starting with the payroll screen.
-
-**documents created in this job**
-- 
-- 
-- 
-- 
+- **Priority #1 is to apply the deployer agent's patch** from . This is a crucial step for stabilizing the application before adding new features.
+- The user's primary goal is a **top-notch, professional** application. Pay close attention to UI/UX details, responsiveness, and stability.
+- **Frontend changes require an Expo restart.** After any significant UI change, you MUST run expo: stopped
+expo: started to ensure the changes are visible to the user.
+- **Mocked Features**: Key services like Email (SendGrid) and OTP (Twilio) are currently mocked. Do not proceed with full implementation without confirming with the user and obtaining API keys.
 
 **Last 10 User Messages and any pending user messages**
-1.  **where should we input pay rate, also how can we see how much employee has earn**: Request for pay rate management and employee earnings view. (Completed)
-2.  **This is business logo and brand colour...tab is on the same place where my mobile home button...how can i know if the location of sign in and out is traced**: Request for branding, UI fix for safe area, and GPS location visibility. (Completed)
-3.  **Edit rates is not Working and payroll export also, function to send contracts also , and employee to send invoice those working in ABN**: Bug report on non-working buttons and request for new features. (Partially Completed)
-4.  **Send employment contract and generate ABN invoices . cant select...give the acess level to the employee...show the total pay for the employee on the time sheet...option for employee to take pic of their manual timesheet also , and leave a note...**: Large feature request batch. (Partially Completed)
-5.  **i cant selkect the employee to send the contract and generate invoivce**: Bug report on employee selection in modals. (Completed)
-6.  **formatting is not professional...if i selkect employee and send contract which contract would be send , do we have option of uploading the contract...generate invoice will be from ABN employess on;ly. can you create a sample contracts for both**: UI feedback and feature clarification/request. (Partially Completed)
-7.  **all of the Above**: User confirming to proceed with all suggested implementations. (Agent started work)
-8.  **the formatting is nmot good also where is invocie and contract template**: User unhappy with modal formatting and asking for template location. (Partially addressed)
-9.  **where is template for invoice and employment contract, also can we have employee to manually edit the timesheet also and section where they can take pic of timesheet and attached for the fortnight period**: Request to view templates and add manual edit/photo features. (Partially Completed - Backend done, Frontend pending)
-10. **whwn click in weekly /fortnightly payroll, i should be able to see all aproivved time sheet and filter according to employee and sites/location... (and more)**: This is the **CURRENT PENDING REQUEST**, a large set of requirements including a new payroll screen, employee editing, ABN invoice automation, and fixing contract formatting. (Work just started)
+- **1. call deployer agent...**: User requested a readiness check. (In Progress - check yielded fixes that are pending)
+- **2. add features of directly taking pic...**: Request to add camera option and supervisor editing. (Completed)
+- **3. can we make it drop down...**: Request for dropdowns on payroll, fix admin checkout, remove duplicate profile tab. (Completed)
+- **4. remove old timesheet, make app top notch**: Request to clean up files and improve quality. (Completed)
+- **5. i clock in...not showing my address**: Bug report about address not showing on home screen. (Completed)
+- **6. still cant edit...create timesheet similiar to employment hero**: Bug report on editing and request for major UI redesign of timesheets. (Completed)
+- **7. when trying to take a pic...and cant edit also**: Bug report with screenshots of image picker and date picker failing. (Completed)
+- **8. expo go mobile link is not working**: User had trouble accessing the mobile preview. (Completed - agent provided correct link)
+- **9. link ti try as employee**: User requested login credentials and instructions for employee testing. (Completed)
+- **10. Pay level should not be seen by the employee...**: Request to implement access control. (Completed)
 
 **Project Health Check:**
-- **Working**: Core login, clock-in/out, timesheet viewing, supervisor approvals, leave requests, basic admin views.
-- **Broken**: Edit Rates and Payroll Export buttons were reported as broken and supposedly fixed, but need verification. Contract/Invoice generation modals are not fully functional and have UI issues.
-- **Mocked**: User authentication (OTP is mocked with a PIN). Email sending is not implemented.
+- **Working**: Most core features are functional, including the redesigned timesheet flow, payroll reports, and basic admin functions.
+- **Broken/Needs Fixes**: The deployer agent identified critical UI/UX and structural bugs in , , and . These files are functional but not production-ready until the recommended patch is applied.
+- **Mocked**: User authentication (OTP is simulated) and all email functionality.
 
 **3rd Party Integrations**
-- **Expo Push Notifications**: Chosen by the user, but not yet implemented.
-- **Twilio/SendGrid**: Discussed for OTP, but user chose to mock authentication for now.
+- : Used for dropdown selectors.
+- : Used for date/time selection in edit modals.
+- : Used for the digital signature pad.
+-  (Python): Used for generating Excel files on the backend.
+- **Discussed but Not Integrated**: SendGrid (email), Twilio (SMS for OTP), Expo Push Notifications.
 
 **Testing status**
-  - Testing agent used after significant changes: YES, the  agent was used once and passed all tests for the initial API setup. It has not been used after the latest feature additions.
+  - Testing agent used after significant changes: NO (A deployer/health-check agent was used, which is different).
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: None.
-  - Known regressions: None identified, but several features are incomplete.
+  - Known regressions: The issues identified by the deployer agent can be considered regressions in quality/stability.
 
 **Credentials to test flow:**
-- **Admin**:
-  - Phone: 
-  - PIN: 
-- **Supervisor**:
-  - Phone: 
-  - PIN: 
-- **Employee (Room Attendant)**:
-  - Phone: 
-  - PIN: 
-- **Employee (Houseman, ABN Contractor)**:
-  - Phone: 
-  - PIN: 
-  - ABN: 
+- **Admin**: Phone: , PIN: 
+- **Supervisor**: Phone: , PIN: 
+- **Employee (Room Attendant)**: Phone: , PIN: 
+- **Employee (Houseman, ABN Contractor)**: Phone: , PIN: 
 
 **What agent forgot to execute**
-The agent received a large, multi-part request in the user's last message (#261). It acknowledged all parts of the request but only executed the very first step: creating an empty file for the new payroll screen (). All other parts of that request are pending and are listed in the **All Pending/In progress Issue list**.
+- The agent's final action was to receive a health check report from the deployer agent. It did not get a chance to **apply the recommended fixes** contained in the report's diff --git a/frontend/.env b/frontend/.env
+index 862cc95..f785677 100644
+--- a/frontend/.env
++++ b/frontend/.env
+@@ -1,5 +1,5 @@
+-EXPO_TUNNEL_SUBDOMAIN=timewatch-3
+-EXPO_PACKAGER_HOSTNAME=https://timewatch-3.preview.emergentagent.com
+-EXPO_PUBLIC_BACKEND_URL=https://timewatch-3.preview.emergentagent.com
++EXPO_TUNNEL_SUBDOMAIN=timeclock
++EXPO_PACKAGER_HOSTNAME=https://timeclock.preview.emergentagent.com
++EXPO_PUBLIC_BACKEND_URL=https://timeclock.preview.emergentagent.com
+ EXPO_USE_FAST_RESOLVER="1"
+ METRO_CACHE_ROOT=/app/frontend/.metro-cache
+\ No newline at end of file (). This is the most critical pending action.
 
 </analysis>
