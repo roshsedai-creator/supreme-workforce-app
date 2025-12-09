@@ -1094,4 +1094,36 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 18,
   },
+  employeeList: {
+    maxHeight: 300,
+    marginBottom: 16,
+  },
+  employeeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: colors.gray[50],
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+  },
+  employeeItemSelected: {
+    backgroundColor: colors.primary + '10',
+    borderColor: colors.primary,
+  },
+  employeeInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  employeeName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  employeeRole: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
 });
