@@ -329,15 +329,17 @@ export default function AdminScreen() {
       const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export-excel`, {
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
+      }, {
+        responseType: 'blob'
       });
 
       Alert.alert(
         'Excel Export Ready',
-        `Records: ${response.data.record_count}\nTotal Hours: ${response.data.total_hours.toFixed(2)}\nTotal Pay: $${response.data.total_pay.toFixed(2)}\n\nExcel file is ready for download.`,
+        `Excel payroll file has been generated successfully for the last 14 days.\n\nThe file contains detailed payroll information including hours worked, pay rates, and total compensation.`,
         [{ text: 'OK' }]
       );
       
-      console.log('Excel Data:', response.data.excel_data);
+      console.log('Excel file generated successfully');
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to export Excel');
     } finally {
