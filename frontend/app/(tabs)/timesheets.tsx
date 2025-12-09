@@ -135,9 +135,50 @@ export default function TimesheetsScreen() {
   const handlePickImage = async (timesheet: any) => {
     setSelectedTimesheet(timesheet);
     
+    // Show options: Camera or Gallery
+    Alert.alert(
+      'Attach Photo',
+      'Choose photo source',
+      [
+        {
+          text: 'Take Photo',
+          onPress: () => openCamera(timesheet),
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: () => openGallery(timesheet),
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ]
+    );
+  };
+
+  const openCamera = async (timesheet: any) => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need camera permissions to take photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      setSelectedPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      setPhotoModalVisible(true);
+    }
+  };
+
+  const openGallery = async (timesheet: any) => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need camera roll permissions to attach photos');
+      Alert.alert('Permission Denied', 'We need gallery permissions to choose photos');
       return;
     }
 
