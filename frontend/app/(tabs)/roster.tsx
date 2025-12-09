@@ -258,6 +258,152 @@ export default function RosterScreen() {
     }
   };
 
+  const handleRequestSwap = async () => {
+    if (!selectedShiftForSwap || !swapToEmployee) {
+      Alert.alert('Error', 'Please select an employee to swap with');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shift-swaps`,
+        {
+          shift_id: selectedShiftForSwap.id,
+          from_employee_id: user?.id,
+          to_employee_id: swapToEmployee,
+          reason: swapReason,
+        }
+      );
+      
+      Alert.alert('Success', 'Swap request sent! Waiting for supervisor approval.');
+      setShowSwapModal(false);
+      setSelectedShiftForSwap(null);
+      setSwapToEmployee('');
+      setSwapReason('');
+      loadSwapRequests();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to create swap request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSwapRequests = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shift-swaps`,
+        {
+          params: {
+            employee_id: !isSupervisor ? user?.id : undefined,
+            status: 'pending'
+          }
+        }
+      );
+      setSwapRequests(res.data);
+    } catch (error) {
+      console.error('Failed to load swap requests:', error);
+    }
+  };
+
+  const handleSwapAction = async (swapId: string, action: 'approved' | 'rejected') => {
+    try {
+      setLoading(true);
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shift-swaps/action`,
+        {
+          swap_id: swapId,
+          action: action,
+          approved_by: user?.id,
+        }
+      );
+      
+      Alert.alert('Success', `Swap request ${action}!`);
+      loadSwapRequests();
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to process swap request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateTemplate = async () => {
+    if (!templateName || !templateEmployee || !templateSite || !templateRole) {
+      Alert.alert('Error', 'Please fill all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/templates?created_by=${user?.id}`,
+        {
+          name: templateName,
+          employee_id: templateEmployee,
+          site_id: templateSite,
+          role: templateRole,
+          day_of_week: templateDay,
+          start_time: templateStartTime,
+          end_time: templateEndTime,
+        }
+      );
+      
+      Alert.alert('Success', 'Recurring template created!');
+      setShowTemplateModal(false);
+      resetTemplateForm();
+      loadTemplates();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to create template');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadTemplates = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/templates`,
+        {
+          params: {
+            active: true
+          }
+        }
+      );
+      setTemplates(res.data);
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+    }
+  };
+
+  const handleGenerateFromTemplate = async (templateId: string, weeks: number = 4) => {
+    Alert.alert(
+      'Generate Shifts',
+      `Generate ${weeks} weeks of shifts from this template?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Generate',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const res = await axios.post(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/templates/${templateId}/generate?weeks=${weeks}`
+              );
+              
+              Alert.alert('Success', `Created ${res.data.shifts_created} shifts!`);
+              loadData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to generate shifts');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const resetCreateForm = () => {
     setSelectedEmployee('');
     setSelectedSite('');
