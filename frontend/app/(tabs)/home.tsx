@@ -251,15 +251,27 @@ export default function HomeScreen() {
       <View style={styles.infoCard}>
         <Ionicons name="information-circle" size={24} color={colors.primary} />
         <View style={styles.infoContent}>
-          <Text style={styles.infoTitle}>GPS Verification</Text>
+          <Text style={styles.infoTitle}>Location Information</Text>
+          
+          {siteData && (
+            <View style={styles.siteBox}>
+              <Ionicons name="business" size={20} color={colors.primary} />
+              <View style={styles.siteInfo}>
+                <Text style={styles.siteTitle}>{siteData.name}</Text>
+                <Text style={styles.siteAddress}>{siteData.address}</Text>
+              </View>
+            </View>
+          )}
+          
           <Text style={styles.infoText}>
-            Your location is verified when clocking in and out to ensure you're at the assigned site.
+            Your location is verified when clocking in/out to ensure you're at the assigned site (within 100m radius).
           </Text>
+          
           {location && (
             <View style={styles.locationBox}>
               <Ionicons name="location" size={16} color={colors.success} />
               <Text style={styles.locationText}>
-                Current: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}
+                GPS: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}
               </Text>
             </View>
           )}
