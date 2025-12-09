@@ -318,6 +318,33 @@ export default function AdminScreen() {
       setLoading(false);
     }
   };
+  const handleExcelExport = async () => {
+    setLoading(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 14); // Last 14 days
+
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export-excel`, {
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+      }, {
+        responseType: 'blob'
+      });
+
+      Alert.alert(
+        'Excel Export Ready',
+        `Excel payroll file has been generated successfully for the last 14 days.\n\nThe file contains detailed payroll information including hours worked, pay rates, and total compensation.`,
+        [{ text: 'OK' }]
+      );
+      
+      console.log('Excel file generated successfully');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to export Excel');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleExcelExport = async () => {
     setLoading(true);
