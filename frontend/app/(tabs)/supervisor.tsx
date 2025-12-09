@@ -289,8 +289,8 @@ export default function SupervisorScreen() {
       </View>
     </ScrollView>
 
-      {/* Approval Modal */}
-      <Modal
+    {/* Approval Modal */}
+    <Modal
         visible={showModal}
         animationType="slide"
         transparent
