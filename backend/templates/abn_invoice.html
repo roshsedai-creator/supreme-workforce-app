@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #8B5CF6;
+        }
+        .company-info {
+            flex: 1;
+        }
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B5CF6;
+            margin-bottom: 10px;
+        }
+        .invoice-badge {
+            background-color: #8B5CF6;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-align: right;
+        }
+        .invoice-title {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .invoice-number {
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .parties {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+        }
+        .party-box {
+            width: 45%;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .party-title {
+            font-weight: bold;
+            color: #8B5CF6;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        .invoice-details {
+            background-color: #f0e7ff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #8B5CF6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        th {
+            background-color: #8B5CF6;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #ddd;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        .totals-section {
+            margin-top: 30px;
+            float: right;
+            width: 50%;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .total-row.grand-total {
+            background-color: #8B5CF6;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .payment-terms {
+            clear: both;
+            margin-top: 100px;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-left: 4px solid #F59E0B;
+            border-radius: 4px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .bank-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-info">
+            <div class="company-name">SUPREME HOSPITALITY SERVICES</div>
+            <div>ABN: 12 345 678 901</div>
+            <div>200 Creek St, Brisbane City QLD 4000</div>
+            <div>Phone: 0457 802 302</div>
+            <div>Email: accounts@supremehospitalityservices.com.au</div>
+        </div>
+        <div class="invoice-badge">
+            <div class="invoice-title">TAX INVOICE</div>
+            <div class="invoice-number">{{INVOICE_NUMBER}}</div>
+        </div>
+    </div>
+
+    <div class="parties">
+        <div class="party-box">
+            <div class="party-title">Bill To</div>
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">Supreme Hospitality Services</div>
+            <div>200 Creek St</div>
+            <div>Brisbane City QLD 4000</div>
+            <div>ABN: 12 345 678 901</div>
+        </div>
+        <div class="party-box">
+            <div class="party-title">Bill From (Contractor)</div>
+            <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">{{CONTRACTOR_NAME}}</div>
+            <div>ABN: {{CONTRACTOR_ABN}}</div>
+            <div>Email: {{CONTRACTOR_EMAIL}}</div>
+        </div>
+    </div>
+
+    <div class="invoice-details">
+        <div class="detail-row">
+            <span class="detail-label">Invoice Date:</span>
+            <span>{{INVOICE_DATE}}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Period:</span>
+            <span>{{START_DATE}} to {{END_DATE}}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Payment Terms:</span>
+            <span>Net 7 Days</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Due Date:</span>
+            <span>{{DUE_DATE}}</span>
+        </div>
+    </div>
+
+    <h3 style="color: #8B5CF6; margin-top: 40px;">Services Provided</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="text-align: center;">Hours</th>
+                <th style="text-align: right;">Rate</th>
+                <th style="text-align: right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <strong>{{SERVICE_DESCRIPTION}}</strong><br>
+                    <span style="font-size: 13px; color: #666;">Period: {{START_DATE}} to {{END_DATE}}</span>
+                </td>
+                <td style="text-align: center; font-weight: 600;">{{TOTAL_HOURS}}</td>
+                <td style="text-align: right;">${{HOURLY_RATE}}</td>
+                <td style="text-align: right; font-weight: 600;">${{SUBTOTAL}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="totals-section">
+        <div class="total-row">
+            <span>Subtotal:</span>
+            <span>${{SUBTOTAL}}</span>
+        </div>
+        <div class="total-row">
+            <span>GST (10%):</span>
+            <span>${{GST}}</span>
+        </div>
+        <div class="total-row grand-total">
+            <span>TOTAL (inc GST):</span>
+            <span>${{TOTAL}}</span>
+        </div>
+    </div>
+
+    <div style="clear: both;"></div>
+
+    <div class="bank-details">
+        <h4 style="color: #8B5CF6; margin-top: 0;">Payment Details</h4>
+        <div style="display: flex; justify-content: space-between;">
+            <div>
+                <strong>Bank:</strong> Commonwealth Bank<br>
+                <strong>Account Name:</strong> Supreme Hospitality Services<br>
+                <strong>BSB:</strong> 062-000
+            </div>
+            <div>
+                <strong>Account Number:</strong> 1234 5678<br>
+                <strong>Reference:</strong> {{INVOICE_NUMBER}}
+            </div>
+        </div>
+    </div>
+
+    <div class="payment-terms">
+        <strong>Payment Terms:</strong> Payment is due within 7 days of invoice date. Late payments may incur additional charges. Please include invoice number as payment reference.
+    </div>
+
+    <div class="footer">
+        <p><strong>This is a tax invoice for GST purposes</strong></p>
+        <p>Supreme Hospitality Services Pty Ltd | ABN: 12 345 678 901</p>
+        <p>For any queries regarding this invoice, please contact accounts@supremehospitalityservices.com.au</p>
+    </div>
+</body>
+</html>
