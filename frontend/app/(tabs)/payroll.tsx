@@ -229,51 +229,47 @@ export default function PayrollScreen() {
       </View>
 
       {/* Filters */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedEmployee === 'all' && styles.filterChipActive]}
-          onPress={() => setSelectedEmployee('all')}
-        >
-          <Text style={[styles.filterText, selectedEmployee === 'all' && styles.filterTextActive]}>
-            All Employees
-          </Text>
-        </TouchableOpacity>
-        
-        {employees.map((emp) => (
-          <TouchableOpacity
-            key={emp.id}
-            style={[styles.filterChip, selectedEmployee === emp.id && styles.filterChipActive]}
-            onPress={() => setSelectedEmployee(emp.id)}
-          >
-            <Text style={[styles.filterText, selectedEmployee === emp.id && styles.filterTextActive]}>
-              {emp.first_name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+      <View style={styles.filtersContainer}>
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Employee</Text>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedEmployee}
+              onValueChange={(value) => setSelectedEmployee(value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="All Employees" value="all" />
+              {employees.map((emp) => (
+                <Picker.Item 
+                  key={emp.id} 
+                  label={`${emp.first_name} ${emp.last_name}`} 
+                  value={emp.id} 
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersRow}>
-        <TouchableOpacity
-          style={[styles.filterChip, selectedSite === 'all' && styles.filterChipActive]}
-          onPress={() => setSelectedSite('all')}
-        >
-          <Text style={[styles.filterText, selectedSite === 'all' && styles.filterTextActive]}>
-            All Sites
-          </Text>
-        </TouchableOpacity>
-        
-        {sites.map((site) => (
-          <TouchableOpacity
-            key={site.id}
-            style={[styles.filterChip, selectedSite === site.id && styles.filterChipActive]}
-            onPress={() => setSelectedSite(site.id)}
-          >
-            <Text style={[styles.filterText, selectedSite === site.id && styles.filterTextActive]}>
-              {site.name}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+        <View style={styles.filterGroup}>
+          <Text style={styles.filterLabel}>Site</Text>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={selectedSite}
+              onValueChange={(value) => setSelectedSite(value)}
+              style={styles.picker}
+            >
+              <Picker.Item label="All Sites" value="all" />
+              {sites.map((site) => (
+                <Picker.Item 
+                  key={site.id} 
+                  label={site.name} 
+                  value={site.id} 
+                />
+              ))}
+            </Picker>
+          </View>
+        </View>
+      </View>
 
       {/* Summary */}
       <View style={styles.summaryCard}>
