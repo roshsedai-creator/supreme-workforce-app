@@ -151,6 +151,54 @@ export default function AdminScreen() {
     setPin('');
   };
 
+  const handleEditPayRate = async () => {
+    if (!weekdayRate || !saturdayRate || !sundayRate || !publicHolidayRate || !overtimeRate) {
+      Alert.alert('Error', 'Please fill in all rate fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pay-rates`, {
+        award_level: selectedLevel,
+        weekday_rate: parseFloat(weekdayRate),
+        saturday_rate: parseFloat(saturdayRate),
+        sunday_rate: parseFloat(sundayRate),
+        public_holiday_rate: parseFloat(publicHolidayRate),
+        overtime_rate: parseFloat(overtimeRate),
+      });
+      
+      Alert.alert('Success', `Pay rate for Level ${selectedLevel} updated successfully!`);
+      setShowPayRateModal(false);
+      resetPayRateForm();
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update pay rate');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetPayRateForm = () => {
+    setSelectedLevel(1);
+    setWeekdayRate('');
+    setSaturdayRate('');
+    setSundayRate('');
+    setPublicHolidayRate('');
+    setOvertimeRate('');
+  };
+
+  const loadPayRate = (level: number) => {
+    const rate = payRates.find((r: any) => r.award_level === level);
+    if (rate) {
+      setWeekdayRate(rate.weekday_rate.toString());
+      setSaturdayRate(rate.saturday_rate.toString());
+      setSundayRate(rate.sunday_rate.toString());
+      setPublicHolidayRate(rate.public_holiday_rate.toString());
+      setOvertimeRate(rate.overtime_rate.toString());
+    }
+  };
+
   const handlePayrollExport = async () => {
     setLoading(true);
     try {
