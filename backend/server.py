@@ -838,6 +838,36 @@ async def get_invoices(employee_id: Optional[str] = None, status: Optional[str] 
     invoices = await db.invoices.find(query).sort("generated_date", -1).to_list(1000)
     return [serialize_doc(invoice) for invoice in invoices]
 
+# =====================
+# TEMPLATE PREVIEW ENDPOINTS
+# =====================
+
+@api_router.get("/templates/contract/preview")
+async def preview_contract():
+    """View the employment contract template"""
+    from fastapi.responses import HTMLResponse
+    template_path = Path(__file__).parent / "templates" / "employment_contract.html"
+    
+    if template_path.exists():
+        with open(template_path, 'r') as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    else:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+@api_router.get("/templates/invoice/preview")
+async def preview_invoice():
+    """View the ABN invoice template"""
+    from fastapi.responses import HTMLResponse
+    template_path = Path(__file__).parent / "templates" / "abn_invoice.html"
+    
+    if template_path.exists():
+        with open(template_path, 'r') as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    else:
+        raise HTTPException(status_code=404, detail="Template not found")
+
 # Root endpoint
 @api_router.get("/")
 async def root():
