@@ -60,6 +60,7 @@ export default function AdminScreen() {
   const [awardLevel, setAwardLevel] = useState(1);
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedSiteId, setSelectedSiteId] = useState('');
 
   useEffect(() => {
     fetchData();
