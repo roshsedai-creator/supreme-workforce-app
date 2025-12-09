@@ -122,6 +122,11 @@ export default function AdminScreen() {
       return;
     }
 
+    if (isContractor && !abn) {
+      Alert.alert('Error', 'Please provide ABN for contractors');
+      return;
+    }
+
     setLoading(true);
     try {
       await createUser({
@@ -132,7 +137,9 @@ export default function AdminScreen() {
         role,
         job_title: jobTitle,
         pin,
-        award_level: 1,
+        award_level: awardLevel,
+        abn: isContractor ? abn : null,
+        is_contractor: isContractor,
       });
       Alert.alert('Success', 'Employee created successfully!');
       setShowUserModal(false);
@@ -160,6 +167,9 @@ export default function AdminScreen() {
     setRole('employee');
     setJobTitle('Room Attendant');
     setPin('');
+    setAbn('');
+    setIsContractor(false);
+    setAwardLevel(1);
   };
 
   const handleEditPayRate = async () => {
