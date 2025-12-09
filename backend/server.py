@@ -1,15 +1,15 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, status
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
-import uuid
-from datetime import datetime
-
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional
+from datetime import datetime, timedelta
+from bson import ObjectId
+import bcrypt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -25,32 +25,423 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Helper to convert ObjectId to string
+def serialize_doc(doc):
+    if doc and "_id" in doc:
+        doc["id"] = str(doc["_id"])
+        del doc["_id"]
+    return doc
 
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+# =====================
+# MODELS
+# =====================
 
-class StatusCheckCreate(BaseModel):
-    client_name: str
+class UserRole(BaseModel):
+    id: str
+    name: str  # Room Attendant, Houseman, Supervisor, Public Area Attendant, Admin
+    
+class Site(BaseModel):
+    id: Optional[str] = None
+    name: str
+    address: str
+    gps_lat: float
+    gps_long: float
+    radius_meters: int = 100  # GPS validation radius
 
-# Add your routes to the router instead of directly to app
+class SiteCreate(BaseModel):
+    name: str
+    address: str
+    gps_lat: float
+    gps_long: float
+    radius_meters: int = 100
+
+class User(BaseModel):
+    id: Optional[str] = None
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr
+    role: str  # employee, supervisor, admin
+    job_title: str  # Room Attendant, Houseman, etc.
+    site_id: Optional[str] = None
+    award_level: int = 1
+    pin: str  # Mock PIN for authentication
+    status: str = "active"  # active, inactive
+    created_at: Optional[datetime] = None
+
+class UserCreate(BaseModel):
+    first_name: str
+    last_name: str
+    phone: str
+    email: EmailStr
+    role: str
+    job_title: str
+    site_id: Optional[str] = None
+    award_level: int = 1
+    pin: str
+
+class LoginRequest(BaseModel):
+    identifier: str  # phone or email
+    pin: str
+
+class Shift(BaseModel):
+    id: Optional[str] = None
+    employee_id: str
+    site_id: str
+    start_time: datetime
+    end_time: datetime
+    status: str = "scheduled"  # scheduled, in_progress, completed, cancelled
+    created_at: Optional[datetime] = None
+
+class ShiftCreate(BaseModel):
+    employee_id: str
+    site_id: str
+    start_time: datetime
+    end_time: datetime
+
+class Timesheet(BaseModel):
+    id: Optional[str] = None
+    shift_id: str
+    employee_id: str
+    site_id: str
+    clock_in: Optional[datetime] = None
+    clock_out: Optional[datetime] = None
+    gps_in_lat: Optional[float] = None
+    gps_in_long: Optional[float] = None
+    gps_out_lat: Optional[float] = None
+    gps_out_long: Optional[float] = None
+    break_start: Optional[datetime] = None
+    break_end: Optional[datetime] = None
+    break_minutes: int = 0
+    total_hours: float = 0.0
+    supervisor_id: Optional[str] = None
+    approval_status: str = "pending"  # pending, approved, rejected
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+class ClockInRequest(BaseModel):
+    employee_id: str
+    site_id: str
+    gps_lat: float
+    gps_long: float
+
+class ClockOutRequest(BaseModel):
+    timesheet_id: str
+    gps_lat: float
+    gps_long: float
+
+class BreakRequest(BaseModel):
+    timesheet_id: str
+    action: str  # start or end
+
+class ApprovalRequest(BaseModel):
+    timesheet_id: str
+    supervisor_id: str
+    status: str  # approved or rejected
+    notes: Optional[str] = None
+
+# =====================
+# AUTH ENDPOINTS
+# =====================
+
+@api_router.post("/auth/login")
+async def login(request: LoginRequest):
+    """Mock login with PIN"""
+    user = await db.users.find_one({
+        "$or": [
+            {"phone": request.identifier},
+            {"email": request.identifier}
+        ],
+        "status": "active"
+    })
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Check PIN (in production, use bcrypt)
+    if user.get("pin") != request.pin:
+        raise HTTPException(status_code=401, detail="Invalid PIN")
+    
+    user = serialize_doc(user)
+    return {
+        "success": True,
+        "user": user,
+        "token": f"mock_token_{user['id']}"
+    }
+
+# =====================
+# USER ENDPOINTS
+# =====================
+
+@api_router.post("/users", response_model=User)
+async def create_user(user: UserCreate):
+    user_dict = user.model_dump()
+    user_dict["created_at"] = datetime.utcnow()
+    user_dict["status"] = "active"
+    
+    result = await db.users.insert_one(user_dict)
+    user_dict["id"] = str(result.inserted_id)
+    
+    return User(**user_dict)
+
+@api_router.get("/users")
+async def get_users(role: Optional[str] = None, site_id: Optional[str] = None):
+    query = {"status": "active"}
+    if role:
+        query["role"] = role
+    if site_id:
+        query["site_id"] = site_id
+    
+    users = await db.users.find(query).to_list(1000)
+    return [serialize_doc(user) for user in users]
+
+@api_router.get("/users/{user_id}")
+async def get_user(user_id: str):
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return serialize_doc(user)
+
+# =====================
+# SITE ENDPOINTS
+# =====================
+
+@api_router.post("/sites", response_model=Site)
+async def create_site(site: SiteCreate):
+    site_dict = site.model_dump()
+    result = await db.sites.insert_one(site_dict)
+    site_dict["id"] = str(result.inserted_id)
+    return Site(**site_dict)
+
+@api_router.get("/sites")
+async def get_sites():
+    sites = await db.sites.find().to_list(1000)
+    return [serialize_doc(site) for site in sites]
+
+@api_router.get("/sites/{site_id}")
+async def get_site(site_id: str):
+    site = await db.sites.find_one({"_id": ObjectId(site_id)})
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+    return serialize_doc(site)
+
+# =====================
+# SHIFT ENDPOINTS
+# =====================
+
+@api_router.post("/shifts", response_model=Shift)
+async def create_shift(shift: ShiftCreate):
+    shift_dict = shift.model_dump()
+    shift_dict["status"] = "scheduled"
+    shift_dict["created_at"] = datetime.utcnow()
+    
+    result = await db.shifts.insert_one(shift_dict)
+    shift_dict["id"] = str(result.inserted_id)
+    
+    return Shift(**shift_dict)
+
+@api_router.get("/shifts")
+async def get_shifts(employee_id: Optional[str] = None, site_id: Optional[str] = None, status: Optional[str] = None):
+    query = {}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if site_id:
+        query["site_id"] = site_id
+    if status:
+        query["status"] = status
+    
+    shifts = await db.shifts.find(query).sort("start_time", -1).to_list(1000)
+    return [serialize_doc(shift) for shift in shifts]
+
+@api_router.get("/shifts/{shift_id}")
+async def get_shift(shift_id: str):
+    shift = await db.shifts.find_one({"_id": ObjectId(shift_id)})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    return serialize_doc(shift)
+
+# =====================
+# TIMESHEET ENDPOINTS
+# =====================
+
+@api_router.post("/timesheets/clock-in")
+async def clock_in(request: ClockInRequest):
+    """Clock in - creates a new timesheet"""
+    # Check if already clocked in
+    existing = await db.timesheets.find_one({
+        "employee_id": request.employee_id,
+        "clock_out": None
+    })
+    
+    if existing:
+        raise HTTPException(status_code=400, detail="Already clocked in. Please clock out first.")
+    
+    # Validate GPS (basic check - in production, calculate distance)
+    site = await db.sites.find_one({"_id": ObjectId(request.site_id)})
+    if not site:
+        raise HTTPException(status_code=404, detail="Site not found")
+    
+    # Create timesheet
+    timesheet = {
+        "employee_id": request.employee_id,
+        "site_id": request.site_id,
+        "clock_in": datetime.utcnow(),
+        "gps_in_lat": request.gps_lat,
+        "gps_in_long": request.gps_long,
+        "break_minutes": 0,
+        "total_hours": 0.0,
+        "approval_status": "pending",
+        "created_at": datetime.utcnow()
+    }
+    
+    result = await db.timesheets.insert_one(timesheet)
+    timesheet["id"] = str(result.inserted_id)
+    
+    return {"success": True, "timesheet": serialize_doc(timesheet)}
+
+@api_router.post("/timesheets/clock-out")
+async def clock_out(request: ClockOutRequest):
+    """Clock out - completes the timesheet"""
+    timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
+    
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    if timesheet.get("clock_out"):
+        raise HTTPException(status_code=400, detail="Already clocked out")
+    
+    # Calculate total hours
+    clock_in = timesheet["clock_in"]
+    clock_out = datetime.utcnow()
+    total_seconds = (clock_out - clock_in).total_seconds()
+    total_hours = (total_seconds - (timesheet.get("break_minutes", 0) * 60)) / 3600
+    
+    # Update timesheet
+    await db.timesheets.update_one(
+        {"_id": ObjectId(request.timesheet_id)},
+        {"$set": {
+            "clock_out": clock_out,
+            "gps_out_lat": request.gps_lat,
+            "gps_out_long": request.gps_long,
+            "total_hours": round(total_hours, 2)
+        }}
+    )
+    
+    updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
+    return {"success": True, "timesheet": serialize_doc(updated)}
+
+@api_router.post("/timesheets/break")
+async def manage_break(request: BreakRequest):
+    """Start or end break"""
+    timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
+    
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    if request.action == "start":
+        if timesheet.get("break_start"):
+            raise HTTPException(status_code=400, detail="Break already started")
+        
+        await db.timesheets.update_one(
+            {"_id": ObjectId(request.timesheet_id)},
+            {"$set": {"break_start": datetime.utcnow()}}
+        )
+    elif request.action == "end":
+        if not timesheet.get("break_start"):
+            raise HTTPException(status_code=400, detail="No break in progress")
+        
+        if timesheet.get("break_end"):
+            raise HTTPException(status_code=400, detail="Break already ended")
+        
+        break_start = timesheet["break_start"]
+        break_end = datetime.utcnow()
+        break_duration = (break_end - break_start).total_seconds() / 60
+        
+        await db.timesheets.update_one(
+            {"_id": ObjectId(request.timesheet_id)},
+            {"$set": {
+                "break_end": break_end,
+                "break_minutes": timesheet.get("break_minutes", 0) + int(break_duration)
+            }}
+        )
+    
+    updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
+    return {"success": True, "timesheet": serialize_doc(updated)}
+
+@api_router.get("/timesheets")
+async def get_timesheets(
+    employee_id: Optional[str] = None,
+    site_id: Optional[str] = None,
+    approval_status: Optional[str] = None
+):
+    query = {}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if site_id:
+        query["site_id"] = site_id
+    if approval_status:
+        query["approval_status"] = approval_status
+    
+    timesheets = await db.timesheets.find(query).sort("created_at", -1).to_list(1000)
+    return [serialize_doc(ts) for ts in timesheets]
+
+@api_router.get("/timesheets/{timesheet_id}")
+async def get_timesheet(timesheet_id: str):
+    timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    return serialize_doc(timesheet)
+
+@api_router.post("/timesheets/approve")
+async def approve_timesheet(request: ApprovalRequest):
+    """Supervisor approves/rejects timesheet"""
+    timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
+    
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    await db.timesheets.update_one(
+        {"_id": ObjectId(request.timesheet_id)},
+        {"$set": {
+            "approval_status": request.status,
+            "supervisor_id": request.supervisor_id,
+            "notes": request.notes
+        }}
+    )
+    
+    updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
+    return {"success": True, "timesheet": serialize_doc(updated)}
+
+# =====================
+# DASHBOARD ENDPOINTS
+# =====================
+
+@api_router.get("/dashboard/supervisor")
+async def supervisor_dashboard(site_id: Optional[str] = None):
+    """Get supervisor dashboard data"""
+    query = {}
+    if site_id:
+        query["site_id"] = site_id
+    
+    # Active shifts (clocked in)
+    active_query = {**query, "clock_out": None}
+    active_timesheets = await db.timesheets.find(active_query).to_list(1000)
+    
+    # Pending approvals
+    pending_query = {**query, "approval_status": "pending", "clock_out": {"$ne": None}}
+    pending_timesheets = await db.timesheets.find(pending_query).to_list(1000)
+    
+    return {
+        "active_employees": len(active_timesheets),
+        "pending_approvals": len(pending_timesheets),
+        "active_timesheets": [serialize_doc(ts) for ts in active_timesheets],
+        "pending_timesheets": [serialize_doc(ts) for ts in pending_timesheets]
+    }
+
+# Root endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
+    return {"message": "Supreme Hospitality Services Timesheet API", "version": "1.0.0"}
 
 # Include the router in the main app
 app.include_router(api_router)
