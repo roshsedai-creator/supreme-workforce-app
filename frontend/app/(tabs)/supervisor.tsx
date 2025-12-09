@@ -74,6 +74,65 @@ export default function SupervisorScreen() {
     }
   };
 
+  const handleEdit = (timesheet: any) => {
+    setSelectedTimesheet(timesheet);
+    
+    try {
+      const clockIn = new Date(timesheet.clock_in);
+      const clockOut = timesheet.clock_out ? new Date(timesheet.clock_out) : new Date();
+      
+      setEditDate(format(clockIn, 'yyyy-MM-dd'));
+      setEditStartTime(format(clockIn, 'HH:mm'));
+      setEditEndTime(timesheet.clock_out ? format(clockOut, 'HH:mm') : '');
+    } catch (error) {
+      console.error('Error parsing dates:', error);
+      const now = new Date();
+      setEditDate(format(now, 'yyyy-MM-dd'));
+      setEditStartTime('09:00');
+      setEditEndTime('17:00');
+    }
+    
+    setEditBreakMinutes(timesheet.break_minutes?.toString() || '0');
+    setSupervisorNotes(timesheet.supervisor_notes || '');
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedTimesheet) return;
+
+    if (!editDate || !editStartTime || !editEndTime) {
+      Alert.alert('Error', 'Please fill in date, start time, and end time');
+      return;
+    }
+
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(editStartTime) || !timeRegex.test(editEndTime)) {
+      Alert.alert('Error', 'Please use HH:MM format (e.g., 09:00, 17:30)');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const clockInISO = `${editDate}T${editStartTime}:00.000Z`;
+      const clockOutISO = `${editDate}T${editEndTime}:00.000Z`;
+      
+      await updateTimesheet(selectedTimesheet.id, {
+        manual_clock_in: clockInISO,
+        manual_clock_out: clockOutISO,
+        manual_break_minutes: parseInt(editBreakMinutes) || 0,
+        employee_notes: supervisorNotes,
+      });
+
+      Alert.alert('Success', 'Timesheet updated by supervisor');
+      setShowEditModal(false);
+      fetchDashboard();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update timesheet');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const renderActiveEmployee = ({ item }: any) => {
     const clockIn = new Date(item.clock_in);
     const now = new Date();
