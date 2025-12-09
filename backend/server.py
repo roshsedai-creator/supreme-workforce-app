@@ -244,6 +244,52 @@ class UnavailableDateCreate(BaseModel):
     date: datetime
     reason: Optional[str] = None
 
+# Shift swap models
+class ShiftSwapRequest(BaseModel):
+    id: Optional[str] = None
+    shift_id: str
+    from_employee_id: str
+    to_employee_id: str
+    status: str = "pending"  # pending, approved, rejected
+    reason: Optional[str] = None
+    approved_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class ShiftSwapCreate(BaseModel):
+    shift_id: str
+    from_employee_id: str
+    to_employee_id: str
+    reason: Optional[str] = None
+
+class ShiftSwapAction(BaseModel):
+    swap_id: str
+    action: str  # approve or reject
+    approved_by: str
+
+# Recurring shift template models
+class RecurringShiftTemplate(BaseModel):
+    id: Optional[str] = None
+    name: str
+    employee_id: str
+    site_id: str
+    role: str
+    day_of_week: int  # 0=Monday, 6=Sunday
+    start_time: str  # "08:00"
+    end_time: str  # "16:00"
+    active: bool = True
+    created_by: str
+    created_at: Optional[datetime] = None
+
+class RecurringTemplateCreate(BaseModel):
+    name: str
+    employee_id: str
+    site_id: str
+    role: str
+    day_of_week: int
+    start_time: str
+    end_time: str
+
 # =====================
 # AUTH ENDPOINTS
 # =====================
