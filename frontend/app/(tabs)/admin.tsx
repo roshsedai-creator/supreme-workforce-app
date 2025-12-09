@@ -18,9 +18,20 @@ import axios from 'axios';
 export default function AdminScreen() {
   const [sites, setSites] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [payRates, setPayRates] = useState<any[]>([]);
+  const [earnings, setEarnings] = useState<any>(null);
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
+  const [showPayRateModal, setShowPayRateModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Pay rate form
+  const [selectedLevel, setSelectedLevel] = useState(1);
+  const [weekdayRate, setWeekdayRate] = useState('');
+  const [saturdayRate, setSaturdayRate] = useState('');
+  const [sundayRate, setSundayRate] = useState('');
+  const [publicHolidayRate, setPublicHolidayRate] = useState('');
+  const [overtimeRate, setOvertimeRate] = useState('');
 
   // Site form
   const [siteName, setSiteName] = useState('');
