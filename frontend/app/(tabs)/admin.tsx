@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { getSites, createSite, createUser, getUsers } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import axios from 'axios';
+import PermissionsModal from '../../components/PermissionsModal';
 
 export default function AdminScreen() {
   const [sites, setSites] = useState<any[]>([]);
