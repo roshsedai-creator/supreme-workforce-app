@@ -111,7 +111,7 @@ export default function RosterScreen() {
       loadSwapRequests();
       loadTemplates();
     }
-  }, [selectedDate]);
+  }, [selectedDate, filterSiteId]);
 
   const loadData = async () => {
     try {
