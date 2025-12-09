@@ -61,6 +61,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="roster"
+        options={{
+          title: 'Roster',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-outline" size={size} color={color} />
+          ),
+        }}
+      />
       {isSupervisor && (
         <Tabs.Screen
           name="supervisor"
