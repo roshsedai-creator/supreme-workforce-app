@@ -609,6 +609,246 @@ async def delete_unavailable_date(date_id: str):
     return {"success": True, "message": "Date removed"}
 
 # =====================
+# SHIFT SWAP ENDPOINTS
+# =====================
+
+@api_router.post("/roster/shift-swaps")
+async def create_shift_swap_request(swap: ShiftSwapCreate):
+    """Create a shift swap request"""
+    # Verify shift exists
+    shift = await db.roster_shifts.find_one({"_id": ObjectId(swap.shift_id)})
+    if not shift:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    
+    # Verify the shift belongs to the from_employee
+    if shift["employee_id"] != swap.from_employee_id:
+        raise HTTPException(status_code=403, detail="You can only swap your own shifts")
+    
+    swap_dict = swap.model_dump()
+    swap_dict["status"] = "pending"
+    swap_dict["created_at"] = datetime.utcnow()
+    swap_dict["updated_at"] = datetime.utcnow()
+    
+    result = await db.shift_swaps.insert_one(swap_dict)
+    swap_dict["id"] = str(result.inserted_id)
+    
+    return ShiftSwapRequest(**swap_dict)
+
+@api_router.get("/roster/shift-swaps")
+async def get_shift_swap_requests(
+    employee_id: Optional[str] = None,
+    status: Optional[str] = None
+):
+    """Get shift swap requests"""
+    query = {}
+    
+    if employee_id:
+        query["$or"] = [
+            {"from_employee_id": employee_id},
+            {"to_employee_id": employee_id}
+        ]
+    
+    if status:
+        query["status"] = status
+    
+    swaps = await db.shift_swaps.find(query).sort("created_at", -1).to_list(100)
+    
+    # Enrich with employee and shift details
+    enriched_swaps = []
+    for swap in swaps:
+        from_employee = await db.users.find_one({"_id": ObjectId(swap["from_employee_id"])})
+        to_employee = await db.users.find_one({"_id": ObjectId(swap["to_employee_id"])})
+        shift = await db.roster_shifts.find_one({"_id": ObjectId(swap["shift_id"])})
+        
+        swap_data = serialize_doc(swap)
+        if from_employee:
+            swap_data["from_employee_name"] = f"{from_employee.get('first_name', '')} {from_employee.get('last_name', '')}"
+        if to_employee:
+            swap_data["to_employee_name"] = f"{to_employee.get('first_name', '')} {to_employee.get('last_name', '')}"
+        if shift:
+            swap_data["shift_details"] = {
+                "start_time": shift["start_time"].isoformat(),
+                "end_time": shift["end_time"].isoformat(),
+                "role": shift["role"]
+            }
+        
+        enriched_swaps.append(swap_data)
+    
+    return enriched_swaps
+
+@api_router.post("/roster/shift-swaps/action")
+async def handle_shift_swap_action(action: ShiftSwapAction):
+    """Approve or reject a shift swap request (Supervisor/Admin only)"""
+    swap = await db.shift_swaps.find_one({"_id": ObjectId(action.swap_id)})
+    
+    if not swap:
+        raise HTTPException(status_code=404, detail="Swap request not found")
+    
+    if swap["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Swap request already processed")
+    
+    # Update swap status
+    update_data = {
+        "status": action.action,  # 'approved' or 'rejected'
+        "approved_by": action.approved_by,
+        "updated_at": datetime.utcnow()
+    }
+    
+    await db.shift_swaps.update_one(
+        {"_id": ObjectId(action.swap_id)},
+        {"$set": update_data}
+    )
+    
+    # If approved, update the shift to new employee
+    if action.action == "approved":
+        await db.roster_shifts.update_one(
+            {"_id": ObjectId(swap["shift_id"])},
+            {"$set": {
+                "employee_id": swap["to_employee_id"],
+                "updated_at": datetime.utcnow()
+            }}
+        )
+    
+    return {"success": True, "message": f"Swap request {action.action}"}
+
+# =====================
+# RECURRING SHIFT TEMPLATES ENDPOINTS
+# =====================
+
+@api_router.post("/roster/templates")
+async def create_recurring_template(template: RecurringTemplateCreate, created_by: str):
+    """Create a recurring shift template"""
+    template_dict = template.model_dump()
+    template_dict["created_by"] = created_by
+    template_dict["active"] = True
+    template_dict["created_at"] = datetime.utcnow()
+    
+    result = await db.recurring_templates.insert_one(template_dict)
+    template_dict["id"] = str(result.inserted_id)
+    
+    return RecurringShiftTemplate(**template_dict)
+
+@api_router.get("/roster/templates")
+async def get_recurring_templates(
+    employee_id: Optional[str] = None,
+    active: Optional[bool] = None
+):
+    """Get recurring shift templates"""
+    query = {}
+    
+    if employee_id:
+        query["employee_id"] = employee_id
+    
+    if active is not None:
+        query["active"] = active
+    
+    templates = await db.recurring_templates.find(query).to_list(100)
+    
+    # Enrich with employee and site details
+    enriched_templates = []
+    for template in templates:
+        employee = await db.users.find_one({"_id": ObjectId(template["employee_id"])})
+        site = await db.sites.find_one({"_id": ObjectId(template["site_id"])})
+        
+        template_data = serialize_doc(template)
+        if employee:
+            template_data["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}"
+        if site:
+            template_data["site_name"] = site.get("name", "")
+        
+        enriched_templates.append(template_data)
+    
+    return enriched_templates
+
+@api_router.put("/roster/templates/{template_id}")
+async def update_recurring_template(template_id: str, update_data: dict):
+    """Update or deactivate a recurring template"""
+    result = await db.recurring_templates.update_one(
+        {"_id": ObjectId(template_id)},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    template = await db.recurring_templates.find_one({"_id": ObjectId(template_id)})
+    return serialize_doc(template)
+
+@api_router.delete("/roster/templates/{template_id}")
+async def delete_recurring_template(template_id: str):
+    """Delete a recurring template"""
+    result = await db.recurring_templates.delete_one({"_id": ObjectId(template_id)})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    return {"success": True, "message": "Template deleted"}
+
+@api_router.post("/roster/templates/{template_id}/generate")
+async def generate_shifts_from_template(
+    template_id: str,
+    weeks: int = 4
+):
+    """Generate roster shifts from a template for the next N weeks"""
+    template = await db.recurring_templates.find_one({"_id": ObjectId(template_id)})
+    
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    if not template.get("active", False):
+        raise HTTPException(status_code=400, detail="Template is not active")
+    
+    # Generate shifts for next N weeks
+    shifts_created = []
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    for week in range(weeks):
+        # Find the next occurrence of the day_of_week
+        days_ahead = template["day_of_week"] - today.weekday()
+        if days_ahead < 0:
+            days_ahead += 7
+        
+        shift_date = today + timedelta(days=days_ahead + (week * 7))
+        
+        # Parse time strings
+        start_hour, start_minute = map(int, template["start_time"].split(":"))
+        end_hour, end_minute = map(int, template["end_time"].split(":"))
+        
+        start_time = shift_date.replace(hour=start_hour, minute=start_minute)
+        end_time = shift_date.replace(hour=end_hour, minute=end_minute)
+        
+        # Check if shift already exists for this date
+        existing = await db.roster_shifts.find_one({
+            "employee_id": template["employee_id"],
+            "start_time": start_time
+        })
+        
+        if not existing:
+            shift = {
+                "employee_id": template["employee_id"],
+                "site_id": template["site_id"],
+                "role": template["role"],
+                "start_time": start_time,
+                "end_time": end_time,
+                "status": "scheduled",
+                "created_by": template["created_by"],
+                "notes": f"Generated from template: {template['name']}",
+                "template_id": str(template["_id"]),
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            
+            result = await db.roster_shifts.insert_one(shift)
+            shift["id"] = str(result.inserted_id)
+            shifts_created.append(serialize_doc(shift))
+    
+    return {
+        "success": True,
+        "shifts_created": len(shifts_created),
+        "shifts": shifts_created
+    }
+
+# =====================
 # TIMESHEET ENDPOINTS
 # =====================
 
