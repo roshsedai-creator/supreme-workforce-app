@@ -748,11 +748,16 @@ export default function AdminScreen() {
                     />
                     <View style={styles.employeeInfo}>
                       <Text style={styles.employeeName}>{user.first_name} {user.last_name}</Text>
-                      <Text style={styles.employeeRole}>{user.job_title} • ABN</Text>
+                      <Text style={styles.employeeRole}>{user.job_title}</Text>
+                      <View style={styles.abnBadge}>
+                        <Ionicons name="briefcase" size={12} color={colors.gold} />
+                        <Text style={styles.abnText}>ABN: {user.abn || 'N/A'}</Text>
+                      </View>
                     </View>
                   </TouchableOpacity>
                 ))}
-              </View>
+                </View>
+              )}
 
               <Text style={styles.label}>Start Date (YYYY-MM-DD)</Text>
               <TextInput
