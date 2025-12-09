@@ -13,6 +13,7 @@ import {
   Image,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,6 +28,22 @@ export default function TimesheetsScreen() {
   const [timesheets, setTimesheets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Edit modal states
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
+  const [editClockIn, setEditClockIn] = useState<Date>(new Date());
+  const [editClockOut, setEditClockOut] = useState<Date>(new Date());
+  const [editBreakMinutes, setEditBreakMinutes] = useState('');
+  const [employeeNotes, setEmployeeNotes] = useState('');
+  const [showClockInPicker, setShowClockInPicker] = useState(false);
+  const [showClockOutPicker, setShowClockOutPicker] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  
+  // Photo modal states
+  const [photoModalVisible, setPhotoModalVisible] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
   useEffect(() => {
     fetchTimesheets();
@@ -47,6 +64,81 @@ export default function TimesheetsScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchTimesheets();
+  };
+
+  const handleEditTimesheet = (timesheet: any) => {
+    setSelectedTimesheet(timesheet);
+    setEditClockIn(timesheet.clock_in ? parseISO(timesheet.clock_in) : new Date());
+    setEditClockOut(timesheet.clock_out ? parseISO(timesheet.clock_out) : new Date());
+    setEditBreakMinutes(timesheet.break_minutes?.toString() || '0');
+    setEmployeeNotes(timesheet.employee_notes || '');
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedTimesheet) return;
+
+    try {
+      setUpdating(true);
+      
+      await updateTimesheet(selectedTimesheet.id, {
+        manual_clock_in: editClockIn.toISOString(),
+        manual_clock_out: editClockOut.toISOString(),
+        manual_break_minutes: parseInt(editBreakMinutes) || 0,
+        employee_notes: employeeNotes,
+      });
+
+      Alert.alert('Success', 'Timesheet updated successfully');
+      setEditModalVisible(false);
+      fetchTimesheets();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update timesheet');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handlePickImage = async (timesheet: any) => {
+    setSelectedTimesheet(timesheet);
+    
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need camera roll permissions to attach photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImagePickerAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      quality: 0.7,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      setSelectedPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      setPhotoModalVisible(true);
+    }
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!selectedTimesheet || !selectedPhoto) return;
+
+    try {
+      setUploadingPhoto(true);
+      
+      await updateTimesheet(selectedTimesheet.id, {
+        photo_base64: selectedPhoto,
+      });
+
+      Alert.alert('Success', 'Photo attached successfully');
+      setPhotoModalVisible(false);
+      setSelectedPhoto(null);
+      fetchTimesheets();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -115,12 +207,53 @@ export default function TimesheetsScreen() {
               <Text style={styles.statText}>{item.break_minutes} min break</Text>
             </View>
           )}
+          {item.manually_edited && (
+            <View style={styles.statItem}>
+              <Ionicons name="pencil" size={18} color={colors.warning} />
+              <Text style={[styles.statText, { color: colors.warning }]}>Edited</Text>
+            </View>
+          )}
+          {item.photo_base64 && (
+            <View style={styles.statItem}>
+              <Ionicons name="image" size={18} color={colors.primary} />
+              <Text style={[styles.statText, { color: colors.primary }]}>Photo</Text>
+            </View>
+          )}
         </View>
 
-        {item.notes && (
+        {item.employee_notes && (
           <View style={styles.notesContainer}>
             <Ionicons name="document-text" size={16} color={colors.text.secondary} />
-            <Text style={styles.notesText}>{item.notes}</Text>
+            <Text style={styles.notesText}>{item.employee_notes}</Text>
+          </View>
+        )}
+
+        {/* Action buttons - only for pending timesheets */}
+        {item.approval_status === 'pending' && (
+          <View style={styles.actionRow}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handleEditTimesheet(item)}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Edit Times</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => handlePickImage(item)}
+            >
+              <Ionicons name="camera-outline" size={20} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Attach Photo</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Show total pay if approved */}
+        {item.approval_status === 'approved' && item.total_pay && (
+          <View style={styles.payContainer}>
+            <Ionicons name="cash-outline" size={20} color={colors.success} />
+            <Text style={styles.payText}>Total Pay: ${item.total_pay.toFixed(2)}</Text>
           </View>
         )}
       </View>
@@ -174,6 +307,188 @@ export default function TimesheetsScreen() {
           </View>
         }
       />
+
+      {/* Edit Timesheet Modal */}
+      <Modal
+        visible={editModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setEditModalVisible(false)}
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Timesheet</Text>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              {/* Clock In */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Clock In Time</Text>
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowClockInPicker(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                  <Text style={styles.dateButtonText}>
+                    {format(editClockIn, 'MMM dd, yyyy h:mm a')}
+                  </Text>
+                </TouchableOpacity>
+                {showClockInPicker && (
+                  <DateTimePicker
+                    value={editClockIn}
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, date) => {
+                      setShowClockInPicker(Platform.OS === 'ios');
+                      if (date) setEditClockIn(date);
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Clock Out */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Clock Out Time</Text>
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowClockOutPicker(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                  <Text style={styles.dateButtonText}>
+                    {format(editClockOut, 'MMM dd, yyyy h:mm a')}
+                  </Text>
+                </TouchableOpacity>
+                {showClockOutPicker && (
+                  <DateTimePicker
+                    value={editClockOut}
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, date) => {
+                      setShowClockOutPicker(Platform.OS === 'ios');
+                      if (date) setEditClockOut(date);
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Break Minutes */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Break Minutes</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editBreakMinutes}
+                  onChangeText={setEditBreakMinutes}
+                  keyboardType="number-pad"
+                  placeholder="0"
+                />
+              </View>
+
+              {/* Employee Notes */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes (Optional)</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={employeeNotes}
+                  onChangeText={setEmployeeNotes}
+                  placeholder="Add any notes about this timesheet..."
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>
+                  Use this to correct forgotten clock-ins or clock-outs. Your supervisor will review the changes.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setEditModalVisible(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveEdit}
+                disabled={updating}
+              >
+                {updating ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Photo Upload Modal */}
+      <Modal
+        visible={photoModalVisible}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => {
+          setPhotoModalVisible(false);
+          setSelectedPhoto(null);
+        }}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.photoModalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Attach Photo</Text>
+              <TouchableOpacity onPress={() => {
+                setPhotoModalVisible(false);
+                setSelectedPhoto(null);
+              }}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedPhoto && (
+              <Image 
+                source={{ uri: selectedPhoto }} 
+                style={styles.previewImage}
+                resizeMode="contain"
+              />
+            )}
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => {
+                  setPhotoModalVisible(false);
+                  setSelectedPhoto(null);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleUploadPhoto}
+                disabled={uploadingPhoto}
+              >
+                {uploadingPhoto ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveButtonText}>Upload Photo</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -290,6 +605,7 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     gap: 16,
+    flexWrap: 'wrap',
   },
   statItem: {
     flexDirection: 'row',
@@ -314,6 +630,40 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 18,
   },
+  actionRow: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    gap: 8,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  payContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.success + '15',
+    borderRadius: 12,
+    gap: 8,
+  },
+  payText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.success,
+  },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -330,5 +680,121 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 8,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
+  },
+  photoModalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 24,
+    margin: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text.primary,
+  },
+  modalBody: {
+    padding: 20,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 16,
+    color: colors.text.primary,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 12,
+    padding: 12,
+    gap: 8,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    padding: 12,
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 18,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
+  modalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: colors.gray[100],
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  saveButton: {
+    backgroundColor: colors.primary,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.white,
+  },
+  previewImage: {
+    width: '100%',
+    height: 300,
+    marginVertical: 20,
   },
 });
