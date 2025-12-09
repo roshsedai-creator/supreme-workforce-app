@@ -247,6 +247,25 @@ async def get_user(user_id: str):
         raise HTTPException(status_code=404, detail="User not found")
     return serialize_doc(user)
 
+@api_router.put("/users/{user_id}")
+async def update_user(user_id: str, update_data: dict):
+    """Update employee details"""
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Remove id from update_data if present
+    update_data.pop('id', None)
+    
+    # Update the user
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": update_data}
+    )
+    
+    updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
+    return {"success": True, "user": serialize_doc(updated_user)}
+
 # =====================
 # SITE ENDPOINTS
 # =====================
