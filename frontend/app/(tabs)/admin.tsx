@@ -825,6 +825,5 @@ const styles = StyleSheet.create({
   earningsText: {
     fontSize: 13,
     color: colors.text.secondary,
-    fontWeight: '500',
   },
 });
