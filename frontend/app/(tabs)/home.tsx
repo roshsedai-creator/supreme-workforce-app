@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     color: colors.white,
     marginTop: 4,
   },
-  roleB adge: {
+  roleBadge: {
     backgroundColor: colors.gold,
     paddingHorizontal: 12,
     paddingVertical: 6,
