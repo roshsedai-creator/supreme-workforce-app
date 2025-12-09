@@ -197,7 +197,28 @@ export default function SupervisorScreen() {
             </View>
           )}
         </View>
-      </TouchableOpacity>
+
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.editBtn]}
+            onPress={() => handleEdit(item)}
+          >
+            <Ionicons name="create-outline" size={18} color={colors.primary} />
+            <Text style={styles.editBtnText}>Edit</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.reviewBtn]}
+            onPress={() => {
+              setSelectedTimesheet(item);
+              setShowModal(true);
+            }}
+          >
+            <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
+            <Text style={styles.reviewBtnText}>Review & Approve</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
 
