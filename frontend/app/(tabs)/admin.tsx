@@ -575,12 +575,21 @@ export default function AdminScreen() {
                 )}
               </View>
             </View>
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => handleEditEmployee(user)}
-            >
-              <Ionicons name="create-outline" size={20} color={colors.primary} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => handleEditPermissions(user)}
+              >
+                <Ionicons name="shield-checkmark" size={20} color={colors.gold} />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => handleEditEmployee(user)}
+              >
+                <Ionicons name="create-outline" size={20} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
           </View>
         ))}
       </View>
