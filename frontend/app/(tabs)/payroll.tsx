@@ -541,4 +541,28 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 8,
   },
+  filtersContainer: {
+    padding: 16,
+    paddingBottom: 8,
+    gap: 12,
+  },
+  filterGroup: {
+    marginBottom: 8,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+  pickerWrapper: {
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+  },
 });
