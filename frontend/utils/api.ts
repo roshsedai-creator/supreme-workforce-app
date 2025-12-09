@@ -1,0 +1,111 @@
+import axios from 'axios';
+
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+export const api = axios.create({
+  baseURL: `${API_URL}/api`,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Auth
+export const login = async (identifier: string, pin: string) => {
+  const response = await api.post('/auth/login', { identifier, pin });
+  return response.data;
+};
+
+// Users
+export const getUsers = async (role?: string, site_id?: string) => {
+  const params: any = {};
+  if (role) params.role = role;
+  if (site_id) params.site_id = site_id;
+  const response = await api.get('/users', { params });
+  return response.data;
+};
+
+export const createUser = async (userData: any) => {
+  const response = await api.post('/users', userData);
+  return response.data;
+};
+
+// Sites
+export const getSites = async () => {
+  const response = await api.get('/sites');
+  return response.data;
+};
+
+export const createSite = async (siteData: any) => {
+  const response = await api.post('/sites', siteData);
+  return response.data;
+};
+
+// Timesheets
+export const clockIn = async (employee_id: string, site_id: string, gps_lat: number, gps_long: number) => {
+  const response = await api.post('/timesheets/clock-in', {
+    employee_id,
+    site_id,
+    gps_lat,
+    gps_long,
+  });
+  return response.data;
+};
+
+export const clockOut = async (timesheet_id: string, gps_lat: number, gps_long: number) => {
+  const response = await api.post('/timesheets/clock-out', {
+    timesheet_id,
+    gps_lat,
+    gps_long,
+  });
+  return response.data;
+};
+
+export const manageBreak = async (timesheet_id: string, action: 'start' | 'end') => {
+  const response = await api.post('/timesheets/break', {
+    timesheet_id,
+    action,
+  });
+  return response.data;
+};
+
+export const getTimesheets = async (employee_id?: string, site_id?: string, approval_status?: string) => {
+  const params: any = {};
+  if (employee_id) params.employee_id = employee_id;
+  if (site_id) params.site_id = site_id;
+  if (approval_status) params.approval_status = approval_status;
+  const response = await api.get('/timesheets', { params });
+  return response.data;
+};
+
+export const approveTimesheet = async (timesheet_id: string, supervisor_id: string, status: string, notes?: string) => {
+  const response = await api.post('/timesheets/approve', {
+    timesheet_id,
+    supervisor_id,
+    status,
+    notes,
+  });
+  return response.data;
+};
+
+// Dashboard
+export const getSupervisorDashboard = async (site_id?: string) => {
+  const params: any = {};
+  if (site_id) params.site_id = site_id;
+  const response = await api.get('/dashboard/supervisor', { params });
+  return response.data;
+};
+
+// Shifts
+export const getShifts = async (employee_id?: string, site_id?: string, status?: string) => {
+  const params: any = {};
+  if (employee_id) params.employee_id = employee_id;
+  if (site_id) params.site_id = site_id;
+  if (status) params.status = status;
+  const response = await api.get('/shifts', { params });
+  return response.data;
+};
+
+export const createShift = async (shiftData: any) => {
+  const response = await api.post('/shifts', shiftData);
+  return response.data;
+};
