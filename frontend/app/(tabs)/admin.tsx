@@ -607,8 +607,11 @@ export default function AdminScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Employee</Text>
-              <TouchableOpacity onPress={() => setShowUserModal(false)}>
+              <Text style={styles.modalTitle}>{isEditMode ? 'Edit Employee' : 'Add New Employee'}</Text>
+              <TouchableOpacity onPress={() => {
+                setShowUserModal(false);
+                resetUserForm();
+              }}>
                 <Ionicons name="close" size={28} color={colors.gray[600]} />
               </TouchableOpacity>
             </View>
@@ -647,15 +650,17 @@ export default function AdminScreen() {
                 value={jobTitle}
                 onChangeText={setJobTitle}
               />
-              <TextInput
-                style={styles.input}
-                placeholder="4-digit PIN"
-                value={pin}
-                onChangeText={setPin}
-                secureTextEntry
-                keyboardType="number-pad"
-                maxLength={4}
-              />
+              {!isEditMode && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="4-digit PIN"
+                  value={pin}
+                  onChangeText={setPin}
+                  secureTextEntry
+                  keyboardType="number-pad"
+                  maxLength={4}
+                />
+              )}
 
               <View style={styles.pickerContainer}>
                 <Text style={styles.pickerLabel}>Role:</Text>
