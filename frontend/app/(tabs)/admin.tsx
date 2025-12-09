@@ -720,78 +720,61 @@ export default function AdminScreen() {
                 />
               )}
 
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Assign Site:</Text>
-                <View style={styles.roleOptions}>
-                  {sites.map((site) => (
-                    <TouchableOpacity
-                      key={site.id}
-                      style={[
-                        styles.roleOption,
-                        selectedSiteId === site.id && styles.roleOptionSelected,
-                      ]}
-                      onPress={() => setSelectedSiteId(site.id)}
-                    >
-                      <Text
-                        style={[
-                          styles.roleOptionText,
-                          selectedSiteId === site.id && styles.roleOptionTextSelected,
-                        ]}
-                      >
-                        {site.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Assign Site</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedSiteId}
+                    onValueChange={(value) => setSelectedSiteId(value)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select a site..." value="" />
+                    {sites.map((site) => (
+                      <Picker.Item 
+                        key={site.id} 
+                        label={site.name} 
+                        value={site.id} 
+                      />
+                    ))}
+                  </Picker>
                 </View>
               </View>
 
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Role:</Text>
-                <View style={styles.roleOptions}>
-                  {['employee', 'supervisor', 'admin'].map((r) => (
-                    <TouchableOpacity
-                      key={r}
-                      style={[
-                        styles.roleOption,
-                        role === r && styles.roleOptionSelected,
-                      ]}
-                      onPress={() => setRole(r)}
-                    >
-                      <Text
-                        style={[
-                          styles.roleOptionText,
-                          role === r && styles.roleOptionTextSelected,
-                        ]}
-                      >
-                        {r.charAt(0).toUpperCase() + r.slice(1)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Role</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={role}
+                    onValueChange={(value) => setRole(value)}
+                    style={styles.picker}
+                  >
+                    {['employee', 'supervisor', 'admin'].map((r) => (
+                      <Picker.Item 
+                        key={r} 
+                        label={r.charAt(0).toUpperCase() + r.slice(1)} 
+                        value={r} 
+                      />
+                    ))}
+                  </Picker>
                 </View>
               </View>
 
-              <View style={styles.pickerContainer}>
-                <Text style={styles.pickerLabel}>Award Level (Pay Rate):</Text>
-                <View style={styles.roleOptions}>
-                  {[1, 2, 3, 4].map((level) => (
-                    <TouchableOpacity
-                      key={level}
-                      style={[
-                        styles.roleOption,
-                        awardLevel === level && styles.roleOptionSelected,
-                      ]}
-                      onPress={() => setAwardLevel(level)}
-                    >
-                      <Text
-                        style={[
-                          styles.roleOptionText,
-                          awardLevel === level && styles.roleOptionTextSelected,
-                        ]}
-                      >
-                        Level {level}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Award Level (Pay Rate)</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={awardLevel}
+                    onValueChange={(value) => setAwardLevel(value)}
+                    style={styles.picker}
+                  >
+                    {[1, 2, 3, 4].map((level) => (
+                      <Picker.Item 
+                        key={level} 
+                        label={`Level ${level}`} 
+                        value={level} 
+                      />
+                    ))}
+                  </Picker>
                 </View>
               </View>
 
