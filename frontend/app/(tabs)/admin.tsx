@@ -166,6 +166,7 @@ export default function AdminScreen() {
     setAwardLevel(user.award_level || 1);
     setIsContractor(user.is_contractor || false);
     setAbn(user.abn || '');
+    setSelectedSiteId(user.site_id || '');
     setIsEditMode(true);
     setShowUserModal(true);
   };
