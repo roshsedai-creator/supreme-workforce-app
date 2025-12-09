@@ -464,6 +464,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   infoText: {
+    flex: 1,
     fontSize: 13,
     color: colors.text.secondary,
     lineHeight: 18,
