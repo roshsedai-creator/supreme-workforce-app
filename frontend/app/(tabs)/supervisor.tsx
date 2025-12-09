@@ -231,7 +231,12 @@ export default function SupervisorScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+      }
+    >
       <View style={styles.statsHeader}>
         <View style={styles.statCard}>
           <Ionicons name="people" size={32} color={colors.success} />
@@ -248,14 +253,17 @@ export default function SupervisorScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Currently Clocked In</Text>
         {dashboard?.active_timesheets?.length > 0 ? (
-          <FlatList
-            data={dashboard.active_timesheets}
-            keyExtractor={(item) => item.id}
-            renderItem={renderActiveEmployee}
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.horizontalList}
-          />
+          >
+            {dashboard.active_timesheets.map((item: any) => (
+              <View key={item.id}>
+                {renderActiveEmployee({ item })}
+              </View>
+            ))}
+          </ScrollView>
         ) : (
           <View style={styles.emptySection}>
             <Ionicons name="time-outline" size={48} color={colors.gray[300]} />
@@ -265,22 +273,21 @@ export default function SupervisorScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pending Approvals</Text>
-        <FlatList
-          data={dashboard?.pending_timesheets || []}
-          keyExtractor={(item) => item.id}
-          renderItem={renderPendingTimesheet}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptySection}>
-              <Ionicons name="checkmark-done-outline" size={48} color={colors.gray[300]} />
-              <Text style={styles.emptyText}>All caught up!</Text>
+        <Text style={styles.sectionTitle}>Pending Approvals ({dashboard?.pending_timesheets?.length || 0})</Text>
+        {dashboard?.pending_timesheets && dashboard.pending_timesheets.length > 0 ? (
+          dashboard.pending_timesheets.map((item: any) => (
+            <View key={item.id}>
+              {renderPendingTimesheet({ item })}
             </View>
-          }
-        />
+          ))
+        ) : (
+          <View style={styles.emptySection}>
+            <Ionicons name="checkmark-done-outline" size={48} color={colors.gray[300]} />
+            <Text style={styles.emptyText}>All caught up!</Text>
+          </View>
+        )}
       </View>
+    </ScrollView>
 
       {/* Approval Modal */}
       <Modal
