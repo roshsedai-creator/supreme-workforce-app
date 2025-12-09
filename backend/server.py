@@ -400,7 +400,7 @@ async def clock_in(request: ClockInRequest):
 
 @api_router.post("/timesheets/clock-out")
 async def clock_out(request: ClockOutRequest):
-    """Clock out - completes the timesheet"""
+    """Clock out - completes the timesheet with geo-fencing validation"""
     timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
     
     if not timesheet:
@@ -408,6 +408,19 @@ async def clock_out(request: ClockOutRequest):
     
     if timesheet.get("clock_out"):
         raise HTTPException(status_code=400, detail="Already clocked out")
+    
+    # Validate GPS for clock-out
+    site = await db.sites.find_one({"_id": ObjectId(timesheet["site_id"])})
+    if site:
+        distance = calculate_distance(
+            request.gps_lat, request.gps_long,
+            site["gps_lat"], site["gps_long"]
+        )
+        radius = site.get("radius_meters", 100)
+        out_of_bounds = distance > radius
+    else:
+        distance = 0
+        out_of_bounds = False
     
     # Calculate total hours
     clock_in = timesheet["clock_in"]
@@ -422,6 +435,8 @@ async def clock_out(request: ClockOutRequest):
             "clock_out": clock_out,
             "gps_out_lat": request.gps_lat,
             "gps_out_long": request.gps_long,
+            "gps_out_distance": round(distance, 2),
+            "gps_out_out_of_bounds": out_of_bounds,
             "total_hours": round(total_hours, 2)
         }}
     )
