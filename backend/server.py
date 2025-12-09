@@ -328,9 +328,26 @@ async def get_shift(shift_id: str):
 # TIMESHEET ENDPOINTS
 # =====================
 
+def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate distance between two GPS coordinates using Haversine formula (in meters)"""
+    from math import radians, sin, cos, sqrt, atan2
+    
+    R = 6371000  # Earth's radius in meters
+    
+    lat1_rad = radians(lat1)
+    lat2_rad = radians(lat2)
+    delta_lat = radians(lat2 - lat1)
+    delta_lon = radians(lon2 - lon1)
+    
+    a = sin(delta_lat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    
+    distance = R * c
+    return distance
+
 @api_router.post("/timesheets/clock-in")
 async def clock_in(request: ClockInRequest):
-    """Clock in - creates a new timesheet"""
+    """Clock in - creates a new timesheet with geo-fencing validation"""
     # Check if already clocked in
     existing = await db.timesheets.find_one({
         "employee_id": request.employee_id,
@@ -340,10 +357,20 @@ async def clock_in(request: ClockInRequest):
     if existing:
         raise HTTPException(status_code=400, detail="Already clocked in. Please clock out first.")
     
-    # Validate GPS (basic check - in production, calculate distance)
+    # Validate GPS and calculate distance from site
     site = await db.sites.find_one({"_id": ObjectId(request.site_id)})
     if not site:
         raise HTTPException(status_code=404, detail="Site not found")
+    
+    # Calculate distance from site
+    distance = calculate_distance(
+        request.gps_lat, request.gps_long,
+        site["gps_lat"], site["gps_long"]
+    )
+    
+    # Check if within geo-fence (100m default)
+    radius = site.get("radius_meters", 100)
+    out_of_bounds = distance > radius
     
     # Create timesheet
     timesheet = {
@@ -352,6 +379,8 @@ async def clock_in(request: ClockInRequest):
         "clock_in": datetime.utcnow(),
         "gps_in_lat": request.gps_lat,
         "gps_in_long": request.gps_long,
+        "gps_in_distance": round(distance, 2),
+        "gps_in_out_of_bounds": out_of_bounds,
         "break_minutes": 0,
         "total_hours": 0.0,
         "approval_status": "pending",
@@ -361,7 +390,13 @@ async def clock_in(request: ClockInRequest):
     result = await db.timesheets.insert_one(timesheet)
     timesheet["id"] = str(result.inserted_id)
     
-    return {"success": True, "timesheet": serialize_doc(timesheet)}
+    return {
+        "success": True, 
+        "timesheet": serialize_doc(timesheet),
+        "geo_fence_warning": out_of_bounds,
+        "distance_meters": round(distance, 2),
+        "allowed_radius": radius
+    }
 
 @api_router.post("/timesheets/clock-out")
 async def clock_out(request: ClockOutRequest):
