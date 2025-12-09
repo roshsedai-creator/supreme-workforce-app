@@ -69,6 +69,16 @@ class User(BaseModel):
     award_level: int = 1
     pin: str  # Mock PIN for authentication
     status: str = "active"  # active, inactive
+    permissions: dict = {
+        "view_own_pay": False,
+        "view_all_timesheets": False,
+        "edit_timesheets": False,
+        "approve_timesheets": False,
+        "view_reports": False,
+        "manage_users": False,
+        "manage_sites": False,
+        "export_payroll": False
+    }
     created_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
