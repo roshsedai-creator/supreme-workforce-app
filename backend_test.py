@@ -900,7 +900,7 @@ def test_clock_in_roster_validation():
             f"Expected 403, got {status}")
     
     # Test 2: Check for existing rostered shifts for Emma today
-    from datetime import datetime
+    from datetime import datetime, timedelta
     today = datetime.now()
     start_of_day = today.replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_day = today.replace(hour=23, minute=59, second=59, microsecond=999999)
