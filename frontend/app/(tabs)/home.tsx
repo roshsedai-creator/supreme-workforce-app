@@ -97,9 +97,11 @@ export default function HomeScreen() {
 
     try {
       await clockOut(currentTimesheet.id, loc.coords.latitude, loc.coords.longitude);
-      Alert.alert('Success', 'Clocked out successfully!');
       setCurrentTimesheet(null);
       setOnBreak(false);
+      Alert.alert('Success', 'Clocked out successfully!');
+      // Refresh to make sure UI is updated
+      await fetchCurrentTimesheet();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to clock out');
     } finally {
