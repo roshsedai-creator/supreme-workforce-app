@@ -365,6 +365,111 @@ export default function SupervisorScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Timesheet</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Ionicons name="close" size={28} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Date</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editDate}
+                  onChangeText={setEditDate}
+                  placeholder="YYYY-MM-DD (e.g., 2024-12-09)"
+                />
+              </View>
+
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Start Time</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={editStartTime}
+                    onChangeText={setEditStartTime}
+                    placeholder="HH:MM"
+                  />
+                </View>
+
+                <View style={{ width: 16 }} />
+
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>End Time</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={editEndTime}
+                    onChangeText={setEditEndTime}
+                    placeholder="HH:MM"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Break (minutes)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editBreakMinutes}
+                  onChangeText={setEditBreakMinutes}
+                  keyboardType="number-pad"
+                  placeholder="30"
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Supervisor Notes</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={supervisorNotes}
+                  onChangeText={setSupervisorNotes}
+                  placeholder="Reason for edit..."
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.helpBox}>
+                <Ionicons name="information-circle" size={20} color={colors.primary} />
+                <Text style={styles.helpText}>
+                  Use 24-hour format. Example: 09:00, 17:30. This edit will be recorded.
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.cancelBtn]}
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalBtn, styles.saveBtn]}
+                onPress={handleSaveEdit}
+                disabled={actionLoading}
+              >
+                {actionLoading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveBtnText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
