@@ -10,10 +10,11 @@ import {
   Modal,
   TextInput,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { getSupervisorDashboard, approveTimesheet } from '../../utils/api';
+import { getSupervisorDashboard, approveTimesheet, updateTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import { format } from 'date-fns';
 
@@ -26,6 +27,14 @@ export default function SupervisorScreen() {
   const [showModal, setShowModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editDate, setEditDate] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editBreakMinutes, setEditBreakMinutes] = useState('');
+  const [supervisorNotes, setSupervisorNotes] = useState('');
 
   useEffect(() => {
     fetchDashboard();
