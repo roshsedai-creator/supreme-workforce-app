@@ -18,6 +18,7 @@ import { getSites, createSite, createUser, getUsers } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import axios from 'axios';
 import PermissionsModal from '../../components/PermissionsModal';
+import AvailabilitySnapshot from '../../components/AvailabilitySnapshot';
 
 export default function AdminScreen() {
   const [sites, setSites] = useState<any[]>([]);
@@ -29,6 +30,7 @@ export default function AdminScreen() {
   const [showPayRateModal, setShowPayRateModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Pay rate form
