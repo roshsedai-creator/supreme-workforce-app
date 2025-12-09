@@ -106,6 +106,10 @@ export default function RosterScreen() {
 
   useEffect(() => {
     loadData();
+    if (isSupervisor) {
+      loadSwapRequests();
+      loadTemplates();
+    }
   }, [selectedDate]);
 
   const loadData = async () => {
