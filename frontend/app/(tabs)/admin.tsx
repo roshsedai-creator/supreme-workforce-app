@@ -125,6 +125,32 @@ export default function AdminScreen() {
     setPin('');
   };
 
+  const handlePayrollExport = async () => {
+    setLoading(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 14); // Last 14 days
+
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export`, {
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+      });
+
+      Alert.alert(
+        'Payroll Export Ready',
+        `Records: ${response.data.record_count}\nTotal Hours: ${response.data.total_hours.toFixed(2)}\nTotal Pay: $${response.data.total_pay.toFixed(2)}\n\nCSV data is ready for download.`,
+        [{ text: 'OK' }]
+      );
+      
+      console.log('CSV Data:', response.data.csv_data);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to export payroll');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
