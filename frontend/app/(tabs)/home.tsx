@@ -94,6 +94,9 @@ export default function HomeScreen() {
       );
       setCurrentTimesheet(response.timesheet);
       
+      // Fetch site data to show address
+      await fetchSiteData();
+      
       // Show geo-fence warning if out of bounds
       if (response.geo_fence_warning) {
         Alert.alert(
