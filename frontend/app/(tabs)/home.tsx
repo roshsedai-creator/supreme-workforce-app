@@ -414,4 +414,18 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 18,
   },
+  locationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: colors.success + '20',
+    borderRadius: 6,
+    gap: 6,
+  },
+  locationText: {
+    fontSize: 12,
+    color: colors.success,
+    fontWeight: '600',
+  },
 });
