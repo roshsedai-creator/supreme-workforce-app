@@ -71,6 +71,7 @@ async def seed_data():
             "award_level": 5,
             "pin": "1234",
             "status": "active",
+            "is_contractor": False,
             "created_at": datetime.utcnow()
         },
         # Supervisor
@@ -85,9 +86,10 @@ async def seed_data():
             "award_level": 3,
             "pin": "5678",
             "status": "active",
+            "is_contractor": False,
             "created_at": datetime.utcnow()
         },
-        # Employees
+        # Regular Employees
         {
             "first_name": "Emma",
             "last_name": "Johnson",
@@ -99,6 +101,7 @@ async def seed_data():
             "award_level": 2,
             "pin": "1111",
             "status": "active",
+            "is_contractor": False,
             "created_at": datetime.utcnow()
         },
         {
@@ -112,8 +115,10 @@ async def seed_data():
             "award_level": 2,
             "pin": "2222",
             "status": "active",
+            "is_contractor": False,
             "created_at": datetime.utcnow()
         },
+        # ABN Contractor
         {
             "first_name": "Lisa",
             "last_name": "Davis",
@@ -125,13 +130,15 @@ async def seed_data():
             "award_level": 1,
             "pin": "3333",
             "status": "active",
+            "is_contractor": True,
+            "abn": "51 824 753 556",
             "created_at": datetime.utcnow()
         }
     ]
     
     user_results = await db.users.insert_many(users)
     user_ids = [str(id) for id in user_results.inserted_ids]
-    print(f"✓ Created {len(users)} users")
+    print(f"✓ Created {len(users)} users (including 1 ABN contractor)")
     
     # Create some completed shifts and timesheets
     today = datetime.utcnow()
@@ -149,6 +156,7 @@ async def seed_data():
         "gps_out_long": 153.0251,
         "break_minutes": 30,
         "total_hours": 8.0,
+        "total_pay": 0.0,
         "approval_status": "pending",
         "created_at": yesterday
     }
@@ -165,6 +173,7 @@ async def seed_data():
         "gps_out_long": 153.0251,
         "break_minutes": 30,
         "total_hours": 7.5,
+        "total_pay": 0.0,
         "approval_status": "pending",
         "created_at": yesterday
     }
@@ -182,6 +191,7 @@ async def seed_data():
         "gps_out_long": 153.0251,
         "break_minutes": 30,
         "total_hours": 7.5,
+        "total_pay": 286.88,
         "approval_status": "approved",
         "supervisor_id": user_ids[1],  # Sarah
         "notes": "Great work!",
@@ -270,10 +280,11 @@ async def seed_data():
     print("   Phone: 0434567890")
     print("   Email: michael.b@example.com")
     print("   PIN: 2222")
-    print("\n👷 Employee (Lisa):")
+    print("\n👷 ABN Contractor (Lisa):")
     print("   Phone: 0445678901")
     print("   Email: lisa.d@example.com")
     print("   PIN: 3333")
+    print("   ABN: 51 824 753 556")
     
     client.close()
 
