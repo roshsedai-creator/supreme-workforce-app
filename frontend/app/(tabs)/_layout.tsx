@@ -1,11 +1,14 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 import { colors } from '../../constants/colors';
 
 export default function TabsLayout() {
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const isSupervisor = user?.role === 'supervisor' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
@@ -18,8 +21,8 @@ export default function TabsLayout() {
           backgroundColor: colors.white,
           borderTopWidth: 1,
           borderTopColor: colors.gray[200],
-          height: 60,
-          paddingBottom: 8,
+          height: 70 + insets.bottom, // Add safe area bottom
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 12, // Use safe area or default
           paddingTop: 8,
         },
         headerStyle: {
