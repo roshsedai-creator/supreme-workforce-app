@@ -164,13 +164,7 @@ export default function SupervisorScreen() {
     const clockOut = new Date(item.clock_out);
 
     return (
-      <TouchableOpacity
-        style={styles.timesheetCard}
-        onPress={() => {
-          setSelectedTimesheet(item);
-          setShowModal(true);
-        }}
-      >
+      <View style={styles.timesheetCard}>
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.dateText}>{format(clockIn, 'MMM dd, yyyy')}</Text>
