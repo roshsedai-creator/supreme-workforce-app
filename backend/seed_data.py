@@ -57,7 +57,42 @@ async def seed_data():
     site_ids = [str(id) for id in site_results.inserted_ids]
     print(f"✓ Created {len(sites)} sites")
     
-    # Create Users
+    # Create Users with role-based permissions
+    def get_permissions(role):
+        if role == "admin":
+            return {
+                "view_own_pay": True,
+                "view_all_timesheets": True,
+                "edit_timesheets": True,
+                "approve_timesheets": True,
+                "view_reports": True,
+                "manage_users": True,
+                "manage_sites": True,
+                "export_payroll": True
+            }
+        elif role == "supervisor":
+            return {
+                "view_own_pay": True,
+                "view_all_timesheets": True,
+                "edit_timesheets": True,
+                "approve_timesheets": True,
+                "view_reports": True,
+                "manage_users": False,
+                "manage_sites": False,
+                "export_payroll": False
+            }
+        else:  # employee
+            return {
+                "view_own_pay": False,
+                "view_all_timesheets": False,
+                "edit_timesheets": False,
+                "approve_timesheets": False,
+                "view_reports": False,
+                "manage_users": False,
+                "manage_sites": False,
+                "export_payroll": False
+            }
+    
     users = [
         # Admin
         {
@@ -72,6 +107,7 @@ async def seed_data():
             "pin": "1234",
             "status": "active",
             "is_contractor": False,
+            "permissions": get_permissions("admin"),
             "created_at": datetime.utcnow()
         },
         # Supervisor
@@ -87,6 +123,7 @@ async def seed_data():
             "pin": "5678",
             "status": "active",
             "is_contractor": False,
+            "permissions": get_permissions("supervisor"),
             "created_at": datetime.utcnow()
         },
         # Regular Employees
@@ -102,6 +139,7 @@ async def seed_data():
             "pin": "1111",
             "status": "active",
             "is_contractor": False,
+            "permissions": get_permissions("employee"),
             "created_at": datetime.utcnow()
         },
         {
