@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 3px solid #8B5CF6;
+            padding-bottom: 20px;
+        }
+        .logo {
+            color: #8B5CF6;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #8B5CF6;
+        }
+        h1 {
+            color: #8B5CF6;
+            text-align: center;
+            font-size: 24px;
+            margin: 30px 0;
+        }
+        .section {
+            margin: 25px 0;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 16px;
+            color: #8B5CF6;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .clause {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        .signature-section {
+            margin-top: 60px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .signature-box {
+            width: 45%;
+        }
+        .signature-line {
+            border-top: 2px solid #333;
+            margin-top: 50px;
+            padding-top: 10px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .highlight {
+            background-color: #f0e7ff;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">SUPREME HOSPITALITY SERVICES</div>
+        <div>ABN: 12 345 678 901</div>
+        <div>200 Creek St, Brisbane City QLD 4000</div>
+        <div>Phone: 0457 802 302 | Email: info@supremehospitalityservices.com.au</div>
+    </div>
+
+    <h1>EMPLOYMENT CONTRACT</h1>
+
+    <div class="section">
+        <p><strong>Date:</strong> {{DATE}}</p>
+        <p><strong>Employee Name:</strong> {{EMPLOYEE_NAME}}</p>
+        <p><strong>Position:</strong> {{POSITION}}</p>
+        <p><strong>Award Level:</strong> Level {{AWARD_LEVEL}}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">1. PARTIES</div>
+        <div class="clause">
+            <p>This Employment Agreement is made between:</p>
+            <p><strong>Supreme Hospitality Services Pty Ltd</strong> (ABN: 12 345 678 901) ("the Employer")</p>
+            <p>and</p>
+            <p><strong>{{EMPLOYEE_NAME}}</strong> ("the Employee")</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">2. POSITION AND DUTIES</div>
+        <div class="clause">
+            <p>The Employee is employed as <span class="highlight">{{POSITION}}</span> and shall perform duties including but not limited to:</p>
+            <ul>
+                <li>Performing housekeeping and cleaning services at designated hotel sites</li>
+                <li>Maintaining high standards of cleanliness and hygiene</li>
+                <li>Following all workplace health and safety procedures</li>
+                <li>Reporting to site supervisors and following instructions</li>
+                <li>Using timesheet management system for clock-in/out</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">3. EMPLOYMENT TYPE</div>
+        <div class="clause">
+            <p>The Employee is engaged as a <span class="highlight">{{CONTRACT_TYPE}}</span> employee under the Hospitality Industry (General) Award 2020.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">4. REMUNERATION</div>
+        <div class="clause">
+            <p>The Employee shall be paid at <span class="highlight">Award Level {{AWARD_LEVEL}}</span> rates as per the Hospitality Industry (General) Award 2020, which includes:</p>
+            <ul>
+                <li>Weekday rate: ${{WEEKDAY_RATE}} per hour</li>
+                <li>Saturday rate: ${{SATURDAY_RATE}} per hour (penalty loading applied)</li>
+                <li>Sunday rate: ${{SUNDAY_RATE}} per hour (penalty loading applied)</li>
+                <li>Public Holiday rate: ${{PH_RATE}} per hour</li>
+                <li>Overtime rates as per Award provisions</li>
+            </ul>
+            <p>Payment shall be made fortnightly via direct deposit.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">5. HOURS OF WORK</div>
+        <div class="clause">
+            <p>Hours of work will be allocated by the Employer based on client requirements. The Employee must:</p>
+            <ul>
+                <li>Clock in and out using the Supreme Hospitality timesheet app</li>
+                <li>Be present at the designated hotel site during rostered hours</li>
+                <li>Provide GPS verification for clock-in/out</li>
+                <li>Submit timesheets for supervisor approval</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">6. LEAVE ENTITLEMENTS</div>
+        <div class="clause">
+            <p>The Employee is entitled to leave in accordance with the National Employment Standards:</p>
+            <ul>
+                <li>Annual leave: 4 weeks per year (for full-time employees)</li>
+                <li>Personal/carer's leave: 10 days per year</li>
+                <li>Long service leave as per Queensland legislation</li>
+                <li>Leave requests must be submitted via the timesheet management app</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">7. WORKPLACE HEALTH & SAFETY</div>
+        <div class="clause">
+            <p>The Employee must:</p>
+            <ul>
+                <li>Comply with all WHS policies and procedures</li>
+                <li>Report all hazards and incidents immediately</li>
+                <li>Use personal protective equipment as required</li>
+                <li>Attend all mandatory training sessions</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">8. TERMINATION</div>
+        <div class="clause">
+            <p>Either party may terminate this agreement by providing notice as required by the Hospitality Industry (General) Award 2020.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">9. ACCEPTANCE</div>
+        <div class="clause">
+            <p>By signing below, both parties acknowledge they have read, understood, and agree to be bound by the terms of this Employment Contract.</p>
+        </div>
+    </div>
+
+    <div class="signature-section">
+        <div class="signature-box">
+            <div class="signature-line">
+                <strong>Employee Signature</strong><br>
+                {{EMPLOYEE_NAME}}<br>
+                Date: _______________
+            </div>
+        </div>
+        <div class="signature-box">
+            <div class="signature-line">
+                <strong>Employer Representative</strong><br>
+                Supreme Hospitality Services<br>
+                Date: _______________
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Supreme Hospitality Services Pty Ltd | ABN: 12 345 678 901</p>
+        <p>This contract is governed by Australian Fair Work laws and the Hospitality Industry (General) Award 2020</p>
+    </div>
+</body>
+</html>
