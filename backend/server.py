@@ -681,6 +681,113 @@ async def get_earnings_summary():
         "total_pay": sum([e["total_pay"] for e in earnings_data])
     }
 
+# =====================
+# CONTRACT & INVOICE ENDPOINTS
+# =====================
+
+@api_router.post("/contracts/send")
+async def send_contract(employee_id: str, contract_type: str = "employment"):
+    """Send employment contract to employee"""
+    user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    # In production, integrate with DocuSign, HelloSign, etc.
+    # For now, create a contract record
+    contract = {
+        "employee_id": employee_id,
+        "employee_name": f"{user['first_name']} {user['last_name']}",
+        "employee_email": user['email'],
+        "contract_type": contract_type,
+        "status": "sent",
+        "sent_date": datetime.utcnow(),
+        "contract_url": f"https://contracts.supremehospitality.com/{employee_id}/{contract_type}.pdf"  # Mock URL
+    }
+    
+    result = await db.contracts.insert_one(contract)
+    contract["id"] = str(result.inserted_id)
+    
+    return {
+        "success": True,
+        "message": f"Contract sent to {user['email']}",
+        "contract": serialize_doc(contract)
+    }
+
+@api_router.get("/contracts")
+async def get_contracts(employee_id: Optional[str] = None, status: Optional[str] = None):
+    """Get all contracts"""
+    query = {}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if status:
+        query["status"] = status
+    
+    contracts = await db.contracts.find(query).sort("sent_date", -1).to_list(1000)
+    return [serialize_doc(contract) for contract in contracts]
+
+@api_router.post("/invoices/generate")
+async def generate_invoice(employee_id: str, start_date: datetime, end_date: datetime):
+    """Generate invoice for ABN contractors"""
+    user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    # Get approved timesheets for the period
+    timesheets = await db.timesheets.find({
+        "employee_id": employee_id,
+        "approval_status": "approved",
+        "clock_in": {"$gte": start_date, "$lte": end_date}
+    }).to_list(1000)
+    
+    # Calculate totals
+    total_hours = sum([ts.get("total_hours", 0) for ts in timesheets])
+    pay_rate_doc = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+    hourly_rate = pay_rate_doc["weekday_rate"] if pay_rate_doc else 25.0
+    
+    # For ABN, usually a flat rate or negotiated rate
+    total_amount = total_hours * hourly_rate
+    gst = total_amount * 0.1  # 10% GST
+    total_with_gst = total_amount + gst
+    
+    # Create invoice
+    invoice = {
+        "employee_id": employee_id,
+        "employee_name": f"{user['first_name']} {user['last_name']}",
+        "employee_email": user['email'],
+        "abn": user.get("abn", "N/A"),
+        "start_date": start_date,
+        "end_date": end_date,
+        "total_hours": round(total_hours, 2),
+        "hourly_rate": hourly_rate,
+        "subtotal": round(total_amount, 2),
+        "gst": round(gst, 2),
+        "total": round(total_with_gst, 2),
+        "status": "generated",
+        "generated_date": datetime.utcnow(),
+        "invoice_number": f"INV-{datetime.utcnow().strftime('%Y%m%d')}-{employee_id[-4:]}"
+    }
+    
+    result = await db.invoices.insert_one(invoice)
+    invoice["id"] = str(result.inserted_id)
+    
+    return {
+        "success": True,
+        "message": "Invoice generated successfully",
+        "invoice": serialize_doc(invoice)
+    }
+
+@api_router.get("/invoices")
+async def get_invoices(employee_id: Optional[str] = None, status: Optional[str] = None):
+    """Get all invoices"""
+    query = {}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if status:
+        query["status"] = status
+    
+    invoices = await db.invoices.find(query).sort("generated_date", -1).to_list(1000)
+    return [serialize_doc(invoice) for invoice in invoices]
+
 # Root endpoint
 @api_router.get("/")
 async def root():
