@@ -230,6 +230,14 @@ export default function HomeScreen() {
           <Text style={styles.infoText}>
             Your location is verified when clocking in and out to ensure you're at the assigned site.
           </Text>
+          {location && (
+            <View style={styles.locationBox}>
+              <Ionicons name="location" size={16} color={colors.success} />
+              <Text style={styles.locationText}>
+                Current: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
     </ScrollView>
