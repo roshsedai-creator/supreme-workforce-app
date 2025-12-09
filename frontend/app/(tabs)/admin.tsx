@@ -125,6 +125,11 @@ export default function AdminScreen() {
       return;
     }
 
+    if (!selectedSiteId) {
+      Alert.alert('Error', 'Please select a site for the employee');
+      return;
+    }
+
     if (isContractor && !abn) {
       Alert.alert('Error', 'Please provide ABN for contractors');
       return;
@@ -140,6 +145,7 @@ export default function AdminScreen() {
         role,
         job_title: jobTitle,
         pin,
+        site_id: selectedSiteId,
         award_level: awardLevel,
         abn: isContractor ? abn : null,
         is_contractor: isContractor,
