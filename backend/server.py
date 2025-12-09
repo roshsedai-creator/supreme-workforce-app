@@ -114,9 +114,12 @@ class Timesheet(BaseModel):
     break_end: Optional[datetime] = None
     break_minutes: int = 0
     total_hours: float = 0.0
+    total_pay: float = 0.0
     supervisor_id: Optional[str] = None
     approval_status: str = "pending"  # pending, approved, rejected
     notes: Optional[str] = None
+    employee_notes: Optional[str] = None
+    photo_base64: Optional[str] = None
     created_at: Optional[datetime] = None
 
 class ClockInRequest(BaseModel):
