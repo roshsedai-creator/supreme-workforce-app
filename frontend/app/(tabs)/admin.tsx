@@ -178,6 +178,39 @@ export default function AdminScreen() {
     }
   };
 
+  const handleEditPermissions = (user: any) => {
+    setEditingPermissions(user);
+    setPermissions(user.permissions || {
+      view_own_pay: false,
+      view_all_timesheets: false,
+      edit_timesheets: false,
+      approve_timesheets: false,
+      view_reports: false,
+      manage_users: false,
+      manage_sites: false,
+      export_payroll: false,
+    });
+    setShowPermissionsModal(true);
+  };
+
+  const handleSavePermissions = async () => {
+    if (!editingPermissions) return;
+
+    setLoading(true);
+    try {
+      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${editingPermissions.id}`, {
+        permissions
+      });
+      Alert.alert('Success', 'Permissions updated successfully!');
+      setShowPermissionsModal(false);
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update permissions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEditEmployee = (user: any) => {
     setEditingEmployee(user);
     setFirstName(user.first_name);
