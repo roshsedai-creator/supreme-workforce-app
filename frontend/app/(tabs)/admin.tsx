@@ -1170,6 +1170,17 @@ export default function AdminScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Permissions Modal */}
+      <PermissionsModal
+        visible={showPermissionsModal}
+        onClose={() => setShowPermissionsModal(false)}
+        onSave={handleSavePermissions}
+        permissions={permissions}
+        setPermissions={setPermissions}
+        employee={editingPermissions}
+        loading={loading}
+      />
     </ScrollView>
   );
 }
