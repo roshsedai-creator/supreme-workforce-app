@@ -478,6 +478,147 @@ async def supervisor_dashboard(site_id: Optional[str] = None):
         "pending_timesheets": [serialize_doc(ts) for ts in pending_timesheets]
     }
 
+# =====================
+# LEAVE REQUEST ENDPOINTS
+# =====================
+
+@api_router.post("/leave-requests", response_model=LeaveRequest)
+async def create_leave_request(leave: LeaveRequestCreate):
+    leave_dict = leave.model_dump()
+    leave_dict["status"] = "pending"
+    leave_dict["created_at"] = datetime.utcnow()
+    
+    result = await db.leave_requests.insert_one(leave_dict)
+    leave_dict["id"] = str(result.inserted_id)
+    
+    return LeaveRequest(**leave_dict)
+
+@api_router.get("/leave-requests")
+async def get_leave_requests(employee_id: Optional[str] = None, status: Optional[str] = None):
+    query = {}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if status:
+        query["status"] = status
+    
+    leaves = await db.leave_requests.find(query).sort("created_at", -1).to_list(1000)
+    return [serialize_doc(leave) for leave in leaves]
+
+@api_router.post("/leave-requests/approve")
+async def approve_leave_request(request: ApprovalRequest):
+    """Approve or reject leave request"""
+    leave = await db.leave_requests.find_one({"_id": ObjectId(request.timesheet_id)})
+    
+    if not leave:
+        raise HTTPException(status_code=404, detail="Leave request not found")
+    
+    await db.leave_requests.update_one(
+        {"_id": ObjectId(request.timesheet_id)},
+        {"$set": {
+            "status": request.status,
+            "approved_by": request.supervisor_id,
+            "notes": request.notes
+        }}
+    )
+    
+    updated = await db.leave_requests.find_one({"_id": ObjectId(request.timesheet_id)})
+    return {"success": True, "leave_request": serialize_doc(updated)}
+
+# =====================
+# PAY RATE ENDPOINTS
+# =====================
+
+@api_router.post("/pay-rates", response_model=PayRate)
+async def create_pay_rate(rate: PayRateCreate):
+    rate_dict = rate.model_dump()
+    result = await db.pay_rates.insert_one(rate_dict)
+    rate_dict["id"] = str(result.inserted_id)
+    return PayRate(**rate_dict)
+
+@api_router.get("/pay-rates")
+async def get_pay_rates(award_level: Optional[int] = None):
+    query = {}
+    if award_level:
+        query["award_level"] = award_level
+    
+    rates = await db.pay_rates.find(query).to_list(1000)
+    return [serialize_doc(rate) for rate in rates]
+
+# =====================
+# PAYROLL EXPORT ENDPOINT
+# =====================
+
+@api_router.post("/payroll/export")
+async def export_payroll(request: PayrollExportRequest):
+    """Export payroll data to CSV format"""
+    import csv
+    from io import StringIO
+    
+    query = {
+        "clock_out": {"$ne": None},
+        "approval_status": "approved",
+        "clock_in": {
+            "$gte": request.start_date,
+            "$lte": request.end_date
+        }
+    }
+    
+    if request.site_id:
+        query["site_id"] = request.site_id
+    
+    timesheets = await db.timesheets.find(query).to_list(1000)
+    
+    # Get employee and pay rate info
+    csv_data = []
+    for ts in timesheets:
+        user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
+        if not user:
+            continue
+        
+        pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+        
+        # Calculate pay based on day of week
+        clock_in = ts["clock_in"]
+        day_of_week = clock_in.weekday()  # 0=Monday, 6=Sunday
+        
+        base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
+        if day_of_week == 5:  # Saturday
+            rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
+        elif day_of_week == 6:  # Sunday
+            rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
+        else:
+            rate = base_rate
+        
+        total_pay = ts["total_hours"] * rate
+        
+        csv_data.append({
+            "Employee ID": ts["employee_id"][-6:],
+            "Name": f"{user['first_name']} {user['last_name']}",
+            "Date": clock_in.strftime("%Y-%m-%d"),
+            "Clock In": clock_in.strftime("%H:%M"),
+            "Clock Out": ts["clock_out"].strftime("%H:%M"),
+            "Total Hours": f"{ts['total_hours']:.2f}",
+            "Break (min)": ts["break_minutes"],
+            "Rate": f"${rate:.2f}",
+            "Total Pay": f"${total_pay:.2f}",
+            "Award Level": user.get("award_level", 1)
+        })
+    
+    # Convert to CSV string
+    output = StringIO()
+    if csv_data:
+        writer = csv.DictWriter(output, fieldnames=csv_data[0].keys())
+        writer.writeheader()
+        writer.writerows(csv_data)
+    
+    return {
+        "success": True,
+        "csv_data": output.getvalue(),
+        "record_count": len(csv_data),
+        "total_hours": sum([float(row["Total Hours"]) for row in csv_data]),
+        "total_pay": sum([float(row["Total Pay"].replace("$", "")) for row in csv_data])
+    }
+
 # Root endpoint
 @api_router.get("/")
 async def root():
