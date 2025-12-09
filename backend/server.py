@@ -443,12 +443,34 @@ async def approve_timesheet(request: ApprovalRequest):
     if not timesheet:
         raise HTTPException(status_code=404, detail="Timesheet not found")
     
+    # Calculate total pay when approving
+    total_pay = 0.0
+    if request.status == "approved" and timesheet.get("total_hours", 0) > 0:
+        # Get employee and pay rate
+        employee = await db.users.find_one({"_id": ObjectId(timesheet["employee_id"])})
+        if employee:
+            pay_rate = await db.pay_rates.find_one({"award_level": employee.get("award_level", 1)})
+            if pay_rate:
+                clock_in = timesheet["clock_in"]
+                day_of_week = clock_in.weekday()
+                
+                # Determine rate based on day
+                if day_of_week == 5:  # Saturday
+                    rate = pay_rate["saturday_rate"]
+                elif day_of_week == 6:  # Sunday
+                    rate = pay_rate["sunday_rate"]
+                else:
+                    rate = pay_rate["weekday_rate"]
+                
+                total_pay = timesheet.get("total_hours", 0) * rate
+    
     await db.timesheets.update_one(
         {"_id": ObjectId(request.timesheet_id)},
         {"$set": {
             "approval_status": request.status,
             "supervisor_id": request.supervisor_id,
-            "notes": request.notes
+            "notes": request.notes,
+            "total_pay": round(total_pay, 2)
         }}
     )
     
