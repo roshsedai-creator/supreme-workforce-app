@@ -289,7 +289,7 @@ export default function HomeScreen() {
       <View style={styles.infoCard}>
         <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
         <Text style={styles.infoText}>
-          Your location is verified when clocking in/out to ensure you're within 100m of the assigned site.
+          Your location is verified when clocking in/out to ensure you&apos;re within 100m of the assigned site.
         </Text>
       </View>
     </ScrollView>
