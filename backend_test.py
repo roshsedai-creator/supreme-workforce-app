@@ -978,7 +978,10 @@ def main():
         ("Clock-in/out Flow", test_clock_in_out_flow),
         ("Break Management", test_break_management),
         ("Timesheet Approval", test_timesheet_approval),
-        ("Supervisor Dashboard", test_supervisor_dashboard)
+        ("Supervisor Dashboard", test_supervisor_dashboard),
+        ("Roster Management", test_roster_management),
+        ("Availability Management", test_availability_management),
+        ("Clock-in Roster Validation", test_clock_in_roster_validation)
     ]
     
     for suite_name, test_func in test_suites:
