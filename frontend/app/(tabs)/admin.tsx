@@ -678,6 +678,31 @@ export default function AdminScreen() {
               )}
 
               <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>Assign Site:</Text>
+                <View style={styles.roleOptions}>
+                  {sites.map((site) => (
+                    <TouchableOpacity
+                      key={site.id}
+                      style={[
+                        styles.roleOption,
+                        selectedSiteId === site.id && styles.roleOptionSelected,
+                      ]}
+                      onPress={() => setSelectedSiteId(site.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.roleOptionText,
+                          selectedSiteId === site.id && styles.roleOptionTextSelected,
+                        ]}
+                      >
+                        {site.name}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.pickerContainer}>
                 <Text style={styles.pickerLabel}>Role:</Text>
                 <View style={styles.roleOptions}>
                   {['employee', 'supervisor', 'admin'].map((r) => (
