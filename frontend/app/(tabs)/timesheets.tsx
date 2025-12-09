@@ -107,8 +107,8 @@ export default function TimesheetsScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchImagePickerAsync({
-      mediaTypes: 'images',
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.7,
       base64: true,
