@@ -934,7 +934,10 @@ export default function AdminScreen() {
         transparent
         onRequestClose={() => setShowInvoiceModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Generate ABN Invoice</Text>
@@ -943,73 +946,85 @@ export default function AdminScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Select ABN Contractor</Text>
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
               {users.filter((u: any) => u.is_contractor).length === 0 ? (
                 <View style={styles.emptyState}>
-                  <Ionicons name="business-outline" size={48} color={colors.gray[300]} />
+                  <Ionicons name="business-outline" size={64} color={colors.gray[300]} />
                   <Text style={styles.emptyText}>No ABN Contractors</Text>
-                  <Text style={styles.emptySubtext}>Add employees with ABN to generate invoices</Text>
+                  <Text style={styles.emptySubtext}>Add employees with ABN status to generate invoices</Text>
                 </View>
               ) : (
-                <View style={styles.employeeList}>
-                  {users.filter((u: any) => u.is_contractor).map((user: any) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={[
-                      styles.employeeItem,
-                      selectedEmployee === user.id && styles.employeeItemSelected,
-                    ]}
-                    onPress={() => setSelectedEmployee(user.id)}
-                  >
-                    <Ionicons 
-                      name={selectedEmployee === user.id ? "radio-button-on" : "radio-button-off"} 
-                      size={20} 
-                      color={selectedEmployee === user.id ? colors.primary : colors.gray[400]} 
-                    />
-                    <View style={styles.employeeInfo}>
-                      <Text style={styles.employeeName}>{user.first_name} {user.last_name}</Text>
-                      <Text style={styles.employeeRole}>{user.job_title}</Text>
-                      <View style={styles.abnBadge}>
-                        <Ionicons name="briefcase" size={12} color={colors.gold} />
-                        <Text style={styles.abnText}>ABN: {user.abn || 'N/A'}</Text>
-                      </View>
+                <>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Select ABN Contractor</Text>
+                    <View style={styles.pickerWrapper}>
+                      <Picker
+                        selectedValue={selectedEmployee}
+                        onValueChange={(value) => setSelectedEmployee(value)}
+                        style={styles.picker}
+                      >
+                        <Picker.Item label="Choose a contractor..." value="" />
+                        {users.filter((u: any) => u.is_contractor).map((user: any) => (
+                          <Picker.Item 
+                            key={user.id} 
+                            label={`${user.first_name} ${user.last_name} - ABN: ${user.abn || 'N/A'}`} 
+                            value={user.id} 
+                          />
+                        ))}
+                      </Picker>
                     </View>
-                  </TouchableOpacity>
-                ))}
-                </View>
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Period Start Date</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="YYYY-MM-DD (e.g., 2025-12-01)"
+                      value={invoiceStartDate}
+                      onChangeText={setInvoiceStartDate}
+                    />
+                  </View>
+
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Period End Date</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="YYYY-MM-DD (e.g., 2025-12-14)"
+                      value={invoiceEndDate}
+                      onChangeText={setInvoiceEndDate}
+                    />
+                  </View>
+
+                  <View style={styles.infoBox}>
+                    <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+                    <Text style={styles.infoText}>
+                      Invoice will be automatically sent to contractor's registered email and info@supremehospitality.com.au
+                    </Text>
+                  </View>
+                </>
               )}
-
-              <Text style={styles.label}>Start Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="2025-12-01"
-                value={invoiceStartDate}
-                onChangeText={setInvoiceStartDate}
-              />
-
-              <Text style={styles.label}>End Date (YYYY-MM-DD)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="2025-12-14"
-                value={invoiceEndDate}
-                onChangeText={setInvoiceEndDate}
-              />
-
-              <TouchableOpacity
-                style={[styles.submitButton, loading && styles.buttonDisabled]}
-                onPress={handleGenerateInvoice}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.submitButtonText}>Generate Invoice</Text>
-                )}
-              </TouchableOpacity>
             </ScrollView>
+
+            {users.filter((u: any) => u.is_contractor).length > 0 && (
+              <View style={styles.modalFooter}>
+                <TouchableOpacity
+                  style={[styles.submitButton, (!selectedEmployee || loading) && styles.buttonDisabled]}
+                  onPress={handleGenerateInvoice}
+                  disabled={!selectedEmployee || loading}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <>
+                      <Ionicons name="document-text" size={20} color={colors.white} />
+                      <Text style={styles.submitButtonText}>Generate & Send Invoice</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Edit Pay Rate Modal */}
