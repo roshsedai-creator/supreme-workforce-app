@@ -191,6 +191,67 @@ async def seed_data():
     await db.timesheets.insert_many([timesheet1, timesheet2, timesheet3])
     print(f"✓ Created 3 sample timesheets")
     
+    # Create Pay Rates
+    pay_rates = [
+        {
+            "award_level": 1,
+            "weekday_rate": 23.23,
+            "saturday_rate": 29.04,
+            "sunday_rate": 34.85,
+            "public_holiday_rate": 46.46,
+            "overtime_rate": 34.85
+        },
+        {
+            "award_level": 2,
+            "weekday_rate": 25.50,
+            "saturday_rate": 31.88,
+            "sunday_rate": 38.25,
+            "public_holiday_rate": 51.00,
+            "overtime_rate": 38.25
+        },
+        {
+            "award_level": 3,
+            "weekday_rate": 28.75,
+            "saturday_rate": 35.94,
+            "sunday_rate": 43.13,
+            "public_holiday_rate": 57.50,
+            "overtime_rate": 43.13
+        },
+        {
+            "award_level": 4,
+            "weekday_rate": 32.00,
+            "saturday_rate": 40.00,
+            "sunday_rate": 48.00,
+            "public_holiday_rate": 64.00,
+            "overtime_rate": 48.00
+        },
+        {
+            "award_level": 5,
+            "weekday_rate": 36.25,
+            "saturday_rate": 45.31,
+            "sunday_rate": 54.38,
+            "public_holiday_rate": 72.50,
+            "overtime_rate": 54.38
+        }
+    ]
+    
+    await db.pay_rates.insert_many(pay_rates)
+    print(f"✓ Created 5 pay rate levels")
+    
+    # Create sample leave request
+    leave_request = {
+        "employee_id": user_ids[2],  # Emma
+        "type": "annual",
+        "start_date": today + timedelta(days=7),
+        "end_date": today + timedelta(days=14),
+        "reason": "Family holiday",
+        "status": "pending",
+        "created_at": datetime.utcnow()
+    }
+    
+    await db.leave_requests.insert_one(leave_request)
+    print(f"✓ Created 1 sample leave request")
+    
     print("\n✅ Seed data completed successfully!")
     print("\n📱 Test Accounts:")
     print("\n👨‍💼 Admin:")
