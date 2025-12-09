@@ -319,6 +319,32 @@ export default function AdminScreen() {
     }
   };
 
+  const handleExcelExport = async () => {
+    setLoading(true);
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 14); // Last 14 days
+
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export-excel`, {
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+      });
+
+      Alert.alert(
+        'Excel Export Ready',
+        `Records: ${response.data.record_count}\nTotal Hours: ${response.data.total_hours.toFixed(2)}\nTotal Pay: $${response.data.total_pay.toFixed(2)}\n\nExcel file is ready for download.`,
+        [{ text: 'OK' }]
+      );
+      
+      console.log('Excel Data:', response.data.excel_data);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to export Excel');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSendContract = async () => {
     if (!selectedEmployee) {
       Alert.alert('Error', 'Please select an employee');
