@@ -80,6 +80,7 @@ export default function HomeScreen() {
       );
       setCurrentTimesheet(response.timesheet);
       Alert.alert('Success', 'Clocked in successfully!');
+      await fetchCurrentTimesheet();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to clock in');
     } finally {
