@@ -233,6 +233,60 @@ export default function AdminScreen() {
     }
   };
 
+  const handleSendContract = async () => {
+    if (!selectedEmployee) {
+      Alert.alert('Error', 'Please select an employee');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/contracts/send?employee_id=${selectedEmployee}&contract_type=${contractType}`
+      );
+
+      Alert.alert('Success', response.data.message);
+      setShowContractModal(false);
+      setSelectedEmployee('');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to send contract');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateInvoice = async () => {
+    if (!selectedEmployee || !invoiceStartDate || !invoiceEndDate) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/invoices/generate`, {
+        employee_id: selectedEmployee,
+        start_date: new Date(invoiceStartDate).toISOString(),
+        end_date: new Date(invoiceEndDate).toISOString(),
+      });
+
+      const invoice = response.data.invoice;
+      Alert.alert(
+        'Invoice Generated',
+        `Invoice #${invoice.invoice_number}\n\nHours: ${invoice.total_hours}\nSubtotal: $${invoice.subtotal}\nGST: $${invoice.gst}\nTotal: $${invoice.total}`,
+        [{ text: 'OK' }]
+      );
+
+      setShowInvoiceModal(false);
+      setSelectedEmployee('');
+      setInvoiceStartDate('');
+      setInvoiceEndDate('');
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to generate invoice');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
