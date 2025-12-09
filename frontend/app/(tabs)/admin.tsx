@@ -724,8 +724,15 @@ export default function AdminScreen() {
 
             <ScrollView style={styles.modalBody}>
               <Text style={styles.label}>Select ABN Contractor</Text>
-              <View style={styles.employeeList}>
-                {users.map((user: any) => (
+              {users.filter((u: any) => u.is_contractor).length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="business-outline" size={48} color={colors.gray[300]} />
+                  <Text style={styles.emptyText}>No ABN Contractors</Text>
+                  <Text style={styles.emptySubtext}>Add employees with ABN to generate invoices</Text>
+                </View>
+              ) : (
+                <View style={styles.employeeList}>
+                  {users.filter((u: any) => u.is_contractor).map((user: any) => (
                   <TouchableOpacity
                     key={user.id}
                     style={[
