@@ -1183,4 +1183,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
+  label: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 12,
+    marginTop: 8,
+  },
 });
