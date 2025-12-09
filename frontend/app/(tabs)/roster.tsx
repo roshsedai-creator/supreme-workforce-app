@@ -1058,6 +1058,15 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '600',
   },
+  filterSection: {
+    marginTop: 12,
+  },
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
   content: {
     flex: 1,
   },
