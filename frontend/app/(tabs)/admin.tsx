@@ -456,6 +456,21 @@ export default function AdminScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      {/* Quick Action - Availability Snapshot */}
+      <View style={styles.quickActionsSection}>
+        <TouchableOpacity
+          style={styles.availabilityButton}
+          onPress={() => setShowAvailabilityModal(true)}
+        >
+          <Ionicons name="calendar-outline" size={24} color={colors.white} />
+          <View style={styles.availabilityButtonContent}>
+            <Text style={styles.availabilityButtonTitle}>Employee Availability</Text>
+            <Text style={styles.availabilityButtonSubtitle}>View weekly snapshot by site</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
+      </View>
+
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Employee Earnings</Text>
