@@ -1,479 +1,484 @@
-diff --git a/frontend/app/(tabs)/admin.tsx b/frontend/app/(tabs)/admin.tsx
-index 2aae66f..7471658 100644
---- a/frontend/app/(tabs)/admin.tsx
-+++ b/frontend/app/(tabs)/admin.tsx
-@@ -319,6 +319,34 @@ export default function AdminScreen() {
-     }
-   };
- 
-+  const handleExcelExport = async () => {
-+    setLoading(true);
-+    try {
-+      const endDate = new Date();
-+      const startDate = new Date();
-+      startDate.setDate(startDate.getDate() - 14); // Last 14 days
-+
-+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export-excel`, {
-+        start_date: startDate.toISOString(),
-+        end_date: endDate.toISOString(),
-+      }, {
-+        responseType: 'blob'
-+      });
-+
-+      Alert.alert(
-+        'Excel Export Ready',
-+        `Excel payroll file has been generated successfully for the last 14 days.\n\nThe file contains detailed payroll information including hours worked, pay rates, and total compensation.`,
-+        [{ text: 'OK' }]
-+      );
-+      
-+      console.log('Excel file generated successfully');
-+    } catch (error: any) {
-+      Alert.alert('Error', error.response?.data?.detail || 'Failed to export Excel');
-+    } finally {
-+      setLoading(false);
-+    }
-+  };
-+
-   const handleSendContract = async () => {
-     if (!selectedEmployee) {
-       Alert.alert('Error', 'Please select an employee');
-@@ -468,13 +496,25 @@ export default function AdminScreen() {
-       <View style={styles.section}>
-         <View style={styles.sectionHeader}>
-           <Text style={styles.sectionTitle}>Payroll Export</Text>
--          <TouchableOpacity
--            style={styles.addButton}
--            onPress={handlePayrollExport}
--          >
--            <Ionicons name="download" size={20} color={colors.white} />
--            <Text style={styles.addButtonText}>Export CSV</Text>
--          </TouchableOpacity>
-+          <View style={{ flexDirection: 'row', gap: 12 }}>
-+            <TouchableOpacity
-+              style={[styles.addButton, { flex: 1 }]}
-+              onPress={handlePayrollExport}
-+              disabled={loading}
-+            >
-+              <Ionicons name="document-text" size={20} color={colors.white} />
-+              <Text style={styles.addButtonText}>CSV</Text>
-+            </TouchableOpacity>
-+            
-+            <TouchableOpacity
-+              style={[styles.addButton, { flex: 1, backgroundColor: colors.success }]}
-+              onPress={handleExcelExport}
-+              disabled={loading}
-+            >
-+              <Ionicons name="stats-chart" size={20} color={colors.white} />
-+              <Text style={styles.addButtonText}>Excel</Text>
-+            </TouchableOpacity>
-+          </View>
-         </View>
- 
-         <View style={styles.card}>
 diff --git a/model.patch b/model.patch
-index 62eca00..e69de29 100644
+index 562467c..e69de29 100644
 --- a/model.patch
 +++ b/model.patch
-@@ -1,402 +0,0 @@
+@@ -1,479 +0,0 @@
 -diff --git a/frontend/app/(tabs)/admin.tsx b/frontend/app/(tabs)/admin.tsx
--index 139ffd8..803d49e 100644
+-index 2aae66f..7471658 100644
 ---- a/frontend/app/(tabs)/admin.tsx
 -+++ b/frontend/app/(tabs)/admin.tsx
--@@ -122,6 +122,11 @@ export default function AdminScreen() {
--       return;
+-@@ -319,6 +319,34 @@ export default function AdminScreen() {
 -     }
-- 
--+    if (isContractor && !abn) {
--+      Alert.alert('Error', 'Please provide ABN for contractors');
--+      return;
--+    }
--+
--     setLoading(true);
--     try {
--       await createUser({
--@@ -132,7 +137,9 @@ export default function AdminScreen() {
--         role,
--         job_title: jobTitle,
--         pin,
---        award_level: 1,
--+        award_level: awardLevel,
--+        abn: isContractor ? abn : null,
--+        is_contractor: isContractor,
--       });
--       Alert.alert('Success', 'Employee created successfully!');
--       setShowUserModal(false);
--@@ -160,6 +167,9 @@ export default function AdminScreen() {
--     setRole('employee');
--     setJobTitle('Room Attendant');
--     setPin('');
--+    setAbn('');
--+    setIsContractor(false);
--+    setAwardLevel(1);
 -   };
 - 
--   const handleEditPayRate = async () => {
+-+  const handleExcelExport = async () => {
+-+    setLoading(true);
+-+    try {
+-+      const endDate = new Date();
+-+      const startDate = new Date();
+-+      startDate.setDate(startDate.getDate() - 14); // Last 14 days
+-+
+-+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export-excel`, {
+-+        start_date: startDate.toISOString(),
+-+        end_date: endDate.toISOString(),
+-+      }, {
+-+        responseType: 'blob'
+-+      });
+-+
+-+      Alert.alert(
+-+        'Excel Export Ready',
+-+        `Excel payroll file has been generated successfully for the last 14 days.\n\nThe file contains detailed payroll information including hours worked, pay rates, and total compensation.`,
+-+        [{ text: 'OK' }]
+-+      );
+-+      
+-+      console.log('Excel file generated successfully');
+-+    } catch (error: any) {
+-+      Alert.alert('Error', error.response?.data?.detail || 'Failed to export Excel');
+-+    } finally {
+-+      setLoading(false);
+-+    }
+-+  };
+-+
+-   const handleSendContract = async () => {
+-     if (!selectedEmployee) {
+-       Alert.alert('Error', 'Please select an employee');
+-@@ -468,13 +496,25 @@ export default function AdminScreen() {
+-       <View style={styles.section}>
+-         <View style={styles.sectionHeader}>
+-           <Text style={styles.sectionTitle}>Payroll Export</Text>
+--          <TouchableOpacity
+--            style={styles.addButton}
+--            onPress={handlePayrollExport}
+--          >
+--            <Ionicons name="download" size={20} color={colors.white} />
+--            <Text style={styles.addButtonText}>Export CSV</Text>
+--          </TouchableOpacity>
+-+          <View style={{ flexDirection: 'row', gap: 12 }}>
+-+            <TouchableOpacity
+-+              style={[styles.addButton, { flex: 1 }]}
+-+              onPress={handlePayrollExport}
+-+              disabled={loading}
+-+            >
+-+              <Ionicons name="document-text" size={20} color={colors.white} />
+-+              <Text style={styles.addButtonText}>CSV</Text>
+-+            </TouchableOpacity>
+-+            
+-+            <TouchableOpacity
+-+              style={[styles.addButton, { flex: 1, backgroundColor: colors.success }]}
+-+              onPress={handleExcelExport}
+-+              disabled={loading}
+-+            >
+-+              <Ionicons name="stats-chart" size={20} color={colors.white} />
+-+              <Text style={styles.addButtonText}>Excel</Text>
+-+            </TouchableOpacity>
+-+          </View>
+-         </View>
+- 
+-         <View style={styles.card}>
 -diff --git a/model.patch b/model.patch
--index bbacf2d..e69de29 100644
+-index 62eca00..e69de29 100644
 ---- a/model.patch
 -+++ b/model.patch
--@@ -1,360 +0,0 @@
+-@@ -1,402 +0,0 @@
 --diff --git a/frontend/app/(tabs)/admin.tsx b/frontend/app/(tabs)/admin.tsx
---index a2846c5..72b88a7 100644
+--index 139ffd8..803d49e 100644
 ----- a/frontend/app/(tabs)/admin.tsx
 --+++ b/frontend/app/(tabs)/admin.tsx
---@@ -803,33 +803,27 @@ const styles = StyleSheet.create({
---   },
---   summaryBox: {
---     flex: 1,
----    backgroundColor: colors.white,
----    borderRadius: 12,
---+    backgroundColor: colors.primary + '10',
---     padding: 16,
---+    borderRadius: 12,
---     alignItems: 'center',
----    shadowColor: '#000',
----    shadowOffset: { width: 0, height: 2 },
----    shadowOpacity: 0.1,
----    shadowRadius: 8,
----    elevation: 4,
---   },
---   summaryValue: {
---     fontSize: 24,
----    fontWeight: '700',
---+    fontWeight: 'bold',
---     color: colors.primary,
---     marginBottom: 4,
---   },
---   summaryLabel: {
---     fontSize: 12,
---     color: colors.text.secondary,
----    fontWeight: '600',
---+    textAlign: 'center',
---   },
---   earningsRow: {
----    marginTop: 8,
---+    marginTop: 6,
---   },
---   earningsText: {
---     fontSize: 13,
---     color: colors.text.secondary,
----    fontWeight: '500',
---   },
--- });
+--@@ -122,6 +122,11 @@ export default function AdminScreen() {
+--       return;
+--     }
+-- 
+--+    if (isContractor && !abn) {
+--+      Alert.alert('Error', 'Please provide ABN for contractors');
+--+      return;
+--+    }
+--+
+--     setLoading(true);
+--     try {
+--       await createUser({
+--@@ -132,7 +137,9 @@ export default function AdminScreen() {
+--         role,
+--         job_title: jobTitle,
+--         pin,
+---        award_level: 1,
+--+        award_level: awardLevel,
+--+        abn: isContractor ? abn : null,
+--+        is_contractor: isContractor,
+--       });
+--       Alert.alert('Success', 'Employee created successfully!');
+--       setShowUserModal(false);
+--@@ -160,6 +167,9 @@ export default function AdminScreen() {
+--     setRole('employee');
+--     setJobTitle('Room Attendant');
+--     setPin('');
+--+    setAbn('');
+--+    setIsContractor(false);
+--+    setAwardLevel(1);
+--   };
+-- 
+--   const handleEditPayRate = async () => {
 --diff --git a/model.patch b/model.patch
---index 6c0aaba..e69de29 100644
+--index bbacf2d..e69de29 100644
 ----- a/model.patch
 --+++ b/model.patch
---@@ -1,312 +0,0 @@
+--@@ -1,360 +0,0 @@
 ---diff --git a/frontend/app/(tabs)/admin.tsx b/frontend/app/(tabs)/admin.tsx
----index 7714161..6709074 100644
+---index a2846c5..72b88a7 100644
 ------ a/frontend/app/(tabs)/admin.tsx
 ---+++ b/frontend/app/(tabs)/admin.tsx
----@@ -179,6 +179,70 @@ export default function AdminScreen() {
---- 
----   return (
----     <ScrollView style={styles.container}>
----+      <View style={styles.section}>
----+        <View style={styles.sectionHeader}>
----+          <Text style={styles.sectionTitle}>Employee Earnings</Text>
----+        </View>
----+
----+        {earnings && (
----+          <>
----+            <View style={styles.summaryRow}>
----+              <View style={styles.summaryBox}>
----+                <Text style={styles.summaryValue}>${earnings.total_pay?.toFixed(2) || '0.00'}</Text>
----+                <Text style={styles.summaryLabel}>Total Pay</Text>
----+              </View>
----+              <View style={styles.summaryBox}>
----+                <Text style={styles.summaryValue}>{earnings.total_hours?.toFixed(1) || '0'}</Text>
----+                <Text style={styles.summaryLabel}>Total Hours</Text>
----+              </View>
----+            </View>
----+
----+            {earnings.employees?.map((emp: any) => (
----+              <View key={emp.employee_id} style={styles.card}>
----+                <Ionicons name="person-circle" size={24} color={colors.success} />
----+                <View style={styles.cardContent}>
----+                  <Text style={styles.cardTitle}>{emp.name}</Text>
----+                  <Text style={styles.cardSubtitle}>{emp.job_title} • Level {emp.award_level}</Text>
----+                  <View style={styles.earningsRow}>
----+                    <Text style={styles.earningsText}>
----+                      {emp.shift_count} shifts • {emp.total_hours} hrs • ${emp.total_pay.toFixed(2)}
----+                    </Text>
----+                  </View>
----+                </View>
----+              </View>
----+            ))}
----+          </>
----+        )}
----+      </View>
----+
----+      <View style={styles.section}>
----+        <View style={styles.sectionHeader}>
----+          <Text style={styles.sectionTitle}>Pay Rates ({payRates.length})</Text>
----+          <TouchableOpacity
----+            style={styles.addButton}
----+            onPress={() => setShowPayRateModal(true)}
----+          >
----+            <Ionicons name="create" size={20} color={colors.white} />
----+            <Text style={styles.addButtonText}>Edit Rates</Text>
----+          </TouchableOpacity>
----+        </View>
----+
----+        {payRates.map((rate: any) => (
----+          <View key={rate.id} style={styles.card}>
----+            <Ionicons name="pricetag" size={24} color={colors.gold} />
----+            <View style={styles.cardContent}>
----+              <Text style={styles.cardTitle}>Level {rate.award_level}</Text>
----+              <Text style={styles.cardSubtitle}>
----+                Weekday: ${rate.weekday_rate} | Sat: ${rate.saturday_rate} | Sun: ${rate.sunday_rate}
----+              </Text>
----+              <Text style={styles.cardDetails}>
----+                PH: ${rate.public_holiday_rate} | OT: ${rate.overtime_rate}
----+              </Text>
----+            </View>
----+          </View>
----+        ))}
----+      </View>
----+
----       <View style={styles.section}>
----         <View style={styles.sectionHeader}>
----           <Text style={styles.sectionTitle}>Sites ({sites.length})</Text>
----@@ -580,4 +644,40 @@ const styles = StyleSheet.create({
----   buttonDisabled: {
----     opacity: 0.6,
+---@@ -803,33 +803,27 @@ const styles = StyleSheet.create({
 ---   },
----+  summaryRow: {
----+    flexDirection: 'row',
----+    marginBottom: 16,
----+    gap: 12,
----+  },
----+  summaryBox: {
----+    flex: 1,
----+    backgroundColor: colors.white,
+---   summaryBox: {
+---     flex: 1,
+----    backgroundColor: colors.white,
+----    borderRadius: 12,
+---+    backgroundColor: colors.primary + '10',
+---     padding: 16,
 ---+    borderRadius: 12,
----+    padding: 16,
----+    alignItems: 'center',
----+    shadowColor: '#000',
----+    shadowOffset: { width: 0, height: 2 },
----+    shadowOpacity: 0.1,
----+    shadowRadius: 8,
----+    elevation: 4,
----+  },
----+  summaryValue: {
----+    fontSize: 24,
----+    fontWeight: '700',
----+    color: colors.primary,
----+    marginBottom: 4,
----+  },
----+  summaryLabel: {
----+    fontSize: 12,
----+    color: colors.text.secondary,
----+    fontWeight: '600',
----+  },
----+  earningsRow: {
----+    marginTop: 8,
----+  },
----+  earningsText: {
----+    fontSize: 13,
----+    color: colors.text.secondary,
----+    fontWeight: '500',
----+  },
+---     alignItems: 'center',
+----    shadowColor: '#000',
+----    shadowOffset: { width: 0, height: 2 },
+----    shadowOpacity: 0.1,
+----    shadowRadius: 8,
+----    elevation: 4,
+---   },
+---   summaryValue: {
+---     fontSize: 24,
+----    fontWeight: '700',
+---+    fontWeight: 'bold',
+---     color: colors.primary,
+---     marginBottom: 4,
+---   },
+---   summaryLabel: {
+---     fontSize: 12,
+---     color: colors.text.secondary,
+----    fontWeight: '600',
+---+    textAlign: 'center',
+---   },
+---   earningsRow: {
+----    marginTop: 8,
+---+    marginTop: 6,
+---   },
+---   earningsText: {
+---     fontSize: 13,
+---     color: colors.text.secondary,
+----    fontWeight: '500',
+---   },
 --- });
 ---diff --git a/model.patch b/model.patch
----index b8325fa..e69de29 100644
+---index 6c0aaba..e69de29 100644
 ------ a/model.patch
 ---+++ b/model.patch
----@@ -1,191 +0,0 @@
-----diff --git a/frontend/app/(tabs)/_layout.tsx b/frontend/app/(tabs)/_layout.tsx
-----index 8290d5a..21ee2aa 100644
-------- a/frontend/app/(tabs)/_layout.tsx
-----+++ b/frontend/app/(tabs)/_layout.tsx
-----@@ -49,6 +49,15 @@ export default function TabsLayout() {
-----           ),
-----         }}
-----       />
-----+      <Tabs.Screen
-----+        name="leave"
-----+        options={{
-----+          title: 'Leave',
-----+          tabBarIcon: ({ color, size }) => (
-----+            <Ionicons name="calendar" size={size} color={color} />
-----+          ),
-----+        }}
-----+      />
-----       {isSupervisor && (
-----         <Tabs.Screen
-----           name="supervisor"
+---@@ -1,312 +0,0 @@
+----diff --git a/frontend/app/(tabs)/admin.tsx b/frontend/app/(tabs)/admin.tsx
+----index 7714161..6709074 100644
+------- a/frontend/app/(tabs)/admin.tsx
+----+++ b/frontend/app/(tabs)/admin.tsx
+----@@ -179,6 +179,70 @@ export default function AdminScreen() {
+---- 
+----   return (
+----     <ScrollView style={styles.container}>
+----+      <View style={styles.section}>
+----+        <View style={styles.sectionHeader}>
+----+          <Text style={styles.sectionTitle}>Employee Earnings</Text>
+----+        </View>
+----+
+----+        {earnings && (
+----+          <>
+----+            <View style={styles.summaryRow}>
+----+              <View style={styles.summaryBox}>
+----+                <Text style={styles.summaryValue}>${earnings.total_pay?.toFixed(2) || '0.00'}</Text>
+----+                <Text style={styles.summaryLabel}>Total Pay</Text>
+----+              </View>
+----+              <View style={styles.summaryBox}>
+----+                <Text style={styles.summaryValue}>{earnings.total_hours?.toFixed(1) || '0'}</Text>
+----+                <Text style={styles.summaryLabel}>Total Hours</Text>
+----+              </View>
+----+            </View>
+----+
+----+            {earnings.employees?.map((emp: any) => (
+----+              <View key={emp.employee_id} style={styles.card}>
+----+                <Ionicons name="person-circle" size={24} color={colors.success} />
+----+                <View style={styles.cardContent}>
+----+                  <Text style={styles.cardTitle}>{emp.name}</Text>
+----+                  <Text style={styles.cardSubtitle}>{emp.job_title} • Level {emp.award_level}</Text>
+----+                  <View style={styles.earningsRow}>
+----+                    <Text style={styles.earningsText}>
+----+                      {emp.shift_count} shifts • {emp.total_hours} hrs • ${emp.total_pay.toFixed(2)}
+----+                    </Text>
+----+                  </View>
+----+                </View>
+----+              </View>
+----+            ))}
+----+          </>
+----+        )}
+----+      </View>
+----+
+----+      <View style={styles.section}>
+----+        <View style={styles.sectionHeader}>
+----+          <Text style={styles.sectionTitle}>Pay Rates ({payRates.length})</Text>
+----+          <TouchableOpacity
+----+            style={styles.addButton}
+----+            onPress={() => setShowPayRateModal(true)}
+----+          >
+----+            <Ionicons name="create" size={20} color={colors.white} />
+----+            <Text style={styles.addButtonText}>Edit Rates</Text>
+----+          </TouchableOpacity>
+----+        </View>
+----+
+----+        {payRates.map((rate: any) => (
+----+          <View key={rate.id} style={styles.card}>
+----+            <Ionicons name="pricetag" size={24} color={colors.gold} />
+----+            <View style={styles.cardContent}>
+----+              <Text style={styles.cardTitle}>Level {rate.award_level}</Text>
+----+              <Text style={styles.cardSubtitle}>
+----+                Weekday: ${rate.weekday_rate} | Sat: ${rate.saturday_rate} | Sun: ${rate.sunday_rate}
+----+              </Text>
+----+              <Text style={styles.cardDetails}>
+----+                PH: ${rate.public_holiday_rate} | OT: ${rate.overtime_rate}
+----+              </Text>
+----+            </View>
+----+          </View>
+----+        ))}
+----+      </View>
+----+
+----       <View style={styles.section}>
+----         <View style={styles.sectionHeader}>
+----           <Text style={styles.sectionTitle}>Sites ({sites.length})</Text>
+----@@ -580,4 +644,40 @@ const styles = StyleSheet.create({
+----   buttonDisabled: {
+----     opacity: 0.6,
+----   },
+----+  summaryRow: {
+----+    flexDirection: 'row',
+----+    marginBottom: 16,
+----+    gap: 12,
+----+  },
+----+  summaryBox: {
+----+    flex: 1,
+----+    backgroundColor: colors.white,
+----+    borderRadius: 12,
+----+    padding: 16,
+----+    alignItems: 'center',
+----+    shadowColor: '#000',
+----+    shadowOffset: { width: 0, height: 2 },
+----+    shadowOpacity: 0.1,
+----+    shadowRadius: 8,
+----+    elevation: 4,
+----+  },
+----+  summaryValue: {
+----+    fontSize: 24,
+----+    fontWeight: '700',
+----+    color: colors.primary,
+----+    marginBottom: 4,
+----+  },
+----+  summaryLabel: {
+----+    fontSize: 12,
+----+    color: colors.text.secondary,
+----+    fontWeight: '600',
+----+  },
+----+  earningsRow: {
+----+    marginTop: 8,
+----+  },
+----+  earningsText: {
+----+    fontSize: 13,
+----+    color: colors.text.secondary,
+----+    fontWeight: '500',
+----+  },
+---- });
 ----diff --git a/model.patch b/model.patch
-----index 50b5667..e69de29 100644
+----index b8325fa..e69de29 100644
 ------- a/model.patch
 ----+++ b/model.patch
-----@@ -1,166 +0,0 @@
------diff --git a/test_result.md b/test_result.md
------index ac108a8..9138d3f 100644
--------- a/test_result.md
------+++ b/test_result.md
------@@ -107,99 +107,123 @@ user_problem_statement: "Build a mobile-first Timesheet & Workforce Management a
------ backend:
------   - task: "Authentication API with mock PIN login"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented POST /api/auth/login with phone/email + PIN authentication. Returns user object and mock token. Tested manually with curl - working."
------+      - working: true
------+        agent: "testing"
------+        comment: "Comprehensive testing completed. All authentication scenarios working: valid login with phone (200), valid login with email (200), invalid PIN rejection (401), non-existent user rejection (404). Returns proper user object and token."
------   
------   - task: "User management APIs (CRUD)"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented GET/POST /api/users with role filtering. Created seed data with 5 users (admin, supervisor, 3 employees)."
------+      - working: true
------+        agent: "testing"
------+        comment: "User APIs tested successfully. GET /api/users returns all 5 users correctly. Role filtering works: GET /api/users?role=employee returns 3 employees, GET /api/users?role=supervisor returns 1 supervisor. All responses properly formatted."
------   
------   - task: "Site management APIs"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented GET/POST /api/sites. Created 3 seed sites (Novotel, Ibis, Hotel Grand Chancellor) with GPS coordinates."
------+      - working: true
------+        agent: "testing"
------+        comment: "Site APIs working correctly. GET /api/sites returns all 3 sites with proper GPS coordinates and metadata. Site data includes Novotel Brisbane, Ibis Brisbane, and Hotel Grand Chancellor with correct addresses and GPS coordinates."
------   
------   - task: "Clock-in API with GPS validation"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented POST /api/timesheets/clock-in. Creates timesheet with GPS coordinates. Prevents double clock-in."
------+      - working: true
------+        agent: "testing"
------+        comment: "Clock-in API fully functional. Successfully creates timesheet with GPS coordinates (-27.4698, 153.0251). Correctly prevents double clock-in with 400 error 'Already clocked in. Please clock out first.' Returns timesheet ID for subsequent operations."
------   
------   - task: "Clock-out API"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented POST /api/timesheets/clock-out. Calculates total hours minus break time."
------+      - working: true
------+        agent: "testing"
------+        comment: "Clock-out API working correctly. Successfully completes timesheet with GPS coordinates. Calculates total hours properly (accounting for break time). Returns updated timesheet with clock_out timestamp and total_hours calculation."
------   
------   - task: "Break management API"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "medium"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented POST /api/timesheets/break with start/end actions. Tracks break duration."
------+      - working: true
------+        agent: "testing"
------+        comment: "Break management API fully functional. Successfully starts break (200), prevents double break start (400), ends break (200), and tracks break minutes. Proper error handling for invalid operations like ending non-existent breaks."
------   
------   - task: "Timesheet approval API"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented POST /api/timesheets/approve. Allows supervisors to approve/reject with notes."
------+      - working: true
------+        agent: "testing"
------+        comment: "Timesheet approval workflow working perfectly. GET /api/timesheets?approval_status=pending returns pending timesheets correctly. POST /api/timesheets/approve successfully approves and rejects timesheets with supervisor notes. Status updates properly to 'approved' or 'rejected'."
------   
------   - task: "Supervisor dashboard API"
------     implemented: true
-------    working: "unknown"
------+    working: true
------     file: "server.py"
------     stuck_count: 0
------     priority: "high"
-------    needs_retesting: true
------+    needs_retesting: false
------     status_history:
------       - working: "unknown"
------         agent: "main"
------         comment: "Implemented GET /api/dashboard/supervisor. Returns active employees and pending approvals."
------+      - working: true
------+        agent: "testing"
------+        comment: "Supervisor dashboard API working correctly. Returns all required fields: active_employees, pending_approvals, active_timesheets, pending_timesheets. Site filtering with ?site_id parameter works properly. Currently shows 2 active employees and 2 pending approvals."
------ 
------ frontend:
------   - task: "Login screen with mock PIN authentication"
------@@ -294,14 +318,14 @@ metadata:
------ 
------ test_plan:
------   current_focus:
-------    - "Authentication API"
-------    - "Clock-in/out flow"
-------    - "Break management"
-------    - "Supervisor approval workflow"
------+    - "Employee home screen with clock-in/out"
------+    - "Supervisor approval dashboard"
------   stuck_tasks: []
------   test_all: false
------   test_priority: "high_first"
------ 
------ agent_communication:
------   - agent: "main"
-------    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
------\ No newline at end of file
------+    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
------+  - agent: "testing"
------+    message: "Backend testing completed successfully! All 8 backend APIs are working correctly: Authentication (login with phone/email, proper error handling), User/Site management (CRUD operations, role filtering), Clock-in/out flow (GPS tracking, double clock-in prevention, hours calculation), Break management (start/end breaks, duration tracking), Timesheet approval (supervisor approve/reject with notes), Dashboard (active employees, pending approvals, site filtering). All test scenarios passed with proper HTTP status codes and data validation. Backend is production-ready."
------\ No newline at end of file
+----@@ -1,191 +0,0 @@
+-----diff --git a/frontend/app/(tabs)/_layout.tsx b/frontend/app/(tabs)/_layout.tsx
+-----index 8290d5a..21ee2aa 100644
+-------- a/frontend/app/(tabs)/_layout.tsx
+-----+++ b/frontend/app/(tabs)/_layout.tsx
+-----@@ -49,6 +49,15 @@ export default function TabsLayout() {
+-----           ),
+-----         }}
+-----       />
+-----+      <Tabs.Screen
+-----+        name="leave"
+-----+        options={{
+-----+          title: 'Leave',
+-----+          tabBarIcon: ({ color, size }) => (
+-----+            <Ionicons name="calendar" size={size} color={color} />
+-----+          ),
+-----+        }}
+-----+      />
+-----       {isSupervisor && (
+-----         <Tabs.Screen
+-----           name="supervisor"
+-----diff --git a/model.patch b/model.patch
+-----index 50b5667..e69de29 100644
+-------- a/model.patch
+-----+++ b/model.patch
+-----@@ -1,166 +0,0 @@
+------diff --git a/test_result.md b/test_result.md
+------index ac108a8..9138d3f 100644
+--------- a/test_result.md
+------+++ b/test_result.md
+------@@ -107,99 +107,123 @@ user_problem_statement: "Build a mobile-first Timesheet & Workforce Management a
+------ backend:
+------   - task: "Authentication API with mock PIN login"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented POST /api/auth/login with phone/email + PIN authentication. Returns user object and mock token. Tested manually with curl - working."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Comprehensive testing completed. All authentication scenarios working: valid login with phone (200), valid login with email (200), invalid PIN rejection (401), non-existent user rejection (404). Returns proper user object and token."
+------   
+------   - task: "User management APIs (CRUD)"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented GET/POST /api/users with role filtering. Created seed data with 5 users (admin, supervisor, 3 employees)."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "User APIs tested successfully. GET /api/users returns all 5 users correctly. Role filtering works: GET /api/users?role=employee returns 3 employees, GET /api/users?role=supervisor returns 1 supervisor. All responses properly formatted."
+------   
+------   - task: "Site management APIs"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented GET/POST /api/sites. Created 3 seed sites (Novotel, Ibis, Hotel Grand Chancellor) with GPS coordinates."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Site APIs working correctly. GET /api/sites returns all 3 sites with proper GPS coordinates and metadata. Site data includes Novotel Brisbane, Ibis Brisbane, and Hotel Grand Chancellor with correct addresses and GPS coordinates."
+------   
+------   - task: "Clock-in API with GPS validation"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented POST /api/timesheets/clock-in. Creates timesheet with GPS coordinates. Prevents double clock-in."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Clock-in API fully functional. Successfully creates timesheet with GPS coordinates (-27.4698, 153.0251). Correctly prevents double clock-in with 400 error 'Already clocked in. Please clock out first.' Returns timesheet ID for subsequent operations."
+------   
+------   - task: "Clock-out API"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented POST /api/timesheets/clock-out. Calculates total hours minus break time."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Clock-out API working correctly. Successfully completes timesheet with GPS coordinates. Calculates total hours properly (accounting for break time). Returns updated timesheet with clock_out timestamp and total_hours calculation."
+------   
+------   - task: "Break management API"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "medium"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented POST /api/timesheets/break with start/end actions. Tracks break duration."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Break management API fully functional. Successfully starts break (200), prevents double break start (400), ends break (200), and tracks break minutes. Proper error handling for invalid operations like ending non-existent breaks."
+------   
+------   - task: "Timesheet approval API"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented POST /api/timesheets/approve. Allows supervisors to approve/reject with notes."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Timesheet approval workflow working perfectly. GET /api/timesheets?approval_status=pending returns pending timesheets correctly. POST /api/timesheets/approve successfully approves and rejects timesheets with supervisor notes. Status updates properly to 'approved' or 'rejected'."
+------   
+------   - task: "Supervisor dashboard API"
+------     implemented: true
+-------    working: "unknown"
+------+    working: true
+------     file: "server.py"
+------     stuck_count: 0
+------     priority: "high"
+-------    needs_retesting: true
+------+    needs_retesting: false
+------     status_history:
+------       - working: "unknown"
+------         agent: "main"
+------         comment: "Implemented GET /api/dashboard/supervisor. Returns active employees and pending approvals."
+------+      - working: true
+------+        agent: "testing"
+------+        comment: "Supervisor dashboard API working correctly. Returns all required fields: active_employees, pending_approvals, active_timesheets, pending_timesheets. Site filtering with ?site_id parameter works properly. Currently shows 2 active employees and 2 pending approvals."
+------ 
+------ frontend:
+------   - task: "Login screen with mock PIN authentication"
+------@@ -294,14 +318,14 @@ metadata:
+------ 
+------ test_plan:
+------   current_focus:
+-------    - "Authentication API"
+-------    - "Clock-in/out flow"
+-------    - "Break management"
+-------    - "Supervisor approval workflow"
+------+    - "Employee home screen with clock-in/out"
+------+    - "Supervisor approval dashboard"
+------   stuck_tasks: []
+------   test_all: false
+------   test_priority: "high_first"
+------ 
+------ agent_communication:
+------   - agent: "main"
+-------    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
+------\ No newline at end of file
+------+    message: "Phase 1 MVP implementation complete. All backend APIs implemented with seed data. Frontend screens built and manually tested. Login, navigation, and data display working. Need comprehensive backend testing for clock-in/out, break management, and approval workflow. Test accounts created: Admin (0457802302/1234), Supervisor (0412345678/5678), Employee Emma (0423456789/1111)."
+------+  - agent: "testing"
+------+    message: "Backend testing completed successfully! All 8 backend APIs are working correctly: Authentication (login with phone/email, proper error handling), User/Site management (CRUD operations, role filtering), Clock-in/out flow (GPS tracking, double clock-in prevention, hours calculation), Break management (start/end breaks, duration tracking), Timesheet approval (supervisor approve/reject with notes), Dashboard (active employees, pending approvals, site filtering). All test scenarios passed with proper HTTP status codes and data validation. Backend is production-ready."
+------\ No newline at end of file
