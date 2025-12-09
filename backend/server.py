@@ -216,6 +216,43 @@ async def login(request: LoginRequest):
         "token": f"mock_token_{user['id']}"
     }
 
+@api_router.post("/auth/request-otp")
+async def request_otp(phone: str):
+    """Request OTP for login (Mock - prints to console)"""
+    from otp_service import generate_otp
+    
+    # Check if user exists
+    user = await db.users.find_one({"phone": phone, "status": "active"})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    otp = generate_otp(phone)
+    
+    return {
+        "success": True,
+        "message": f"OTP sent to {phone} (Check console for mock OTP)",
+        "otp_for_testing": otp  # Remove in production!
+    }
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp_login(phone: str, otp: str):
+    """Verify OTP and login"""
+    from otp_service import verify_otp
+    
+    if not verify_otp(phone, otp):
+        raise HTTPException(status_code=401, detail="Invalid or expired OTP")
+    
+    user = await db.users.find_one({"phone": phone, "status": "active"})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user = serialize_doc(user)
+    return {
+        "success": True,
+        "user": user,
+        "token": f"otp_token_{user['id']}"
+    }
+
 # =====================
 # USER ENDPOINTS
 # =====================
