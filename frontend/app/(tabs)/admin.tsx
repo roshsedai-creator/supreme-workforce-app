@@ -64,6 +64,20 @@ export default function AdminScreen() {
   const [editingEmployee, setEditingEmployee] = useState<any>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState('');
+  
+  // Permissions modal
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [editingPermissions, setEditingPermissions] = useState<any>(null);
+  const [permissions, setPermissions] = useState({
+    view_own_pay: false,
+    view_all_timesheets: false,
+    edit_timesheets: false,
+    approve_timesheets: false,
+    view_reports: false,
+    manage_users: false,
+    manage_sites: false,
+    export_payroll: false,
+  });
 
   useEffect(() => {
     fetchData();
