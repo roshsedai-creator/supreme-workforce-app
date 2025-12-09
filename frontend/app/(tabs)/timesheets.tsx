@@ -363,8 +363,12 @@ export default function TimesheetsScreen() {
                     mode="datetime"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={(event, date) => {
-                      setShowClockInPicker(Platform.OS === 'ios');
-                      if (date) setEditClockIn(date);
+                      if (Platform.OS === 'android') {
+                        setShowClockInPicker(false);
+                      }
+                      if (date) {
+                        setEditClockIn(date);
+                      }
                     }}
                   />
                 )}
