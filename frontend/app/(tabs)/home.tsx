@@ -60,6 +60,18 @@ export default function HomeScreen() {
     }
   };
 
+  const fetchSiteData = async () => {
+    if (!user?.site_id) return;
+    
+    try {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/sites/${user.site_id}`);
+      const data = await response.json();
+      setSiteData(data);
+    } catch (error) {
+      console.error('Failed to fetch site data:', error);
+    }
+  };
+
   const handleClockIn = async () => {
     if (!user?.site_id) {
       Alert.alert('Error', 'No site assigned. Please contact your supervisor.');
