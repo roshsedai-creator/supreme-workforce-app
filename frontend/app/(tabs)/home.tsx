@@ -465,4 +465,27 @@ const styles = StyleSheet.create({
     color: colors.success,
     fontWeight: '600',
   },
+  siteBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 12,
+    backgroundColor: colors.primary + '10',
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 12,
+  },
+  siteInfo: {
+    flex: 1,
+  },
+  siteTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  siteAddress: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 18,
+  },
 });
