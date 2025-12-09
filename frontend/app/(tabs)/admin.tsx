@@ -1236,4 +1236,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     marginTop: 8,
   },
+  contractorToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    marginBottom: 12,
+    gap: 12,
+  },
+  contractorLabel: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.text.primary,
+  },
 });
