@@ -619,6 +619,68 @@ async def export_payroll(request: PayrollExportRequest):
         "total_pay": sum([float(row["Total Pay"].replace("$", "")) for row in csv_data])
     }
 
+# =====================
+# EARNINGS ENDPOINT
+# =====================
+
+@api_router.get("/earnings/summary")
+async def get_earnings_summary():
+    """Get earnings summary for all employees"""
+    employees = await db.users.find({"role": {"$ne": "admin"}}).to_list(1000)
+    
+    earnings_data = []
+    for emp in employees:
+        # Get approved timesheets
+        timesheets = await db.timesheets.find({
+            "employee_id": str(emp["_id"]),
+            "approval_status": "approved",
+            "clock_out": {"$ne": None}
+        }).to_list(1000)
+        
+        total_hours = 0
+        total_pay = 0
+        
+        # Get pay rate for employee
+        pay_rate = await db.pay_rates.find_one({"award_level": emp.get("award_level", 1)})
+        base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
+        
+        for ts in timesheets:
+            hours = ts.get("total_hours", 0)
+            total_hours += hours
+            
+            # Calculate pay based on day
+            clock_in = ts["clock_in"]
+            day_of_week = clock_in.weekday()
+            
+            if day_of_week == 5:  # Saturday
+                rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
+            elif day_of_week == 6:  # Sunday
+                rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
+            else:
+                rate = base_rate
+            
+            total_pay += hours * rate
+        
+        earnings_data.append({
+            "employee_id": str(emp["_id"]),
+            "name": f"{emp['first_name']} {emp['last_name']}",
+            "job_title": emp.get("job_title", ""),
+            "award_level": emp.get("award_level", 1),
+            "total_hours": round(total_hours, 2),
+            "total_pay": round(total_pay, 2),
+            "shift_count": len(timesheets)
+        })
+    
+    # Sort by total_pay descending
+    earnings_data.sort(key=lambda x: x["total_pay"], reverse=True)
+    
+    return {
+        "employees": earnings_data,
+        "total_employees": len(earnings_data),
+        "total_hours": sum([e["total_hours"] for e in earnings_data]),
+        "total_pay": sum([e["total_pay"] for e in earnings_data])
+    }
+
 # Root endpoint
 @api_router.get("/")
 async def root():
