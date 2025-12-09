@@ -487,6 +487,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  scrollView: {
+    flex: 1,
+  },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
