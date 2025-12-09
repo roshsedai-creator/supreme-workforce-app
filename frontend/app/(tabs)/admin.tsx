@@ -850,4 +850,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.secondary,
   },
+  featureCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    gap: 12,
+  },
+  featureContent: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  featureSubtitle: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 18,
+  },
 });
