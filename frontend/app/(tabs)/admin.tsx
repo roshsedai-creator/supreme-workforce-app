@@ -526,6 +526,110 @@ export default function AdminScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Edit Pay Rate Modal */}
+      <Modal
+        visible={showPayRateModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowPayRateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Pay Rates</Text>
+              <TouchableOpacity onPress={() => setShowPayRateModal(false)}>
+                <Ionicons name="close" size={28} color={colors.gray[600]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.label}>Award Level</Text>
+              <View style={styles.roleOptions}>
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <TouchableOpacity
+                    key={level}
+                    style={[
+                      styles.roleOption,
+                      selectedLevel === level && styles.roleOptionSelected,
+                    ]}
+                    onPress={() => {
+                      setSelectedLevel(level);
+                      loadPayRate(level);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.roleOptionText,
+                        selectedLevel === level && styles.roleOptionTextSelected,
+                      ]}
+                    >
+                      Level {level}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Weekday Rate ($)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="23.23"
+                value={weekdayRate}
+                onChangeText={setWeekdayRate}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Saturday Rate ($)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="29.04"
+                value={saturdayRate}
+                onChangeText={setSaturdayRate}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Sunday Rate ($)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="34.85"
+                value={sundayRate}
+                onChangeText={setSundayRate}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Public Holiday Rate ($)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="46.46"
+                value={publicHolidayRate}
+                onChangeText={setPublicHolidayRate}
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Overtime Rate ($)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="34.85"
+                value={overtimeRate}
+                onChangeText={setOvertimeRate}
+                keyboardType="decimal-pad"
+              />
+
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleEditPayRate}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.submitButtonText}>Update Pay Rate</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
