@@ -413,6 +413,16 @@ export default function RosterScreen() {
     setShiftNotes('');
   };
 
+  const resetTemplateForm = () => {
+    setTemplateName('');
+    setTemplateEmployee('');
+    setTemplateSite('');
+    setTemplateRole('');
+    setTemplateDay(0);
+    setTemplateStartTime('09:00');
+    setTemplateEndTime('17:00');
+  };
+
   const previousWeek = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 7);
