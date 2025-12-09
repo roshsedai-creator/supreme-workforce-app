@@ -1151,4 +1151,36 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 2,
   },
+  abnBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.gold + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 6,
+    alignSelf: 'flex-start',
+    gap: 4,
+  },
+  abnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.gold,
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginTop: 8,
+    textAlign: 'center',
+  },
 });
