@@ -1,6 +1,6 @@
 export const colors = {
-  // Supreme Brand Colors
-  primary: '#1E40AF', // Supreme Blue
+  // Supreme Brand Colors (from logo)
+  primary: '#8B5CF6', // Supreme Purple
   gold: '#F59E0B', // Supreme Gold
   
   // Status Colors
