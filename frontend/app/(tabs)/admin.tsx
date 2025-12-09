@@ -1329,4 +1329,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.text.primary,
   },
+  editButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: colors.primary + '15',
+  },
 });
