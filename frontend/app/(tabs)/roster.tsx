@@ -126,6 +126,7 @@ export default function RosterScreen() {
         {
           params: {
             employee_id: !isSupervisor ? user?.id : undefined,
+            site_id: filterSiteId !== 'all' ? filterSiteId : undefined,
             start_date: startDate.toISOString(),
             end_date: endDate.toISOString(),
           }
