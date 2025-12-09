@@ -21,10 +21,12 @@ export default function HomeScreen() {
   const [currentTimesheet, setCurrentTimesheet] = useState<any>(null);
   const [onBreak, setOnBreak] = useState(false);
   const [location, setLocation] = useState<any>(null);
+  const [siteData, setSiteData] = useState<any>(null);
 
   useEffect(() => {
     requestLocationPermission();
     fetchCurrentTimesheet();
+    fetchSiteData();
   }, []);
 
   const requestLocationPermission = async () => {
