@@ -197,6 +197,53 @@ class PayrollExportRequest(BaseModel):
     end_date: datetime
     site_id: Optional[str] = None
 
+# Roster models
+class RosterShift(BaseModel):
+    id: Optional[str] = None
+    employee_id: str
+    site_id: str
+    role: str  # job title
+    start_time: datetime
+    end_time: datetime
+    status: str = "scheduled"  # scheduled, completed, cancelled
+    created_by: str  # supervisor or admin id
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class RosterShiftCreate(BaseModel):
+    employee_id: str
+    site_id: str
+    role: str
+    start_time: datetime
+    end_time: datetime
+    notes: Optional[str] = None
+
+class EmployeeAvailability(BaseModel):
+    id: Optional[str] = None
+    employee_id: str
+    day_of_week: int  # 0=Monday, 6=Sunday
+    available: bool
+    start_time: Optional[str] = None  # "09:00"
+    end_time: Optional[str] = None  # "17:00"
+    created_at: Optional[datetime] = None
+
+class AvailabilityUpdate(BaseModel):
+    employee_id: str
+    availability: List[dict]  # [{ day: 0, available: true, start: "09:00", end: "17:00" }]
+
+class UnavailableDate(BaseModel):
+    id: Optional[str] = None
+    employee_id: str
+    date: datetime
+    reason: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+class UnavailableDateCreate(BaseModel):
+    employee_id: str
+    date: datetime
+    reason: Optional[str] = None
+
 # =====================
 # AUTH ENDPOINTS
 # =====================
