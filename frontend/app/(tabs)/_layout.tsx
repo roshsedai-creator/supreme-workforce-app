@@ -35,6 +35,12 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
+        name="leave"
+        options={{
+          href: null, // Hide from tabs
+        }}
+      />
+      <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
