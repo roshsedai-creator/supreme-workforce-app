@@ -610,6 +610,52 @@ export default function AdminScreen() {
                 </View>
               </View>
 
+              <View style={styles.pickerContainer}>
+                <Text style={styles.pickerLabel}>Award Level (Pay Rate):</Text>
+                <View style={styles.roleOptions}>
+                  {[1, 2, 3, 4].map((level) => (
+                    <TouchableOpacity
+                      key={level}
+                      style={[
+                        styles.roleOption,
+                        awardLevel === level && styles.roleOptionSelected,
+                      ]}
+                      onPress={() => setAwardLevel(level)}
+                    >
+                      <Text
+                        style={[
+                          styles.roleOptionText,
+                          awardLevel === level && styles.roleOptionTextSelected,
+                        ]}
+                      >
+                        Level {level}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.contractorToggle}
+                onPress={() => setIsContractor(!isContractor)}
+              >
+                <Ionicons
+                  name={isContractor ? 'checkbox' : 'square-outline'}
+                  size={24}
+                  color={isContractor ? colors.primary : colors.gray[400]}
+                />
+                <Text style={styles.contractorLabel}>ABN Contractor (Independent)</Text>
+              </TouchableOpacity>
+
+              {isContractor && (
+                <TextInput
+                  style={styles.input}
+                  placeholder="ABN (e.g., 51 824 753 556)"
+                  value={abn}
+                  onChangeText={setAbn}
+                />
+              )}
+
               <TouchableOpacity
                 style={[styles.submitButton, loading && styles.buttonDisabled]}
                 onPress={handleCreateUser}
