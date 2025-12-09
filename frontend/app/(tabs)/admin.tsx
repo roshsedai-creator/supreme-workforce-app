@@ -155,6 +155,28 @@ export default function AdminScreen() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Payroll Export</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handlePayrollExport}
+          >
+            <Ionicons name="download" size={20} color={colors.white} />
+            <Text style={styles.addButtonText}>Export CSV</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.card}>
+          <Ionicons name="cash" size={24} color={colors.success} />
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle}>Weekly/Fortnightly Payroll</Text>
+            <Text style={styles.cardSubtitle}>Export approved timesheets with calculated pay</Text>
+            <Text style={styles.cardDetails}>Includes award rates, penalties, and overtime</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Employees ({users.length})</Text>
           <TouchableOpacity
             style={styles.addButton}
