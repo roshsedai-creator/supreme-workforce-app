@@ -154,6 +154,7 @@ async def seed_data():
             "pin": "2222",
             "status": "active",
             "is_contractor": False,
+            "permissions": get_permissions("employee"),
             "created_at": datetime.utcnow()
         },
         # ABN Contractor
@@ -166,6 +167,7 @@ async def seed_data():
             "job_title": "Public Area Attendant",
             "site_id": site_ids[1],
             "award_level": 1,
+            "permissions": get_permissions("employee"),
             "pin": "3333",
             "status": "active",
             "is_contractor": True,
