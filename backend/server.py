@@ -79,6 +79,8 @@ class UserCreate(BaseModel):
     site_id: Optional[str] = None
     award_level: int = 1
     pin: str
+    abn: Optional[str] = None
+    is_contractor: bool = False
 
 class LoginRequest(BaseModel):
     identifier: str  # phone or email
