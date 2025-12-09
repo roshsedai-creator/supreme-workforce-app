@@ -735,13 +735,15 @@ export default function AdminScreen() {
 
               <TouchableOpacity
                 style={[styles.submitButton, loading && styles.buttonDisabled]}
-                onPress={handleCreateUser}
+                onPress={isEditMode ? handleUpdateEmployee : handleCreateUser}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text style={styles.submitButtonText}>Create Employee</Text>
+                  <Text style={styles.submitButtonText}>
+                    {isEditMode ? 'Update Employee' : 'Create Employee'}
+                  </Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
