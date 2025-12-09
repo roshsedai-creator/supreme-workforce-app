@@ -429,6 +429,58 @@ export default function RosterScreen() {
     setTemplateEndTime('17:00');
   };
 
+  const handleReassignShift = async (shiftId: string, newEmployeeId: string) => {
+    try {
+      setLoading(true);
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${shiftId}`,
+        {
+          employee_id: newEmployeeId,
+          updated_at: new Date().toISOString(),
+        }
+      );
+      
+      Alert.alert('Success', 'Shift reassigned successfully!');
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to reassign shift');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const promptReassignShift = (shift: RosterShift) => {
+    if (!isSupervisor) {
+      Alert.alert('Permission Denied', 'Only supervisors can reassign shifts');
+      return;
+    }
+
+    Alert.alert(
+      'Reassign Shift',
+      `Reassign ${shift.employee_name}'s shift on ${formatDate(shift.start_time)}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Choose Employee',
+          onPress: () => {
+            // Show picker with employees
+            const employeeList = employees.map((emp: any) => 
+              `${emp.first_name} ${emp.last_name}`
+            ).join('\n');
+            
+            Alert.prompt(
+              'Select Employee',
+              'Enter employee name or use the roster screen to tap and hold a shift, then select a new employee',
+              [
+                { text: 'Cancel', style: 'cancel' },
+              ]
+            );
+          }
+        }
+      ]
+    );
+  };
+
   const previousWeek = () => {
     const newDate = new Date(selectedDate);
     newDate.setDate(newDate.getDate() - 7);
