@@ -231,12 +231,13 @@ export default function SupervisorScreen() {
   }
 
   return (
-    <ScrollView 
-      style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-      }
-    >
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+      >
       <View style={styles.statsHeader}>
         <View style={styles.statCard}>
           <Ionicons name="people" size={32} color={colors.success} />
