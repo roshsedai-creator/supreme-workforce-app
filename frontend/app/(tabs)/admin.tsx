@@ -54,14 +54,28 @@ export default function AdminScreen() {
 
   const fetchData = async () => {
     try {
-      const [sitesData, usersData] = await Promise.all([
+      const [sitesData, usersData, payRatesData] = await Promise.all([
         getSites(),
         getUsers(),
+        axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pay-rates`),
       ]);
       setSites(sitesData);
       setUsers(usersData);
+      setPayRates(payRatesData.data);
+      
+      // Fetch earnings
+      fetchEarnings();
     } catch (error) {
       console.error('Failed to fetch data:', error);
+    }
+  };
+
+  const fetchEarnings = async () => {
+    try {
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/earnings/summary`);
+      setEarnings(response.data);
+    } catch (error) {
+      console.error('Failed to fetch earnings:', error);
     }
   };
 
