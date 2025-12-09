@@ -154,6 +154,58 @@ export default function AdminScreen() {
     }
   };
 
+  const handleEditEmployee = (user: any) => {
+    setEditingEmployee(user);
+    setFirstName(user.first_name);
+    setLastName(user.last_name);
+    setPhone(user.phone);
+    setEmail(user.email);
+    setRole(user.role);
+    setJobTitle(user.job_title);
+    setAwardLevel(user.award_level || 1);
+    setIsContractor(user.is_contractor || false);
+    setAbn(user.abn || '');
+    setIsEditMode(true);
+    setShowUserModal(true);
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!firstName || !lastName || !phone || !email) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    if (isContractor && !abn) {
+      Alert.alert('Error', 'Please provide ABN for contractors');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${editingEmployee.id}`, {
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        email,
+        role,
+        job_title: jobTitle,
+        award_level: awardLevel,
+        abn: isContractor ? abn : null,
+        is_contractor: isContractor,
+      });
+      Alert.alert('Success', 'Employee updated successfully!');
+      setShowUserModal(false);
+      resetUserForm();
+      setIsEditMode(false);
+      setEditingEmployee(null);
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update employee');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const resetSiteForm = () => {
     setSiteName('');
     setSiteAddress('');
@@ -170,6 +222,10 @@ export default function AdminScreen() {
     setJobTitle('Room Attendant');
     setPin('');
     setAbn('');
+    setAwardLevel(1);
+    setIsContractor(false);
+    setIsEditMode(false);
+    setEditingEmployee(null);
     setIsContractor(false);
     setAwardLevel(1);
   };
