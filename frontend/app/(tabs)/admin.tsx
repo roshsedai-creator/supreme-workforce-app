@@ -613,6 +613,159 @@ export default function AdminScreen() {
         </View>
       </Modal>
 
+      {/* Send Contract Modal */}
+      <Modal
+        visible={showContractModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowContractModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Send Employment Contract</Text>
+              <TouchableOpacity onPress={() => setShowContractModal(false)}>
+                <Ionicons name="close" size={28} color={colors.gray[600]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.label}>Select Employee</Text>
+              <View style={styles.employeeList}>
+                {users.map((user: any) => (
+                  <TouchableOpacity
+                    key={user.id}
+                    style={[
+                      styles.employeeItem,
+                      selectedEmployee === user.id && styles.employeeItemSelected,
+                    ]}
+                    onPress={() => setSelectedEmployee(user.id)}
+                  >
+                    <Ionicons 
+                      name={selectedEmployee === user.id ? "radio-button-on" : "radio-button-off"} 
+                      size={20} 
+                      color={selectedEmployee === user.id ? colors.primary : colors.gray[400]} 
+                    />
+                    <View style={styles.employeeInfo}>
+                      <Text style={styles.employeeName}>{user.first_name} {user.last_name}</Text>
+                      <Text style={styles.employeeRole}>{user.job_title}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Contract Type</Text>
+              <View style={styles.roleOptions}>
+                {['employment', 'casual', 'part-time'].map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[
+                      styles.roleOption,
+                      contractType === type && styles.roleOptionSelected,
+                    ]}
+                    onPress={() => setContractType(type)}
+                  >
+                    <Text
+                      style={[
+                        styles.roleOptionText,
+                        contractType === type && styles.roleOptionTextSelected,
+                      ]}
+                    >
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleSendContract}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.submitButtonText}>Send Contract</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Generate Invoice Modal */}
+      <Modal
+        visible={showInvoiceModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowInvoiceModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Generate ABN Invoice</Text>
+              <TouchableOpacity onPress={() => setShowInvoiceModal(false)}>
+                <Ionicons name="close" size={28} color={colors.gray[600]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.label}>Select ABN Contractor</Text>
+              <View style={styles.employeeList}>
+                {users.map((user: any) => (
+                  <TouchableOpacity
+                    key={user.id}
+                    style={[
+                      styles.employeeItem,
+                      selectedEmployee === user.id && styles.employeeItemSelected,
+                    ]}
+                    onPress={() => setSelectedEmployee(user.id)}
+                  >
+                    <Ionicons 
+                      name={selectedEmployee === user.id ? "radio-button-on" : "radio-button-off"} 
+                      size={20} 
+                      color={selectedEmployee === user.id ? colors.primary : colors.gray[400]} 
+                    />
+                    <View style={styles.employeeInfo}>
+                      <Text style={styles.employeeName}>{user.first_name} {user.last_name}</Text>
+                      <Text style={styles.employeeRole}>{user.job_title} • ABN</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.label}>Start Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2025-12-01"
+                value={invoiceStartDate}
+                onChangeText={setInvoiceStartDate}
+              />
+
+              <Text style={styles.label}>End Date (YYYY-MM-DD)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="2025-12-14"
+                value={invoiceEndDate}
+                onChangeText={setInvoiceEndDate}
+              />
+
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleGenerateInvoice}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.submitButtonText}>Generate Invoice</Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* Edit Pay Rate Modal */}
       <Modal
         visible={showPayRateModal}
