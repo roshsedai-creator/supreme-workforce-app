@@ -433,7 +433,7 @@ export default function AdminScreen() {
           <Text style={styles.sectionTitle}>Contracts & Invoices</Text>
         </View>
 
-        <TouchableOpacity style={styles.featureCard} onPress={() => Alert.alert('Send Contract', 'Select an employee to send employment contract')}>
+        <TouchableOpacity style={styles.featureCard} onPress={() => setShowContractModal(true)}>
           <Ionicons name="document-text" size={32} color={colors.primary} />
           <View style={styles.featureContent}>
             <Text style={styles.featureTitle}>Send Employment Contracts</Text>
@@ -442,7 +442,7 @@ export default function AdminScreen() {
           <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.featureCard} onPress={() => Alert.alert('Generate Invoice', 'Select an ABN contractor to generate invoice')}>
+        <TouchableOpacity style={styles.featureCard} onPress={() => setShowInvoiceModal(true)}>
           <Ionicons name="receipt" size={32} color={colors.gold} />
           <View style={styles.featureContent}>
             <Text style={styles.featureTitle}>Generate ABN Invoices</Text>
