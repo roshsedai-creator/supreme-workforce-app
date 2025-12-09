@@ -387,9 +387,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Roster shift management API"
-    - "Employee availability API"
-    - "Clock-in roster validation"
     - "Roster management system (frontend)"
   stuck_tasks: []
   test_all: false
