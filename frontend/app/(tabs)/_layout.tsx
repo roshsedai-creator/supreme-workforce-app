@@ -49,6 +49,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="leave"
+        options={{
+          title: 'Leave',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar" size={size} color={color} />
+          ),
+        }}
+      />
       {isSupervisor && (
         <Tabs.Screen
           name="supervisor"
