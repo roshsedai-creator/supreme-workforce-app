@@ -378,8 +378,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Employee home screen with clock-in/out"
-    - "Supervisor approval dashboard"
+    - "Roster shift management API"
+    - "Employee availability API"
+    - "Clock-in roster validation"
+    - "Roster management system (frontend)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
