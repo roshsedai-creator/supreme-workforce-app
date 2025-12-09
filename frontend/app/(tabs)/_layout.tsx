@@ -77,8 +77,19 @@ export default function TabsLayout() {
           name="admin"
           options={{
             title: 'Admin',
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size}) => (
               <Ionicons name="settings" size={size} color={color} />
+            ),
+          }}
+        />
+      )}
+      {isAdmin && (
+        <Tabs.Screen
+          name="payroll"
+          options={{
+            title: 'Payroll',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="cash" size={size} color={color} />
             ),
           }}
         />
