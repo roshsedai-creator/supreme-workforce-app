@@ -274,6 +274,18 @@ frontend:
         agent: "main"
         comment: "Implemented timesheets screen showing all shifts with status badges (pending/approved/rejected). Shows summary stats. Tested with Emma's account - displays 2 timesheets correctly."
   
+  - task: "Manual timesheet editing with photo upload"
+    implemented: true
+    working: "unknown"
+    file: "app/(tabs)/timesheets.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Added comprehensive manual editing feature for employees. Features: Edit clock-in/out times using DateTimePicker, edit break minutes, add employee notes, attach photos from camera roll. Only available for pending timesheets. Visual indicators for edited timesheets and attached photos. Shows total pay on approved timesheets. Uses backend /api/timesheets/{id}/update endpoint. Installed @react-native-community/datetimepicker. Ready for testing."
+  
   - task: "Supervisor approval dashboard"
     implemented: true
     working: "unknown"
