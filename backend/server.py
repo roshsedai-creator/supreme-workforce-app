@@ -585,7 +585,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 @api_router.post("/timesheets/clock-in")
 async def clock_in(request: ClockInRequest):
-    """Clock in - creates a new timesheet with geo-fencing validation"""
+    """Clock in - creates a new timesheet with geo-fencing and roster validation"""
     # Check if already clocked in
     existing = await db.timesheets.find_one({
         "employee_id": request.employee_id,
@@ -594,6 +594,22 @@ async def clock_in(request: ClockInRequest):
     
     if existing:
         raise HTTPException(status_code=400, detail="Already clocked in. Please clock out first.")
+    
+    # *** ROSTER VALIDATION ***
+    # Check if employee has a rostered shift for current time
+    current_time = datetime.utcnow()
+    rostered_shift = await db.roster_shifts.find_one({
+        "employee_id": request.employee_id,
+        "start_time": {"$lte": current_time},
+        "end_time": {"$gte": current_time},
+        "status": "scheduled"
+    })
+    
+    if not rostered_shift:
+        raise HTTPException(
+            status_code=403, 
+            detail="You are not rostered to work at this time. Please check your roster or contact your supervisor."
+        )
     
     # Validate GPS and calculate distance from site
     site = await db.sites.find_one({"_id": ObjectId(request.site_id)})
@@ -610,10 +626,11 @@ async def clock_in(request: ClockInRequest):
     radius = site.get("radius_meters", 100)
     out_of_bounds = distance > radius
     
-    # Create timesheet
+    # Create timesheet linked to roster shift
     timesheet = {
         "employee_id": request.employee_id,
         "site_id": request.site_id,
+        "roster_shift_id": str(rostered_shift["_id"]),
         "clock_in": datetime.utcnow(),
         "gps_in_lat": request.gps_lat,
         "gps_in_long": request.gps_long,
@@ -633,7 +650,8 @@ async def clock_in(request: ClockInRequest):
         "timesheet": serialize_doc(timesheet),
         "geo_fence_warning": out_of_bounds,
         "distance_meters": round(distance, 2),
-        "allowed_radius": radius
+        "allowed_radius": radius,
+        "rostered_shift": serialize_doc(rostered_shift)
     }
 
 @api_router.post("/timesheets/clock-out")
