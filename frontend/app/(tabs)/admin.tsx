@@ -494,13 +494,25 @@ export default function AdminScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Payroll Export</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handlePayrollExport}
-          >
-            <Ionicons name="download" size={20} color={colors.white} />
-            <Text style={styles.addButtonText}>Export CSV</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity
+              style={[styles.addButton, { flex: 1 }]}
+              onPress={handlePayrollExport}
+              disabled={loading}
+            >
+              <Ionicons name="document-text" size={20} color={colors.white} />
+              <Text style={styles.addButtonText}>CSV</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[styles.addButton, { flex: 1, backgroundColor: colors.success }]}
+              onPress={handleExcelExport}
+              disabled={loading}
+            >
+              <Ionicons name="stats-chart" size={20} color={colors.white} />
+              <Text style={styles.addButtonText}>Excel</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.card}>
