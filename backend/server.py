@@ -421,6 +421,148 @@ async def get_shift(shift_id: str):
     return serialize_doc(shift)
 
 # =====================
+# ROSTER ENDPOINTS
+# =====================
+
+@api_router.post("/roster/shifts")
+async def create_roster_shift(shift: RosterShiftCreate, created_by: str):
+    """Create a new roster shift (Admin/Supervisor only)"""
+    shift_dict = shift.model_dump()
+    shift_dict["created_by"] = created_by
+    shift_dict["status"] = "scheduled"
+    shift_dict["created_at"] = datetime.utcnow()
+    shift_dict["updated_at"] = datetime.utcnow()
+    
+    result = await db.roster_shifts.insert_one(shift_dict)
+    shift_dict["id"] = str(result.inserted_id)
+    
+    return RosterShift(**shift_dict)
+
+@api_router.get("/roster/shifts")
+async def get_roster_shifts(
+    employee_id: Optional[str] = None,
+    site_id: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get roster shifts with optional filters"""
+    query = {}
+    
+    if employee_id:
+        query["employee_id"] = employee_id
+    if site_id:
+        query["site_id"] = site_id
+    
+    if start_date and end_date:
+        query["start_time"] = {
+            "$gte": datetime.fromisoformat(start_date.replace('Z', '+00:00')),
+            "$lte": datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+        }
+    
+    shifts = await db.roster_shifts.find(query).sort("start_time", 1).to_list(1000)
+    
+    # Enrich with employee and site details
+    enriched_shifts = []
+    for shift in shifts:
+        employee = await db.users.find_one({"_id": ObjectId(shift["employee_id"])})
+        site = await db.sites.find_one({"_id": ObjectId(shift["site_id"])})
+        
+        shift_data = serialize_doc(shift)
+        if employee:
+            shift_data["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}"
+        if site:
+            shift_data["site_name"] = site.get("name", "")
+        
+        enriched_shifts.append(shift_data)
+    
+    return enriched_shifts
+
+@api_router.put("/roster/shifts/{shift_id}")
+async def update_roster_shift(shift_id: str, update_data: dict):
+    """Update roster shift"""
+    update_data["updated_at"] = datetime.utcnow()
+    
+    result = await db.roster_shifts.update_one(
+        {"_id": ObjectId(shift_id)},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    
+    shift = await db.roster_shifts.find_one({"_id": ObjectId(shift_id)})
+    return serialize_doc(shift)
+
+@api_router.delete("/roster/shifts/{shift_id}")
+async def delete_roster_shift(shift_id: str):
+    """Delete roster shift"""
+    result = await db.roster_shifts.delete_one({"_id": ObjectId(shift_id)})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    
+    return {"success": True, "message": "Shift deleted"}
+
+# =====================
+# AVAILABILITY ENDPOINTS
+# =====================
+
+@api_router.post("/availability")
+async def set_availability(availability_update: AvailabilityUpdate):
+    """Set employee weekly availability"""
+    employee_id = availability_update.employee_id
+    
+    # Delete existing availability for this employee
+    await db.availability.delete_many({"employee_id": employee_id})
+    
+    # Insert new availability
+    for avail in availability_update.availability:
+        avail_dict = {
+            "employee_id": employee_id,
+            "day_of_week": avail["day"],
+            "available": avail["available"],
+            "start_time": avail.get("start_time"),
+            "end_time": avail.get("end_time"),
+            "created_at": datetime.utcnow()
+        }
+        await db.availability.insert_one(avail_dict)
+    
+    return {"success": True, "message": "Availability updated"}
+
+@api_router.get("/availability/{employee_id}")
+async def get_availability(employee_id: str):
+    """Get employee availability"""
+    availability = await db.availability.find({"employee_id": employee_id}).to_list(100)
+    return [serialize_doc(avail) for avail in availability]
+
+@api_router.post("/availability/unavailable-dates")
+async def add_unavailable_date(unavailable: UnavailableDateCreate):
+    """Mark a date as unavailable"""
+    unavailable_dict = unavailable.model_dump()
+    unavailable_dict["created_at"] = datetime.utcnow()
+    
+    result = await db.unavailable_dates.insert_one(unavailable_dict)
+    unavailable_dict["id"] = str(result.inserted_id)
+    
+    return UnavailableDate(**unavailable_dict)
+
+@api_router.get("/availability/unavailable-dates/{employee_id}")
+async def get_unavailable_dates(employee_id: str):
+    """Get employee unavailable dates"""
+    dates = await db.unavailable_dates.find({"employee_id": employee_id}).to_list(100)
+    return [serialize_doc(date) for date in dates]
+
+@api_router.delete("/availability/unavailable-dates/{date_id}")
+async def delete_unavailable_date(date_id: str):
+    """Remove unavailable date"""
+    result = await db.unavailable_dates.delete_one({"_id": ObjectId(date_id)})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Date not found")
+    
+    return {"success": True, "message": "Date removed"}
+
+# =====================
 # TIMESHEET ENDPOINTS
 # =====================
 
