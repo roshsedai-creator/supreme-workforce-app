@@ -666,6 +666,25 @@ export default function RosterScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* Site Filter */}
+        {isSupervisor && sites.length > 0 && (
+          <View style={styles.filterSection}>
+            <Text style={styles.filterLabel}>Filter by Site:</Text>
+            <View style={styles.pickerWrapper}>
+              <Picker
+                selectedValue={filterSiteId}
+                onValueChange={(value) => setFilterSiteId(value)}
+                style={styles.picker}
+              >
+                <Picker.Item label="All Sites" value="all" />
+                {sites.map((site: any) => (
+                  <Picker.Item key={site.id} label={site.name} value={site.id} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+        )}
       </View>
 
       {/* Main Content */}
