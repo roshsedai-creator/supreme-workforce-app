@@ -240,6 +240,7 @@ export default function AdminScreen() {
     setIsContractor(false);
     setIsEditMode(false);
     setEditingEmployee(null);
+    setSelectedSiteId('');
     setIsContractor(false);
     setAwardLevel(1);
   };
