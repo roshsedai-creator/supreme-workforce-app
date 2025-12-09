@@ -251,34 +251,46 @@ export default function HomeScreen() {
         )}
       </View>
 
-      <View style={styles.infoCard}>
-        <Ionicons name="information-circle" size={24} color={colors.primary} />
-        <View style={styles.infoContent}>
-          <Text style={styles.infoTitle}>Location Information</Text>
-          
-          {siteData && (
-            <View style={styles.siteBox}>
-              <Ionicons name="business" size={20} color={colors.primary} />
-              <View style={styles.siteInfo}>
-                <Text style={styles.siteTitle}>{siteData.name}</Text>
-                <Text style={styles.siteAddress}>{siteData.address}</Text>
+      {/* Work Location Card */}
+      <View style={styles.locationCard}>
+        <View style={styles.locationCardHeader}>
+          <Ionicons name="business" size={24} color={colors.primary} />
+          <Text style={styles.locationCardTitle}>Work Location</Text>
+        </View>
+        
+        {siteData ? (
+          <View style={styles.siteDetailsBox}>
+            <View style={styles.siteDetailRow}>
+              <Ionicons name="pin" size={20} color={colors.primary} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.siteName}>{siteData.name}</Text>
+                <Text style={styles.siteAddressLarge}>{siteData.address}</Text>
               </View>
             </View>
-          )}
-          
-          <Text style={styles.infoText}>
-            Your location is verified when clocking in/out to ensure you're at the assigned site (within 100m radius).
-          </Text>
-          
-          {location && (
-            <View style={styles.locationBox}>
-              <Ionicons name="location" size={16} color={colors.success} />
-              <Text style={styles.locationText}>
-                GPS: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}
-              </Text>
-            </View>
-          )}
-        </View>
+            
+            {location && (
+              <View style={styles.gpsBox}>
+                <Ionicons name="locate" size={16} color={colors.success} />
+                <Text style={styles.gpsText}>
+                  Your GPS: {location.coords.latitude.toFixed(4)}, {location.coords.longitude.toFixed(4)}
+                </Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.loadingText}>Loading location...</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Info Card */}
+      <View style={styles.infoCard}>
+        <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
+        <Text style={styles.infoText}>
+          Your location is verified when clocking in/out to ensure you're within 100m of the assigned site.
+        </Text>
       </View>
     </ScrollView>
   );
