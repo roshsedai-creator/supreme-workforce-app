@@ -900,6 +900,38 @@ async def send_contract_email_endpoint(employee_id: str, contract_type: str):
         "message": f"Contract email sent to {user['email']} (Check console - MOCK)"
     }
 
+@api_router.post("/contracts/sign")
+async def sign_contract(employee_id: str, contract_type: str, signature_base64: str):
+    """Save digital signature for contract"""
+    
+    # Create or update contract document
+    contract_doc = {
+        "employee_id": employee_id,
+        "contract_type": contract_type,
+        "signature_base64": signature_base64,
+        "signed_at": datetime.utcnow(),
+        "status": "signed"
+    }
+    
+    # Check if contract already exists
+    existing = await db.contracts.find_one({
+        "employee_id": employee_id,
+        "contract_type": contract_type
+    })
+    
+    if existing:
+        await db.contracts.update_one(
+            {"_id": existing["_id"]},
+            {"$set": contract_doc}
+        )
+    else:
+        await db.contracts.insert_one(contract_doc)
+    
+    return {
+        "success": True,
+        "message": "Contract signed successfully"
+    }
+
 @api_router.post("/invoices/send-email")
 async def send_invoice_email_endpoint(employee_id: str, period: str, total_amount: float):
     """Send invoice via email to ABN contractor (Mock)"""
