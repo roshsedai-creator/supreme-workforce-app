@@ -1,0 +1,1085 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Modal,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import axios from 'axios';
+import { useAuthStore } from '../../store/authStore';
+import { colors } from '../../constants/colors';
+
+interface RosterShift {
+  id: string;
+  employee_id: string;
+  employee_name: string;
+  site_id: string;
+  site_name: string;
+  role: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  notes?: string;
+}
+
+interface Site {
+  id: string;
+  name: string;
+  address: string;
+}
+
+interface Employee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  job_title: string;
+}
+
+export default function RosterScreen() {
+  const { user } = useAuthStore();
+  const [shifts, setShifts] = useState<RosterShift[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // View state
+  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // Modal states
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  
+  // Create shift form
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [selectedSite, setSelectedSite] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [shiftStart, setShiftStart] = useState(new Date());
+  const [shiftEnd, setShiftEnd] = useState(new Date());
+  const [shiftNotes, setShiftNotes] = useState('');
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  
+  // Availability state
+  const [availability, setAvailability] = useState([
+    { day: 0, name: 'Monday', available: true, start_time: '09:00', end_time: '17:00' },
+    { day: 1, name: 'Tuesday', available: true, start_time: '09:00', end_time: '17:00' },
+    { day: 2, name: 'Wednesday', available: true, start_time: '09:00', end_time: '17:00' },
+    { day: 3, name: 'Thursday', available: true, start_time: '09:00', end_time: '17:00' },
+    { day: 4, name: 'Friday', available: true, start_time: '09:00', end_time: '17:00' },
+    { day: 5, name: 'Saturday', available: false, start_time: '09:00', end_time: '17:00' },
+    { day: 6, name: 'Sunday', available: false, start_time: '09:00', end_time: '17:00' },
+  ]);
+
+  const isSupervisor = user?.role === 'supervisor' || user?.role === 'admin';
+
+  useEffect(() => {
+    loadData();
+  }, [selectedDate]);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Load roster shifts
+      const startDate = getWeekStart(selectedDate);
+      const endDate = getWeekEnd(selectedDate);
+      
+      const shiftsRes = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts`,
+        {
+          params: {
+            employee_id: !isSupervisor ? user?.id : undefined,
+            start_date: startDate.toISOString(),
+            end_date: endDate.toISOString(),
+          }
+        }
+      );
+      setShifts(shiftsRes.data);
+      
+      // Load sites and employees if supervisor/admin
+      if (isSupervisor) {
+        const [sitesRes, employeesRes] = await Promise.all([
+          axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/sites`),
+          axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users?role=employee`)
+        ]);
+        setSites(sitesRes.data);
+        setEmployees(employeesRes.data);
+      }
+      
+      // Load employee availability
+      if (user?.id) {
+        try {
+          const availRes = await axios.get(
+            `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/availability/${user.id}`
+          );
+          if (availRes.data && availRes.data.length > 0) {
+            const loadedAvail = availRes.data.map((a: any) => ({
+              day: a.day_of_week,
+              name: getDayName(a.day_of_week),
+              available: a.available,
+              start_time: a.start_time || '09:00',
+              end_time: a.end_time || '17:00',
+            }));
+            setAvailability(loadedAvail);
+          }
+        } catch (err) {
+          console.log('No availability data yet');
+        }
+      }
+      
+    } catch (error: any) {
+      console.error('Load data error:', error);
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to load roster data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+  };
+
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    return new Date(d.setDate(diff));
+  };
+
+  const getWeekEnd = (date: Date) => {
+    const start = getWeekStart(date);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6); // Sunday
+    return end;
+  };
+
+  const getDayName = (dayNum: number) => {
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    return days[dayNum];
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  const handleCreateShift = async () => {
+    if (!selectedEmployee || !selectedSite || !selectedRole) {
+      Alert.alert('Error', 'Please fill all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts?created_by=${user?.id}`,
+        {
+          employee_id: selectedEmployee,
+          site_id: selectedSite,
+          role: selectedRole,
+          start_time: shiftStart.toISOString(),
+          end_time: shiftEnd.toISOString(),
+          notes: shiftNotes,
+        }
+      );
+      
+      Alert.alert('Success', 'Shift created successfully!');
+      setShowCreateModal(false);
+      resetCreateForm();
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to create shift');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveAvailability = async () => {
+    try {
+      setLoading(true);
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/availability`,
+        {
+          employee_id: user?.id,
+          availability: availability.map(a => ({
+            day: a.day,
+            available: a.available,
+            start_time: a.start_time,
+            end_time: a.end_time,
+          }))
+        }
+      );
+      
+      Alert.alert('Success', 'Availability updated successfully!');
+      setShowAvailabilityModal(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update availability');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetCreateForm = () => {
+    setSelectedEmployee('');
+    setSelectedSite('');
+    setSelectedRole('');
+    setShiftStart(new Date());
+    setShiftEnd(new Date());
+    setShiftNotes('');
+  };
+
+  const previousWeek = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() - 7);
+    setSelectedDate(newDate);
+  };
+
+  const nextWeek = () => {
+    const newDate = new Date(selectedDate);
+    newDate.setDate(newDate.getDate() + 7);
+    setSelectedDate(newDate);
+  };
+
+  const getShiftsForDate = (date: Date) => {
+    return shifts.filter(shift => {
+      const shiftDate = new Date(shift.start_time);
+      return shiftDate.toDateString() === date.toDateString();
+    });
+  };
+
+  const renderWeekView = () => {
+    const weekStart = getWeekStart(selectedDate);
+    const days = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
+      const dayShifts = getShiftsForDate(date);
+      
+      days.push(
+        <View key={i} style={styles.dayColumn}>
+          <View style={styles.dayHeader}>
+            <Text style={styles.dayName}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</Text>
+            <Text style={styles.dayDate}>{date.getDate()}</Text>
+          </View>
+          
+          <ScrollView style={styles.dayShifts}>
+            {dayShifts.length > 0 ? (
+              dayShifts.map(shift => (
+                <View key={shift.id} style={styles.shiftCard}>
+                  {isSupervisor && <Text style={styles.shiftEmployee}>{shift.employee_name}</Text>}
+                  <Text style={styles.shiftTime}>
+                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                  </Text>
+                  <Text style={styles.shiftSite}>{shift.site_name}</Text>
+                  <Text style={styles.shiftRole}>{shift.role}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noShifts}>No shifts</Text>
+            )}
+          </ScrollView>
+        </View>
+      );
+    }
+    
+    return <View style={styles.weekContainer}>{days}</View>;
+  };
+
+  const renderListView = () => {
+    const myShifts = isSupervisor ? shifts : shifts.filter(s => s.employee_id === user?.id);
+    
+    if (myShifts.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons name="calendar-outline" size={64} color={colors.gray[300]} />
+          <Text style={styles.emptyText}>No shifts scheduled</Text>
+          {!isSupervisor && (
+            <Text style={styles.emptySubtext}>
+              Contact your supervisor to be added to the roster
+            </Text>
+          )}
+        </View>
+      );
+    }
+    
+    return myShifts.map(shift => (
+      <View key={shift.id} style={styles.listCard}>
+        <View style={styles.listCardHeader}>
+          <Ionicons name="time" size={24} color={colors.primary} />
+          <View style={styles.listCardInfo}>
+            <Text style={styles.listCardDate}>{formatDate(shift.start_time)}</Text>
+            <Text style={styles.listCardTime}>
+              {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+            </Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: colors.success + '20' }]}>
+            <Text style={[styles.statusText, { color: colors.success }]}>
+              {shift.status}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={styles.listCardDetails}>
+          {isSupervisor && (
+            <View style={styles.detailRow}>
+              <Ionicons name="person" size={16} color={colors.text.secondary} />
+              <Text style={styles.detailText}>{shift.employee_name}</Text>
+            </View>
+          )}
+          <View style={styles.detailRow}>
+            <Ionicons name="location" size={16} color={colors.text.secondary} />
+            <Text style={styles.detailText}>{shift.site_name}</Text>
+          </View>
+          <View style={styles.detailRow}>
+            <Ionicons name="briefcase" size={16} color={colors.text.secondary} />
+            <Text style={styles.detailText}>{shift.role}</Text>
+          </View>
+          {shift.notes && (
+            <View style={styles.detailRow}>
+              <Ionicons name="document-text" size={16} color={colors.text.secondary} />
+              <Text style={styles.detailText}>{shift.notes}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    ));
+  };
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading roster...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      {/* Header Controls */}
+      <View style={styles.header}>
+        <View style={styles.weekNavigation}>
+          <TouchableOpacity onPress={previousWeek} style={styles.navButton}>
+            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          </TouchableOpacity>
+          
+          <View style={styles.weekLabel}>
+            <Text style={styles.weekText}>
+              {getWeekStart(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {getWeekEnd(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+          </View>
+          
+          <TouchableOpacity onPress={nextWeek} style={styles.navButton}>
+            <Ionicons name="chevron-forward" size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.headerActions}>
+          {isSupervisor && (
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => setShowCreateModal(true)}
+            >
+              <Ionicons name="add" size={20} color={colors.white} />
+              <Text style={styles.createButtonText}>Create Shift</Text>
+            </TouchableOpacity>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.availabilityButton}
+            onPress={() => setShowAvailabilityModal(true)}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.primary} />
+            <Text style={styles.availabilityButtonText}>My Availability</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.viewToggle}>
+          <TouchableOpacity
+            style={[styles.viewButton, viewMode === 'week' && styles.viewButtonActive]}
+            onPress={() => setViewMode('week')}
+          >
+            <Text style={[styles.viewButtonText, viewMode === 'week' && styles.viewButtonTextActive]}>
+              Week
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewButton, viewMode === 'day' && styles.viewButtonActive]}
+            onPress={() => setViewMode('day')}
+          >
+            <Text style={[styles.viewButtonText, viewMode === 'day' && styles.viewButtonTextActive]}>
+              List
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Main Content */}
+      <ScrollView
+        style={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        {viewMode === 'week' ? renderWeekView() : renderListView()}
+      </ScrollView>
+
+      {/* Create Shift Modal */}
+      <Modal
+        visible={showCreateModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create Roster Shift</Text>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Employee *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedEmployee}
+                    onValueChange={setSelectedEmployee}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select employee..." value="" />
+                    {employees.map(emp => (
+                      <Picker.Item
+                        key={emp.id}
+                        label={`${emp.first_name} ${emp.last_name} - ${emp.job_title}`}
+                        value={emp.id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Site *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedSite}
+                    onValueChange={setSelectedSite}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select site..." value="" />
+                    {sites.map(site => (
+                      <Picker.Item key={site.id} label={site.name} value={site.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Role *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedRole}
+                    onValueChange={setSelectedRole}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select role..." value="" />
+                    <Picker.Item label="Room Attendant" value="Room Attendant" />
+                    <Picker.Item label="Houseman" value="Houseman" />
+                    <Picker.Item label="Public Area Attendant" value="Public Area Attendant" />
+                    <Picker.Item label="Supervisor" value="Supervisor" />
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Start Time *</Text>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowStartPicker(true)}
+                >
+                  <Ionicons name="calendar" size={20} color={colors.primary} />
+                  <Text style={styles.dateButtonText}>
+                    {shiftStart.toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showStartPicker && (
+                  <DateTimePicker
+                    value={shiftStart}
+                    mode="datetime"
+                    display="default"
+                    onChange={(event, date) => {
+                      setShowStartPicker(false);
+                      if (date) setShiftStart(date);
+                    }}
+                  />
+                )}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>End Time *</Text>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowEndPicker(true)}
+                >
+                  <Ionicons name="calendar" size={20} color={colors.primary} />
+                  <Text style={styles.dateButtonText}>
+                    {shiftEnd.toLocaleString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric', 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                {showEndPicker && (
+                  <DateTimePicker
+                    value={shiftEnd}
+                    mode="datetime"
+                    display="default"
+                    onChange={(event, date) => {
+                      setShowEndPicker(false);
+                      if (date) setShiftEnd(date);
+                    }}
+                  />
+                )}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Notes (Optional)</Text>
+                <TextInput
+                  style={styles.textArea}
+                  value={shiftNotes}
+                  onChangeText={setShiftNotes}
+                  placeholder="Add any special instructions..."
+                  multiline
+                  numberOfLines={3}
+                  placeholderTextColor={colors.gray[400]}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleCreateShift}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>Create Shift</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Availability Modal */}
+      <Modal
+        visible={showAvailabilityModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowAvailabilityModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>My Availability</Text>
+              <TouchableOpacity onPress={() => setShowAvailabilityModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <Text style={styles.availabilityInfo}>
+                Set your weekly availability to help supervisors schedule your shifts.
+              </Text>
+
+              {availability.map((day, index) => (
+                <View key={day.day} style={styles.availabilityRow}>
+                  <TouchableOpacity
+                    style={styles.availabilityToggle}
+                    onPress={() => {
+                      const newAvail = [...availability];
+                      newAvail[index].available = !newAvail[index].available;
+                      setAvailability(newAvail);
+                    }}
+                  >
+                    <Ionicons
+                      name={day.available ? 'checkbox' : 'square-outline'}
+                      size={24}
+                      color={day.available ? colors.success : colors.gray[400]}
+                    />
+                    <Text style={[styles.dayNameText, !day.available && styles.dayNameDisabled]}>
+                      {day.name}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  {day.available && (
+                    <View style={styles.timeInputs}>
+                      <TextInput
+                        style={styles.timeInput}
+                        value={day.start_time}
+                        onChangeText={(text) => {
+                          const newAvail = [...availability];
+                          newAvail[index].start_time = text;
+                          setAvailability(newAvail);
+                        }}
+                        placeholder="09:00"
+                        placeholderTextColor={colors.gray[400]}
+                      />
+                      <Text style={styles.timeSeparator}>-</Text>
+                      <TextInput
+                        style={styles.timeInput}
+                        value={day.end_time}
+                        onChangeText={(text) => {
+                          const newAvail = [...availability];
+                          newAvail[index].end_time = text;
+                          setAvailability(newAvail);
+                        }}
+                        placeholder="17:00"
+                        placeholderTextColor={colors.gray[400]}
+                      />
+                    </View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleSaveAvailability}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark" size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>Save Availability</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.text.secondary,
+  },
+  header: {
+    backgroundColor: colors.white,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  weekNavigation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  navButton: {
+    padding: 8,
+  },
+  weekLabel: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  weekText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  createButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  createButtonText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  availabilityButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    gap: 8,
+  },
+  availabilityButtonText: {
+    color: colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: colors.gray[100],
+    borderRadius: 8,
+    padding: 4,
+  },
+  viewButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  viewButtonActive: {
+    backgroundColor: colors.white,
+  },
+  viewButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.text.secondary,
+  },
+  viewButtonTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  content: {
+    flex: 1,
+  },
+  weekContainer: {
+    flexDirection: 'row',
+    padding: 8,
+  },
+  dayColumn: {
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  dayHeader: {
+    backgroundColor: colors.white,
+    padding: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  dayName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  dayDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.primary,
+    marginTop: 4,
+  },
+  dayShifts: {
+    flex: 1,
+  },
+  shiftCard: {
+    backgroundColor: colors.primary + '15',
+    padding: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  shiftEmployee: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  shiftTime: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  shiftSite: {
+    fontSize: 10,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  shiftRole: {
+    fontSize: 10,
+    color: colors.text.secondary,
+  },
+  noShifts: {
+    fontSize: 11,
+    color: colors.gray[400],
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  listCard: {
+    backgroundColor: colors.white,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  listCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  listCardInfo: {
+    flex: 1,
+  },
+  listCardDate: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  listCardTime: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  listCardDetails: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 48,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.gray[400],
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text.primary,
+  },
+  modalBody: {
+    padding: 24,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+  pickerWrapper: {
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+    color: colors.text.primary,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.gray[50],
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    gap: 12,
+  },
+  dateButtonText: {
+    fontSize: 15,
+    color: colors.text.primary,
+  },
+  textArea: {
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    padding: 16,
+    fontSize: 15,
+    color: colors.text.primary,
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  modalFooter: {
+    padding: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
+  submitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  submitButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  availabilityInfo: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  availabilityRow: {
+    marginBottom: 16,
+  },
+  availabilityToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 8,
+  },
+  dayNameText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  dayNameDisabled: {
+    color: colors.gray[400],
+  },
+  timeInputs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginLeft: 36,
+  },
+  timeInput: {
+    flex: 1,
+    backgroundColor: colors.gray[50],
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    padding: 12,
+    fontSize: 14,
+    color: colors.text.primary,
+  },
+  timeSeparator: {
+    fontSize: 16,
+    color: colors.text.secondary,
+  },
+});
