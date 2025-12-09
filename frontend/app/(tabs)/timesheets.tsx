@@ -392,8 +392,12 @@ export default function TimesheetsScreen() {
                     mode="datetime"
                     display={Platform.OS === 'ios' ? 'spinner' : 'default'}
                     onChange={(event, date) => {
-                      setShowClockOutPicker(Platform.OS === 'ios');
-                      if (date) setEditClockOut(date);
+                      if (Platform.OS === 'android') {
+                        setShowClockOutPicker(false);
+                      }
+                      if (date) {
+                        setEditClockOut(date);
+                      }
                     }}
                   />
                 )}
