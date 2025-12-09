@@ -808,6 +808,126 @@ async def export_payroll(request: PayrollExportRequest):
         "total_pay": sum([float(row["Total Pay"].replace("$", "")) for row in csv_data])
     }
 
+@api_router.post("/payroll/export-excel")
+async def export_payroll_excel(request: PayrollExportRequest):
+    """Export payroll data to Excel format"""
+    from fastapi.responses import Response
+    from excel_export import create_payroll_excel
+    
+    query = {
+        "clock_out": {"$ne": None},
+        "approval_status": "approved",
+        "clock_in": {
+            "$gte": request.start_date,
+            "$lte": request.end_date
+        }
+    }
+    
+    if request.site_id:
+        query["site_id"] = request.site_id
+    
+    timesheets = await db.timesheets.find(query).to_list(1000)
+    
+    # Enrich with employee and site data
+    enriched_data = []
+    for ts in timesheets:
+        user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
+        site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])})
+        pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+        
+        if not user:
+            continue
+        
+        # Calculate pay
+        clock_in = ts["clock_in"]
+        day_of_week = clock_in.weekday()
+        base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
+        
+        if day_of_week == 5:
+            rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
+        elif day_of_week == 6:
+            rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
+        else:
+            rate = base_rate
+        
+        total_pay = ts["total_hours"] * rate
+        
+        enriched_data.append({
+            "employee_id": ts["employee_id"][-6:],
+            "employee_name": f"{user['first_name']} {user['last_name']}",
+            "site_name": site["name"] if site else "Unknown",
+            "clock_in": clock_in.isoformat(),
+            "clock_out": ts["clock_out"].isoformat() if ts.get("clock_out") else "",
+            "total_hours": ts["total_hours"],
+            "break_minutes": ts["break_minutes"],
+            "pay_rate": rate,
+            "total_pay": total_pay,
+            "approval_status": ts["approval_status"],
+            "supervisor_notes": ts.get("supervisor_notes", "")
+        })
+    
+    excel_bytes = create_payroll_excel(
+        enriched_data,
+        request.start_date.isoformat(),
+        request.end_date.isoformat()
+    )
+    
+    return Response(
+        content=excel_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={
+            "Content-Disposition": f"attachment; filename=payroll_{request.start_date.strftime('%Y%m%d')}.xlsx"
+        }
+    )
+
+@api_router.post("/contracts/send-email")
+async def send_contract_email_endpoint(employee_id: str, contract_type: str):
+    """Send employment contract via email (Mock)"""
+    from otp_service import send_contract_email
+    
+    user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    success = send_contract_email(
+        user["email"],
+        f"{user['first_name']} {user['last_name']}",
+        contract_type
+    )
+    
+    return {
+        "success": success,
+        "message": f"Contract email sent to {user['email']} (Check console - MOCK)"
+    }
+
+@api_router.post("/invoices/send-email")
+async def send_invoice_email_endpoint(employee_id: str, period: str, total_amount: float):
+    """Send invoice via email to ABN contractor (Mock)"""
+    from otp_service import send_invoice_email
+    
+    user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if not user.get("is_contractor"):
+        raise HTTPException(status_code=400, detail="Employee is not an ABN contractor")
+    
+    import random
+    invoice_data = {
+        "invoice_number": f"INV-{random.randint(10000, 99999)}",
+        "total": total_amount,
+        "period": period,
+        "abn": user.get("abn", "")
+    }
+    
+    success = send_invoice_email(user["email"], invoice_data)
+    
+    return {
+        "success": success,
+        "message": f"Invoice email sent to {user['email']} (Check console - MOCK)",
+        "invoice_number": invoice_data["invoice_number"]
+    }
+
 # =====================
 # EARNINGS ENDPOINT
 # =====================
