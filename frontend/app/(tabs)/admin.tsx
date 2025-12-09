@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 4,
   },
