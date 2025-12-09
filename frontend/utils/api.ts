@@ -109,3 +109,18 @@ export const createShift = async (shiftData: any) => {
   const response = await api.post('/shifts', shiftData);
   return response.data;
 };
+
+// Timesheet Updates
+export const updateTimesheet = async (
+  timesheet_id: string, 
+  data: {
+    employee_notes?: string;
+    photo_base64?: string;
+    manual_clock_in?: string;
+    manual_clock_out?: string;
+    manual_break_minutes?: number;
+  }
+) => {
+  const response = await api.post(`/timesheets/${timesheet_id}/update`, data);
+  return response.data;
+};
