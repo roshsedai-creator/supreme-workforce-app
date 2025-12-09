@@ -610,6 +610,357 @@ def test_supervisor_dashboard():
     
     return results
 
+def test_roster_management():
+    """Test roster shift management APIs"""
+    results = TestResults()
+    
+    print("\n📅 TESTING ROSTER MANAGEMENT")
+    print("-" * 40)
+    
+    # Get admin and employee IDs
+    admin_login = make_request("POST", "/auth/login", {
+        "identifier": TEST_ACCOUNTS["admin"]["phone"],
+        "pin": TEST_ACCOUNTS["admin"]["pin"]
+    })
+    
+    emma_login = make_request("POST", "/auth/login", {
+        "identifier": TEST_ACCOUNTS["emma"]["phone"],
+        "pin": TEST_ACCOUNTS["emma"]["pin"]
+    })
+    
+    if not admin_login or admin_login.status_code != 200:
+        results.add_result("Roster management setup", False, "Could not login admin")
+        return results
+    
+    if not emma_login or emma_login.status_code != 200:
+        results.add_result("Roster management setup", False, "Could not login Emma")
+        return results
+    
+    admin_id = admin_login.json()["user"]["id"]
+    emma_id = emma_login.json()["user"]["id"]
+    
+    # Get sites
+    sites_response = make_request("GET", "/sites")
+    if not sites_response or sites_response.status_code != 200:
+        results.add_result("Roster management setup", False, "Could not get sites")
+        return results
+    
+    sites = sites_response.json()
+    if not sites:
+        results.add_result("Roster management setup", False, "No sites available")
+        return results
+    
+    site_id = sites[0]["id"]
+    
+    # Test 1: Get all roster shifts
+    roster_response = make_request("GET", "/roster/shifts")
+    
+    if roster_response and roster_response.status_code == 200:
+        shifts = roster_response.json()
+        if isinstance(shifts, list):
+            results.add_result("Get all roster shifts", True, f"Found {len(shifts)} roster shifts")
+            
+            # Check enrichment
+            if shifts and "employee_name" in shifts[0] and "site_name" in shifts[0]:
+                results.add_result("Roster shift enrichment", True, 
+                    f"Shifts enriched with employee_name and site_name")
+            elif shifts:
+                results.add_result("Roster shift enrichment", False, 
+                    "Shifts missing employee_name or site_name enrichment")
+        else:
+            results.add_result("Get all roster shifts", False, "Response is not a list")
+    else:
+        status = roster_response.status_code if roster_response else "No response"
+        results.add_result("Get all roster shifts", False, f"HTTP {status}")
+    
+    # Test 2: Create a new roster shift
+    from datetime import datetime, timedelta
+    tomorrow = datetime.now() + timedelta(days=1)
+    start_time = tomorrow.replace(hour=8, minute=0, second=0, microsecond=0)
+    end_time = tomorrow.replace(hour=16, minute=0, second=0, microsecond=0)
+    
+    shift_data = {
+        "employee_id": emma_id,
+        "site_id": site_id,
+        "role": "Room Attendant",
+        "start_time": start_time.isoformat(),
+        "end_time": end_time.isoformat(),
+        "notes": "Test shift created by backend testing"
+    }
+    
+    create_response = make_request("POST", f"/roster/shifts?created_by={admin_id}", shift_data)
+    
+    test_shift_id = None
+    if create_response and create_response.status_code == 200:
+        shift = create_response.json()
+        test_shift_id = shift.get("id")
+        results.add_result("Create roster shift", True, f"Created shift ID: {test_shift_id}")
+    else:
+        status = create_response.status_code if create_response else "No response"
+        results.add_result("Create roster shift", False, f"HTTP {status}")
+    
+    # Test 3: Update the roster shift
+    if test_shift_id:
+        new_end_time = tomorrow.replace(hour=17, minute=0, second=0, microsecond=0)
+        update_data = {
+            "end_time": new_end_time.isoformat(),
+            "notes": "Updated by backend testing - extended to 5pm"
+        }
+        
+        update_response = make_request("PUT", f"/roster/shifts/{test_shift_id}", update_data)
+        
+        if update_response and update_response.status_code == 200:
+            results.add_result("Update roster shift", True, "Shift updated successfully")
+        else:
+            status = update_response.status_code if update_response else "No response"
+            results.add_result("Update roster shift", False, f"HTTP {status}")
+    
+    # Test 4: Filter shifts by employee
+    filter_response = make_request("GET", f"/roster/shifts?employee_id={emma_id}")
+    
+    if filter_response and filter_response.status_code == 200:
+        emma_shifts = filter_response.json()
+        if isinstance(emma_shifts, list):
+            results.add_result("Filter shifts by employee", True, f"Found {len(emma_shifts)} shifts for Emma")
+        else:
+            results.add_result("Filter shifts by employee", False, "Response is not a list")
+    else:
+        status = filter_response.status_code if filter_response else "No response"
+        results.add_result("Filter shifts by employee", False, f"HTTP {status}")
+    
+    # Test 5: Delete the test shift
+    if test_shift_id:
+        delete_response = make_request("DELETE", f"/roster/shifts/{test_shift_id}")
+        
+        if delete_response and delete_response.status_code == 200:
+            results.add_result("Delete roster shift", True, "Test shift deleted successfully")
+        else:
+            status = delete_response.status_code if delete_response else "No response"
+            results.add_result("Delete roster shift", False, f"HTTP {status}")
+    
+    return results
+
+def test_availability_management():
+    """Test employee availability management APIs"""
+    results = TestResults()
+    
+    print("\n🗓️ TESTING AVAILABILITY MANAGEMENT")
+    print("-" * 40)
+    
+    # Get Emma's ID
+    emma_login = make_request("POST", "/auth/login", {
+        "identifier": TEST_ACCOUNTS["emma"]["phone"],
+        "pin": TEST_ACCOUNTS["emma"]["pin"]
+    })
+    
+    if not emma_login or emma_login.status_code != 200:
+        results.add_result("Availability management setup", False, "Could not login Emma")
+        return results
+    
+    emma_id = emma_login.json()["user"]["id"]
+    
+    # Test 1: Get Emma's current availability
+    get_availability_response = make_request("GET", f"/availability/{emma_id}")
+    
+    if get_availability_response and get_availability_response.status_code == 200:
+        availability = get_availability_response.json()
+        if isinstance(availability, list):
+            results.add_result("Get employee availability", True, f"Found {len(availability)} availability records")
+        else:
+            results.add_result("Get employee availability", False, "Response is not a list")
+    else:
+        status = get_availability_response.status_code if get_availability_response else "No response"
+        results.add_result("Get employee availability", False, f"HTTP {status}")
+    
+    # Test 2: Update Emma's availability
+    availability_data = {
+        "employee_id": emma_id,
+        "availability": [
+            {"day": 0, "available": False},  # Monday - unavailable
+            {"day": 1, "available": True, "start_time": "09:00", "end_time": "17:00"},  # Tuesday
+            {"day": 2, "available": True, "start_time": "09:00", "end_time": "17:00"},  # Wednesday
+            {"day": 3, "available": True, "start_time": "09:00", "end_time": "17:00"},  # Thursday
+            {"day": 4, "available": True, "start_time": "09:00", "end_time": "17:00"},  # Friday
+            {"day": 5, "available": False},  # Saturday - unavailable
+            {"day": 6, "available": False}   # Sunday - unavailable
+        ]
+    }
+    
+    update_availability_response = make_request("POST", "/availability", availability_data)
+    
+    if update_availability_response and update_availability_response.status_code == 200:
+        results.add_result("Update employee availability", True, "Availability updated successfully")
+    else:
+        status = update_availability_response.status_code if update_availability_response else "No response"
+        results.add_result("Update employee availability", False, f"HTTP {status}")
+    
+    # Test 3: Add unavailable date
+    from datetime import datetime, timedelta
+    unavailable_date = datetime.now() + timedelta(days=14)
+    
+    unavailable_data = {
+        "employee_id": emma_id,
+        "date": unavailable_date.isoformat(),
+        "reason": "Personal appointment - backend testing"
+    }
+    
+    add_unavailable_response = make_request("POST", "/availability/unavailable-dates", unavailable_data)
+    
+    test_unavailable_id = None
+    if add_unavailable_response and add_unavailable_response.status_code == 200:
+        unavailable_result = add_unavailable_response.json()
+        test_unavailable_id = unavailable_result.get("id")
+        results.add_result("Add unavailable date", True, f"Added unavailable date ID: {test_unavailable_id}")
+    else:
+        status = add_unavailable_response.status_code if add_unavailable_response else "No response"
+        results.add_result("Add unavailable date", False, f"HTTP {status}")
+    
+    # Test 4: Get unavailable dates
+    get_unavailable_response = make_request("GET", f"/availability/unavailable-dates/{emma_id}")
+    
+    if get_unavailable_response and get_unavailable_response.status_code == 200:
+        unavailable_dates = get_unavailable_response.json()
+        if isinstance(unavailable_dates, list):
+            results.add_result("Get unavailable dates", True, f"Found {len(unavailable_dates)} unavailable dates")
+        else:
+            results.add_result("Get unavailable dates", False, "Response is not a list")
+    else:
+        status = get_unavailable_response.status_code if get_unavailable_response else "No response"
+        results.add_result("Get unavailable dates", False, f"HTTP {status}")
+    
+    # Test 5: Delete unavailable date
+    if test_unavailable_id:
+        delete_unavailable_response = make_request("DELETE", f"/availability/unavailable-dates/{test_unavailable_id}")
+        
+        if delete_unavailable_response and delete_unavailable_response.status_code == 200:
+            results.add_result("Delete unavailable date", True, "Unavailable date deleted successfully")
+        else:
+            status = delete_unavailable_response.status_code if delete_unavailable_response else "No response"
+            results.add_result("Delete unavailable date", False, f"HTTP {status}")
+    
+    return results
+
+def test_clock_in_roster_validation():
+    """Test clock-in with roster validation"""
+    results = TestResults()
+    
+    print("\n🔒 TESTING CLOCK-IN ROSTER VALIDATION")
+    print("-" * 40)
+    
+    # Get Emma's ID and site
+    emma_login = make_request("POST", "/auth/login", {
+        "identifier": TEST_ACCOUNTS["emma"]["phone"],
+        "pin": TEST_ACCOUNTS["emma"]["pin"]
+    })
+    
+    if not emma_login or emma_login.status_code != 200:
+        results.add_result("Clock-in validation setup", False, "Could not login Emma")
+        return results
+    
+    emma_id = emma_login.json()["user"]["id"]
+    
+    sites_response = make_request("GET", "/sites")
+    if not sites_response or sites_response.status_code != 200:
+        results.add_result("Clock-in validation setup", False, "Could not get sites")
+        return results
+    
+    sites = sites_response.json()
+    if not sites:
+        results.add_result("Clock-in validation setup", False, "No sites available")
+        return results
+    
+    site = sites[0]
+    site_id = site["id"]
+    
+    # Test 1: Try to clock-in without rostered shift (should fail with 403)
+    clock_in_data = {
+        "employee_id": emma_id,
+        "site_id": site_id,
+        "gps_lat": site["gps_lat"],
+        "gps_long": site["gps_long"]
+    }
+    
+    no_roster_response = make_request("POST", "/timesheets/clock-in", clock_in_data)
+    
+    if no_roster_response and no_roster_response.status_code == 403:
+        error_data = no_roster_response.json()
+        if "not rostered" in error_data.get("detail", "").lower():
+            results.add_result("Block clock-in without roster", True, 
+                "Correctly blocked clock-in without rostered shift")
+        else:
+            results.add_result("Block clock-in without roster", False, 
+                f"Wrong error message: {error_data.get('detail')}")
+    else:
+        status = no_roster_response.status_code if no_roster_response else "No response"
+        results.add_result("Block clock-in without roster", False, 
+            f"Expected 403, got {status}")
+    
+    # Test 2: Check for existing rostered shifts for Emma today
+    from datetime import datetime
+    today = datetime.now()
+    start_of_day = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_of_day = today.replace(hour=23, minute=59, second=59, microsecond=999999)
+    
+    todays_shifts_response = make_request("GET", 
+        f"/roster/shifts?employee_id={emma_id}&start_date={start_of_day.isoformat()}&end_date={end_of_day.isoformat()}")
+    
+    if todays_shifts_response and todays_shifts_response.status_code == 200:
+        todays_shifts = todays_shifts_response.json()
+        results.add_result("Check today's roster shifts", True, 
+            f"Emma has {len(todays_shifts)} shifts today")
+        
+        # Check if any shift is currently active
+        current_time = datetime.now()
+        active_shift = None
+        
+        for shift in todays_shifts:
+            shift_start = datetime.fromisoformat(shift["start_time"].replace('Z', '+00:00'))
+            shift_end = datetime.fromisoformat(shift["end_time"].replace('Z', '+00:00'))
+            
+            # Allow 30 minute buffer before start
+            buffer_start = shift_start - timedelta(minutes=30)
+            
+            if buffer_start <= current_time <= shift_end:
+                active_shift = shift
+                break
+        
+        if active_shift:
+            # Test 3: Try to clock-in with active roster (should succeed)
+            with_roster_response = make_request("POST", "/timesheets/clock-in", clock_in_data)
+            
+            if with_roster_response and with_roster_response.status_code == 200:
+                result_data = with_roster_response.json()
+                if result_data.get("success") and result_data.get("timesheet"):
+                    timesheet = result_data["timesheet"]
+                    roster_shift_id = timesheet.get("roster_shift_id")
+                    results.add_result("Clock-in with roster", True, 
+                        f"Successfully clocked in, linked to roster shift: {roster_shift_id}")
+                    
+                    # Clean up - clock out
+                    clock_out_data = {
+                        "timesheet_id": timesheet["id"],
+                        "gps_lat": site["gps_lat"],
+                        "gps_long": site["gps_long"]
+                    }
+                    
+                    clock_out_response = make_request("POST", "/timesheets/clock-out", clock_out_data)
+                    if clock_out_response and clock_out_response.status_code == 200:
+                        results.add_result("Cleanup clock-out", True, "Successfully clocked out")
+                else:
+                    results.add_result("Clock-in with roster", False, 
+                        "Missing success or timesheet in response")
+            else:
+                status = with_roster_response.status_code if with_roster_response else "No response"
+                results.add_result("Clock-in with roster", False, f"HTTP {status}")
+        else:
+            results.add_result("Active roster check", True, 
+                "No active rostered shift found (expected if no shifts scheduled now)")
+    else:
+        status = todays_shifts_response.status_code if todays_shifts_response else "No response"
+        results.add_result("Check today's roster shifts", False, f"HTTP {status}")
+    
+    return results
+
 def main():
     """Run all backend API tests"""
     print("🚀 SUPREME HOSPITALITY TIMESHEET BACKEND API TESTS")
