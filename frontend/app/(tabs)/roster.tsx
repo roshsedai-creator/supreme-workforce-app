@@ -61,6 +61,25 @@ export default function RosterScreen() {
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [showSwapModal, setShowSwapModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showSwapRequestsModal, setShowSwapRequestsModal] = useState(false);
+  
+  // Shift swap state
+  const [selectedShiftForSwap, setSelectedShiftForSwap] = useState<RosterShift | null>(null);
+  const [swapToEmployee, setSwapToEmployee] = useState('');
+  const [swapReason, setSwapReason] = useState('');
+  const [swapRequests, setSwapRequests] = useState<any[]>([]);
+  
+  // Template state
+  const [templateName, setTemplateName] = useState('');
+  const [templateEmployee, setTemplateEmployee] = useState('');
+  const [templateSite, setTemplateSite] = useState('');
+  const [templateRole, setTemplateRole] = useState('');
+  const [templateDay, setTemplateDay] = useState(0);
+  const [templateStartTime, setTemplateStartTime] = useState('09:00');
+  const [templateEndTime, setTemplateEndTime] = useState('17:00');
+  const [templates, setTemplates] = useState<any[]>([]);
   
   // Create shift form
   const [selectedEmployee, setSelectedEmployee] = useState('');
