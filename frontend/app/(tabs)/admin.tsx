@@ -1430,4 +1430,45 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: colors.primary + '15',
   },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+  pickerWrapper: {
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+    color: colors.text.primary,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary + '10',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    gap: 12,
+  },
+  infoText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.text.secondary,
+    lineHeight: 20,
+  },
+  modalFooter: {
+    padding: 24,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
 });
