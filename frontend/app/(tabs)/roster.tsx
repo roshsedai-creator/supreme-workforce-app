@@ -57,6 +57,7 @@ export default function RosterScreen() {
   // View state
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [filterSiteId, setFilterSiteId] = useState<string>('all');
   
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
