@@ -227,39 +227,48 @@ backend:
   
   - task: "Roster shift management API"
     implemented: true
-    working: "unknown"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
         comment: "Implemented roster shift CRUD: POST /api/roster/shifts (create shift), GET /api/roster/shifts (list with filters by employee_id, site_id, date range), PUT /api/roster/shifts/{id} (update), DELETE /api/roster/shifts/{id} (delete). Enriches shifts with employee_name and site_name. Created seed data with 12 shifts. Ready for testing."
+      - working: true
+        agent: "testing"
+        comment: "Comprehensive testing completed successfully. All roster shift CRUD operations working: GET /api/roster/shifts returns 12 shifts with proper employee_name and site_name enrichment, POST creates shifts correctly with admin authorization, PUT updates shifts (tested extending end time from 4pm to 5pm), DELETE removes shifts successfully, employee filtering works (Emma has 6 shifts). All HTTP status codes and response formats correct."
   
   - task: "Employee availability API"
     implemented: true
-    working: "unknown"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
         comment: "Implemented availability management: POST /api/availability (set weekly availability), GET /api/availability/{employee_id} (get availability), POST /api/availability/unavailable-dates (mark date unavailable), GET /api/availability/unavailable-dates/{employee_id} (get unavailable dates), DELETE /api/availability/unavailable-dates/{id}. Seeded default availability for all employees. Ready for testing."
+      - working: true
+        agent: "testing"
+        comment: "All availability management APIs working perfectly. GET /api/availability/{employee_id} returns 7 availability records for Emma with proper day/time structure. POST /api/availability successfully updates weekly availability (tested making Emma unavailable Mondays, available Tue-Fri 9am-5pm). Unavailable dates: POST creates specific unavailable dates with reason, GET retrieves them correctly, DELETE removes them successfully. All CRUD operations functional."
   
   - task: "Clock-in roster validation"
     implemented: true
-    working: "unknown"
+    working: true
     file: "server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
         comment: "Updated POST /api/timesheets/clock-in to validate employee has an active rostered shift before allowing clock-in. Returns 403 error if not rostered with message 'You are not rostered to work at this time'. Links timesheet to roster_shift_id. Ready for testing."
+      - working: true
+        agent: "testing"
+        comment: "Clock-in roster validation working perfectly. Tested both scenarios: 1) Employee WITHOUT rostered shift (Lisa) correctly blocked with 403 error and message 'You are not rostered to work at this time. Please check your roster or contact your supervisor.' 2) Employee WITH active rostered shift (Emma) successfully clocks in, timesheet linked to roster_shift_id, response includes full rostered_shift details. Validation logic is robust and secure."
 
 frontend:
   - task: "Login screen with mock PIN authentication"
