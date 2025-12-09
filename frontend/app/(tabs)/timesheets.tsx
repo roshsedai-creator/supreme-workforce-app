@@ -7,12 +7,20 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
+  Image,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuthStore } from '../../store/authStore';
-import { getTimesheets } from '../../utils/api';
+import { getTimesheets, updateTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 export default function TimesheetsScreen() {
   const { user } = useAuthStore();
