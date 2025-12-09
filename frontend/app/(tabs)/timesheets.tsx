@@ -249,8 +249,8 @@ export default function TimesheetsScreen() {
           </View>
         )}
 
-        {/* Show total pay if approved */}
-        {item.approval_status === 'approved' && item.total_pay && (
+        {/* Show total pay if approved AND user has permission */}
+        {item.approval_status === 'approved' && item.total_pay && user?.permissions?.view_own_pay && (
           <View style={styles.payContainer}>
             <Ionicons name="cash-outline" size={20} color={colors.success} />
             <Text style={styles.payText}>Total Pay: ${item.total_pay.toFixed(2)}</Text>
