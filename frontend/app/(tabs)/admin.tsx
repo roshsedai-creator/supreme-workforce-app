@@ -181,6 +181,70 @@ export default function AdminScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Employee Earnings</Text>
+        </View>
+
+        {earnings && (
+          <>
+            <View style={styles.summaryRow}>
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryValue}>${earnings.total_pay?.toFixed(2) || '0.00'}</Text>
+                <Text style={styles.summaryLabel}>Total Pay</Text>
+              </View>
+              <View style={styles.summaryBox}>
+                <Text style={styles.summaryValue}>{earnings.total_hours?.toFixed(1) || '0'}</Text>
+                <Text style={styles.summaryLabel}>Total Hours</Text>
+              </View>
+            </View>
+
+            {earnings.employees?.map((emp: any) => (
+              <View key={emp.employee_id} style={styles.card}>
+                <Ionicons name="person-circle" size={24} color={colors.success} />
+                <View style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>{emp.name}</Text>
+                  <Text style={styles.cardSubtitle}>{emp.job_title} • Level {emp.award_level}</Text>
+                  <View style={styles.earningsRow}>
+                    <Text style={styles.earningsText}>
+                      {emp.shift_count} shifts • {emp.total_hours} hrs • ${emp.total_pay.toFixed(2)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </>
+        )}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Pay Rates ({payRates.length})</Text>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => setShowPayRateModal(true)}
+          >
+            <Ionicons name="create" size={20} color={colors.white} />
+            <Text style={styles.addButtonText}>Edit Rates</Text>
+          </TouchableOpacity>
+        </View>
+
+        {payRates.map((rate: any) => (
+          <View key={rate.id} style={styles.card}>
+            <Ionicons name="pricetag" size={24} color={colors.gold} />
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>Level {rate.award_level}</Text>
+              <Text style={styles.cardSubtitle}>
+                Weekday: ${rate.weekday_rate} | Sat: ${rate.saturday_rate} | Sun: ${rate.sunday_rate}
+              </Text>
+              <Text style={styles.cardDetails}>
+                PH: ${rate.public_holiday_rate} | OT: ${rate.overtime_rate}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Sites ({sites.length})</Text>
           <TouchableOpacity
             style={styles.addButton}
