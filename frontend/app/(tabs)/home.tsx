@@ -79,7 +79,18 @@ export default function HomeScreen() {
         loc.coords.longitude
       );
       setCurrentTimesheet(response.timesheet);
-      Alert.alert('Success', 'Clocked in successfully!');
+      
+      // Show geo-fence warning if out of bounds
+      if (response.geo_fence_warning) {
+        Alert.alert(
+          '⚠️ Geo-fence Warning',
+          `You are ${response.distance_meters}m from the site (allowed: ${response.allowed_radius}m). This clock-in has been flagged for supervisor review.`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Success', 'Clocked in successfully!');
+      }
+      
       await fetchCurrentTimesheet();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to clock in');
