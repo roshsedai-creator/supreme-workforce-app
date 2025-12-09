@@ -13,13 +13,15 @@ import {
   Image,
   ScrollView,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuthStore } from '../../store/authStore';
 import { getTimesheets, updateTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 export default function TimesheetsScreen() {
   const { user } = useAuthStore();
@@ -30,13 +32,12 @@ export default function TimesheetsScreen() {
   // Edit modal states
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
-  
-  // Simple time inputs (HH:MM format)
-  const [editDate, setEditDate] = useState('');
-  const [editStartTime, setEditStartTime] = useState('');
-  const [editEndTime, setEditEndTime] = useState('');
+  const [editClockIn, setEditClockIn] = useState<Date>(new Date());
+  const [editClockOut, setEditClockOut] = useState<Date>(new Date());
   const [editBreakMinutes, setEditBreakMinutes] = useState('');
   const [employeeNotes, setEmployeeNotes] = useState('');
+  const [showClockInPicker, setShowClockInPicker] = useState(false);
+  const [showClockOutPicker, setShowClockOutPicker] = useState(false);
   const [updating, setUpdating] = useState(false);
   
   // Photo modal states
@@ -68,23 +69,22 @@ export default function TimesheetsScreen() {
   const handleEditTimesheet = (timesheet: any) => {
     setSelectedTimesheet(timesheet);
     
-    // Parse dates to simple formats
     try {
-      const clockIn = new Date(timesheet.clock_in);
-      const clockOut = timesheet.clock_out ? new Date(timesheet.clock_out) : new Date();
+      // Parse dates safely
+      const clockInDate = timesheet.clock_in 
+        ? (typeof timesheet.clock_in === 'string' ? parseISO(timesheet.clock_in) : new Date(timesheet.clock_in))
+        : new Date();
       
-      // Format as YYYY-MM-DD
-      setEditDate(format(clockIn, 'yyyy-MM-dd'));
+      const clockOutDate = timesheet.clock_out 
+        ? (typeof timesheet.clock_out === 'string' ? parseISO(timesheet.clock_out) : new Date(timesheet.clock_out))
+        : new Date();
       
-      // Format as HH:mm (24-hour)
-      setEditStartTime(format(clockIn, 'HH:mm'));
-      setEditEndTime(timesheet.clock_out ? format(clockOut, 'HH:mm') : '');
+      setEditClockIn(clockInDate);
+      setEditClockOut(clockOutDate);
     } catch (error) {
       console.error('Error parsing dates:', error);
-      const now = new Date();
-      setEditDate(format(now, 'yyyy-MM-dd'));
-      setEditStartTime('09:00');
-      setEditEndTime('17:00');
+      setEditClockIn(new Date());
+      setEditClockOut(new Date());
     }
     
     setEditBreakMinutes(timesheet.break_minutes?.toString() || '0');
@@ -95,29 +95,12 @@ export default function TimesheetsScreen() {
   const handleSaveEdit = async () => {
     if (!selectedTimesheet) return;
 
-    // Validate inputs
-    if (!editDate || !editStartTime || !editEndTime) {
-      Alert.alert('Error', 'Please fill in date, start time, and end time');
-      return;
-    }
-
-    // Validate time format (HH:MM)
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(editStartTime) || !timeRegex.test(editEndTime)) {
-      Alert.alert('Error', 'Please use HH:MM format (e.g., 09:00, 17:30)');
-      return;
-    }
-
     try {
       setUpdating(true);
       
-      // Construct ISO datetime strings
-      const clockInISO = `${editDate}T${editStartTime}:00.000Z`;
-      const clockOutISO = `${editDate}T${editEndTime}:00.000Z`;
-      
       await updateTimesheet(selectedTimesheet.id, {
-        manual_clock_in: clockInISO,
-        manual_clock_out: clockOutISO,
+        manual_clock_in: editClockIn.toISOString(),
+        manual_clock_out: editClockOut.toISOString(),
         manual_break_minutes: parseInt(editBreakMinutes) || 0,
         employee_notes: employeeNotes,
       });
@@ -200,14 +183,13 @@ export default function TimesheetsScreen() {
   const renderTimesheet = ({ item }: any) => {
     const clockIn = new Date(item.clock_in);
     const clockOut = item.clock_out ? new Date(item.clock_out) : null;
-    const canEdit = item.approval_status === 'pending';
 
     return (
       <View style={styles.timesheetCard}>
-        {/* Header with date and status */}
         <View style={styles.cardHeader}>
           <View>
-            <Text style={styles.dateText}>{format(clockIn, 'EEE, MMM dd, yyyy')}</Text>
+            <Text style={styles.dateText}>{format(clockIn, 'MMM dd, yyyy')}</Text>
+            <Text style={styles.dayText}>{format(clockIn, 'EEEE')}</Text>
           </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.approval_status) + '20' }]}>
             <Ionicons name={getStatusIcon(item.approval_status)} size={16} color={getStatusColor(item.approval_status)} />
@@ -217,86 +199,77 @@ export default function TimesheetsScreen() {
           </View>
         </View>
 
-        {/* Time details - Employment Hero style */}
-        <View style={styles.timeGrid}>
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>Start</Text>
-            <Text style={styles.timeCellValue}>{format(clockIn, 'h:mm a')}</Text>
+        <View style={styles.timeRow}>
+          <View style={styles.timeColumn}>
+            <Text style={styles.timeLabel}>Clock In</Text>
+            <Text style={styles.timeValue}>{format(clockIn, 'h:mm a')}</Text>
           </View>
-          
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>End</Text>
-            <Text style={styles.timeCellValue}>
-              {clockOut ? format(clockOut, 'h:mm a') : '-'}
+          <Ionicons name="arrow-forward" size={20} color={colors.gray[300]} />
+          <View style={styles.timeColumn}>
+            <Text style={styles.timeLabel}>Clock Out</Text>
+            <Text style={styles.timeValue}>
+              {clockOut ? format(clockOut, 'h:mm a') : 'In Progress'}
             </Text>
-          </View>
-          
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>Break</Text>
-            <Text style={styles.timeCellValue}>{item.break_minutes} min</Text>
-          </View>
-          
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>Total</Text>
-            <Text style={[styles.timeCellValue, styles.totalHours]}>{item.total_hours.toFixed(2)} hrs</Text>
           </View>
         </View>
 
-        {/* Badges */}
-        <View style={styles.badgesRow}>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Ionicons name="time-outline" size={18} color={colors.text.secondary} />
+            <Text style={styles.statText}>{item.total_hours.toFixed(2)} hrs</Text>
+          </View>
+          {item.break_minutes > 0 && (
+            <View style={styles.statItem}>
+              <Ionicons name="cafe-outline" size={18} color={colors.text.secondary} />
+              <Text style={styles.statText}>{item.break_minutes} min break</Text>
+            </View>
+          )}
           {item.manually_edited && (
-            <View style={styles.badge}>
-              <Ionicons name="pencil" size={12} color={colors.warning} />
-              <Text style={styles.badgeText}>Edited</Text>
+            <View style={styles.statItem}>
+              <Ionicons name="pencil" size={18} color={colors.warning} />
+              <Text style={[styles.statText, { color: colors.warning }]}>Edited</Text>
             </View>
           )}
           {item.photo_base64 && (
-            <View style={styles.badge}>
-              <Ionicons name="image" size={12} color={colors.primary} />
-              <Text style={styles.badgeText}>Photo</Text>
-            </View>
-          )}
-          {item.gps_in_out_of_bounds && (
-            <View style={[styles.badge, { backgroundColor: colors.error + '15' }]}>
-              <Ionicons name="alert-circle" size={12} color={colors.error} />
-              <Text style={[styles.badgeText, { color: colors.error }]}>Out of Bounds</Text>
+            <View style={styles.statItem}>
+              <Ionicons name="image" size={18} color={colors.primary} />
+              <Text style={[styles.statText, { color: colors.primary }]}>Photo</Text>
             </View>
           )}
         </View>
 
-        {/* Notes */}
         {item.employee_notes && (
-          <View style={styles.notesBox}>
-            <Ionicons name="chatbox-ellipses-outline" size={16} color={colors.text.secondary} />
+          <View style={styles.notesContainer}>
+            <Ionicons name="document-text" size={16} color={colors.text.secondary} />
             <Text style={styles.notesText}>{item.employee_notes}</Text>
           </View>
         )}
 
-        {/* Action buttons */}
-        {canEdit && (
-          <View style={styles.actionsRow}>
+        {/* Action buttons - only for pending timesheets */}
+        {item.approval_status === 'pending' && (
+          <View style={styles.actionRow}>
             <TouchableOpacity 
-              style={styles.actionBtn}
+              style={styles.actionButton}
               onPress={() => handleEditTimesheet(item)}
             >
-              <Ionicons name="time-outline" size={18} color={colors.primary} />
-              <Text style={styles.actionBtnText}>Edit Times</Text>
+              <Ionicons name="create-outline" size={20} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Edit Times</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.actionBtn}
+              style={styles.actionButton}
               onPress={() => handlePickImage(item)}
             >
-              <Ionicons name="camera-outline" size={18} color={colors.primary} />
-              <Text style={styles.actionBtnText}>Add Photo</Text>
+              <Ionicons name="camera-outline" size={20} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Attach Photo</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Pay info (if approved and permission) */}
+        {/* Show total pay if approved AND user has permission */}
         {item.approval_status === 'approved' && item.total_pay && user?.permissions?.view_own_pay && (
-          <View style={styles.payBox}>
-            <Ionicons name="cash" size={20} color={colors.success} />
+          <View style={styles.payContainer}>
+            <Ionicons name="cash-outline" size={20} color={colors.success} />
             <Text style={styles.payText}>Total Pay: ${item.total_pay.toFixed(2)}</Text>
           </View>
         )}
@@ -314,11 +287,10 @@ export default function TimesheetsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Summary header */}
       <View style={styles.summaryCard}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryValue}>{timesheets.length}</Text>
-          <Text style={styles.summaryLabel}>Total</Text>
+          <Text style={styles.summaryLabel}>Total Shifts</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
@@ -332,7 +304,7 @@ export default function TimesheetsScreen() {
           <Text style={styles.summaryValue}>
             {timesheets.reduce((sum, ts) => sum + ts.total_hours, 0).toFixed(1)}
           </Text>
-          <Text style={styles.summaryLabel}>Hours</Text>
+          <Text style={styles.summaryLabel}>Total Hours</Text>
         </View>
       </View>
 
@@ -346,119 +318,148 @@ export default function TimesheetsScreen() {
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={64} color={colors.gray[300]} />
+            <Ionicons name="document-text-outline" size={64} color={colors.gray[300]} />
             <Text style={styles.emptyText}>No timesheets yet</Text>
-            <Text style={styles.emptySubtext}>Clock in to start tracking your hours</Text>
+            <Text style={styles.emptySubtext}>Your timesheets will appear here after clocking in</Text>
           </View>
         }
       />
 
-      {/* Edit Modal - Simple text inputs */}
+      {/* Edit Timesheet Modal */}
       <Modal
         visible={editModalVisible}
         animationType="slide"
         transparent={true}
         onRequestClose={() => setEditModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Edit Timesheet</Text>
               <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
+                <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.modalBody}>
+              {/* Clock In */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Date</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editDate}
-                  onChangeText={setEditDate}
-                  placeholder="YYYY-MM-DD (e.g., 2024-12-09)"
-                />
+                <Text style={styles.inputLabel}>Clock In Time</Text>
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowClockInPicker(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                  <Text style={styles.dateButtonText}>
+                    {format(editClockIn, 'MMM dd, yyyy h:mm a')}
+                  </Text>
+                </TouchableOpacity>
+                {showClockInPicker && (
+                  <DateTimePicker
+                    value={editClockIn}
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, date) => {
+                      if (Platform.OS === 'android') {
+                        setShowClockInPicker(false);
+                      }
+                      if (date) {
+                        setEditClockIn(date);
+                      }
+                    }}
+                  />
+                )}
               </View>
 
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>Start Time</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editStartTime}
-                    onChangeText={setEditStartTime}
-                    placeholder="HH:MM (e.g., 09:00)"
+              {/* Clock Out */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Clock Out Time</Text>
+                <TouchableOpacity 
+                  style={styles.dateButton}
+                  onPress={() => setShowClockOutPicker(true)}
+                >
+                  <Ionicons name="time-outline" size={20} color={colors.primary} />
+                  <Text style={styles.dateButtonText}>
+                    {format(editClockOut, 'MMM dd, yyyy h:mm a')}
+                  </Text>
+                </TouchableOpacity>
+                {showClockOutPicker && (
+                  <DateTimePicker
+                    value={editClockOut}
+                    mode="datetime"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, date) => {
+                      if (Platform.OS === 'android') {
+                        setShowClockOutPicker(false);
+                      }
+                      if (date) {
+                        setEditClockOut(date);
+                      }
+                    }}
                   />
-                </View>
-
-                <View style={{ width: 16 }} />
-
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>End Time</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editEndTime}
-                    onChangeText={setEditEndTime}
-                    placeholder="HH:MM (e.g., 17:00)"
-                  />
-                </View>
+                )}
               </View>
 
+              {/* Break Minutes */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Break (minutes)</Text>
+                <Text style={styles.inputLabel}>Break Minutes</Text>
                 <TextInput
                   style={styles.input}
                   value={editBreakMinutes}
                   onChangeText={setEditBreakMinutes}
                   keyboardType="number-pad"
-                  placeholder="30"
+                  placeholder="0"
                 />
               </View>
 
+              {/* Employee Notes */}
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notes (optional)</Text>
+                <Text style={styles.inputLabel}>Notes (Optional)</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   value={employeeNotes}
                   onChangeText={setEmployeeNotes}
-                  placeholder="Reason for manual edit..."
+                  placeholder="Add any notes about this timesheet..."
                   multiline
-                  numberOfLines={3}
+                  numberOfLines={4}
                 />
               </View>
 
-              <View style={styles.helpBox}>
-                <Ionicons name="bulb-outline" size={20} color={colors.primary} />
-                <Text style={styles.helpText}>
-                  Use 24-hour format. Example: 09:00 for 9am, 17:30 for 5:30pm
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>
+                  Use this to correct forgotten clock-ins or clock-outs. Your supervisor will review the changes.
                 </Text>
               </View>
             </ScrollView>
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
+                style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setEditModalVisible(false)}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.saveBtn]}
+                style={[styles.modalButton, styles.saveButton]}
                 onPress={handleSaveEdit}
                 disabled={updating}
               >
                 {updating ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Save Changes</Text>
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
                 )}
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
-      {/* Photo Modal */}
+      {/* Photo Upload Modal */}
       <Modal
         visible={photoModalVisible}
         animationType="fade"
@@ -476,7 +477,7 @@ export default function TimesheetsScreen() {
                 setPhotoModalVisible(false);
                 setSelectedPhoto(null);
               }}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
+                <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
 
@@ -490,23 +491,23 @@ export default function TimesheetsScreen() {
 
             <View style={styles.modalFooter}>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
+                style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setPhotoModalVisible(false);
                   setSelectedPhoto(null);
                 }}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalBtn, styles.saveBtn]}
+                style={[styles.modalButton, styles.saveButton]}
                 onPress={handleUploadPhoto}
                 disabled={uploadingPhoto}
               >
                 {uploadingPhoto ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text style={styles.saveBtnText}>Upload</Text>
+                  <Text style={styles.saveButtonText}>Upload Photo</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -531,22 +532,21 @@ const styles = StyleSheet.create({
   summaryCard: {
     backgroundColor: colors.white,
     margin: 16,
-    marginBottom: 8,
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'space-around',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   summaryItem: {
     alignItems: 'center',
   },
   summaryValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     color: colors.primary,
     marginBottom: 4,
@@ -561,18 +561,18 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    paddingTop: 8,
+    paddingTop: 0,
   },
   timesheetCard: {
     backgroundColor: colors.white,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -581,73 +581,72 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   dateText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  dayText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 2,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
     gap: 4,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     marginLeft: 4,
   },
-  timeGrid: {
+  timeRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: colors.gray[50],
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    borderRadius: 12,
   },
-  timeCell: {
+  timeColumn: {
     flex: 1,
     alignItems: 'center',
   },
-  timeCellLabel: {
-    fontSize: 11,
+  timeLabel: {
+    fontSize: 12,
     color: colors.text.secondary,
     marginBottom: 4,
   },
-  timeCellValue: {
-    fontSize: 14,
+  timeValue: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  totalHours: {
-    color: colors.primary,
-  },
-  badgesRow: {
+  statsRow: {
     flexDirection: 'row',
+    gap: 16,
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
   },
-  badge: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.primary + '15',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '500',
-    color: colors.primary,
+  statText: {
+    fontSize: 14,
+    color: colors.text.secondary,
   },
-  notesBox: {
+  notesContainer: {
     flexDirection: 'row',
+    marginTop: 12,
+    padding: 12,
     backgroundColor: colors.gray[50],
-    padding: 10,
     borderRadius: 8,
-    marginBottom: 12,
     gap: 8,
   },
   notesText: {
@@ -656,36 +655,37 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 18,
   },
-  actionsRow: {
+  actionRow: {
     flexDirection: 'row',
-    gap: 8,
+    marginTop: 12,
+    gap: 12,
   },
-  actionBtn: {
+  actionButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary + '10',
-    padding: 10,
-    borderRadius: 8,
-    gap: 6,
+    padding: 12,
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
+    gap: 8,
   },
-  actionBtnText: {
-    fontSize: 13,
+  actionButtonText: {
+    fontSize: 14,
     fontWeight: '600',
     color: colors.primary,
   },
-  payBox: {
+  payContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.success + '15',
-    padding: 10,
-    borderRadius: 8,
     marginTop: 12,
+    padding: 12,
+    backgroundColor: colors.success + '15',
+    borderRadius: 12,
     gap: 8,
   },
   payText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
     color: colors.success,
   },
@@ -704,6 +704,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
     marginTop: 8,
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -712,15 +713,15 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '85%',
   },
   photoModalContent: {
     backgroundColor: colors.white,
-    borderRadius: 20,
+    borderRadius: 24,
     margin: 20,
-    maxHeight: '75%',
+    maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -739,10 +740,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   inputGroup: {
-    marginBottom: 16,
-  },
-  inputRow: {
-    flexDirection: 'row',
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 14,
@@ -753,24 +751,38 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: colors.gray[300],
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 12,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.text.primary,
   },
   textArea: {
-    height: 80,
+    height: 100,
     textAlignVertical: 'top',
   },
-  helpBox: {
+  dateButton: {
     flexDirection: 'row',
-    backgroundColor: colors.primary + '10',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 12,
     padding: 12,
-    borderRadius: 8,
+    gap: 8,
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: colors.text.primary,
+    flex: 1,
+  },
+  infoBox: {
+    flexDirection: 'row',
+    padding: 12,
+    backgroundColor: colors.primary + '15',
+    borderRadius: 12,
     gap: 8,
     marginTop: 8,
   },
-  helpText: {
+  infoText: {
     flex: 1,
     fontSize: 13,
     color: colors.text.secondary,
@@ -783,25 +795,25 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.gray[200],
   },
-  modalBtn: {
+  modalButton: {
     flex: 1,
-    padding: 14,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  cancelBtn: {
+  cancelButton: {
     backgroundColor: colors.gray[100],
   },
-  cancelBtnText: {
-    fontSize: 15,
+  cancelButtonText: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  saveBtn: {
+  saveButton: {
     backgroundColor: colors.primary,
   },
-  saveBtnText: {
-    fontSize: 15,
+  saveButtonText: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.white,
   },
