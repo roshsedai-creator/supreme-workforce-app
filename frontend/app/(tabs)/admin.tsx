@@ -817,7 +817,7 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 12,
     color: colors.text.secondary,
-    fontWeight: '600',
+    textAlign: 'center',
   },
   earningsRow: {
     marginTop: 8,
