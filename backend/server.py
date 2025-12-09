@@ -140,6 +140,46 @@ class ApprovalRequest(BaseModel):
     status: str  # approved or rejected
     notes: Optional[str] = None
 
+class LeaveRequest(BaseModel):
+    id: Optional[str] = None
+    employee_id: str
+    type: str  # annual, sick, unpaid
+    start_date: datetime
+    end_date: datetime
+    reason: Optional[str] = None
+    status: str = "pending"  # pending, approved, rejected
+    approved_by: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+class LeaveRequestCreate(BaseModel):
+    employee_id: str
+    type: str
+    start_date: datetime
+    end_date: datetime
+    reason: Optional[str] = None
+
+class PayRate(BaseModel):
+    id: Optional[str] = None
+    award_level: int
+    weekday_rate: float
+    saturday_rate: float
+    sunday_rate: float
+    public_holiday_rate: float
+    overtime_rate: float
+
+class PayRateCreate(BaseModel):
+    award_level: int
+    weekday_rate: float
+    saturday_rate: float
+    sunday_rate: float
+    public_holiday_rate: float
+    overtime_rate: float
+
+class PayrollExportRequest(BaseModel):
+    start_date: datetime
+    end_date: datetime
+    site_id: Optional[str] = None
+
 # =====================
 # AUTH ENDPOINTS
 # =====================
