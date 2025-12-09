@@ -725,4 +725,102 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
+  actionButtons: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  actionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 10,
+    gap: 6,
+  },
+  editBtn: {
+    flex: 1,
+    backgroundColor: colors.primary + '15',
+  },
+  editBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  reviewBtn: {
+    flex: 2,
+    backgroundColor: colors.primary,
+  },
+  reviewBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.white,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputRow: {
+    flexDirection: 'row',
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    color: colors.text.primary,
+  },
+  textArea: {
+    height: 80,
+    textAlignVertical: 'top',
+  },
+  helpBox: {
+    flexDirection: 'row',
+    backgroundColor: colors.primary + '10',
+    padding: 12,
+    borderRadius: 8,
+    gap: 8,
+    marginTop: 8,
+  },
+  helpText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 18,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[200],
+  },
+  modalBtn: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelBtn: {
+    backgroundColor: colors.gray[100],
+  },
+  cancelBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  saveBtn: {
+    backgroundColor: colors.primary,
+  },
+  saveBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
+  },
 });
