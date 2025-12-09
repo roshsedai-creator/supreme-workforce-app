@@ -841,7 +841,10 @@ export default function AdminScreen() {
         transparent
         onRequestClose={() => setShowContractModal(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Send Employment Contract</Text>
@@ -850,68 +853,78 @@ export default function AdminScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.label}>Select Employee</Text>
-              <View style={styles.employeeList}>
-                {users.map((user: any) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={[
-                      styles.employeeItem,
-                      selectedEmployee === user.id && styles.employeeItemSelected,
-                    ]}
-                    onPress={() => setSelectedEmployee(user.id)}
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Select Employee</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={selectedEmployee}
+                    onValueChange={(value) => setSelectedEmployee(value)}
+                    style={styles.picker}
                   >
-                    <Ionicons 
-                      name={selectedEmployee === user.id ? "radio-button-on" : "radio-button-off"} 
-                      size={20} 
-                      color={selectedEmployee === user.id ? colors.primary : colors.gray[400]} 
-                    />
-                    <View style={styles.employeeInfo}>
-                      <Text style={styles.employeeName}>{user.first_name} {user.last_name}</Text>
-                      <Text style={styles.employeeRole}>{user.job_title}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
+                    <Picker.Item label="Choose an employee..." value="" />
+                    {users.map((user: any) => (
+                      <Picker.Item 
+                        key={user.id} 
+                        label={`${user.first_name} ${user.last_name} - ${user.job_title}`} 
+                        value={user.id} 
+                      />
+                    ))}
+                  </Picker>
+                </View>
               </View>
 
-              <Text style={styles.label}>Contract Type</Text>
-              <View style={styles.roleOptions}>
-                {['employment', 'casual', 'part-time'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.roleOption,
-                      contractType === type && styles.roleOptionSelected,
-                    ]}
-                    onPress={() => setContractType(type)}
-                  >
-                    <Text
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Contract Type</Text>
+                <View style={styles.roleOptions}>
+                  {['employment', 'casual', 'part-time'].map((type) => (
+                    <TouchableOpacity
+                      key={type}
                       style={[
-                        styles.roleOptionText,
-                        contractType === type && styles.roleOptionTextSelected,
+                        styles.roleOption,
+                        contractType === type && styles.roleOptionSelected,
                       ]}
+                      onPress={() => setContractType(type)}
                     >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      <Text
+                        style={[
+                          styles.roleOptionText,
+                          contractType === type && styles.roleOptionTextSelected,
+                        ]}
+                      >
+                        {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
 
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>
+                  Contract will be sent to info@supremehospitality.com.au
+                </Text>
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
               <TouchableOpacity
-                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                style={[styles.submitButton, (!selectedEmployee || loading) && styles.buttonDisabled]}
                 onPress={handleSendContract}
-                disabled={loading}
+                disabled={!selectedEmployee || loading}
               >
                 {loading ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
-                  <Text style={styles.submitButtonText}>Send Contract</Text>
+                  <>
+                    <Ionicons name="mail" size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>Send Contract</Text>
+                  </>
                 )}
               </TouchableOpacity>
-            </ScrollView>
+            </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Generate Invoice Modal */}
