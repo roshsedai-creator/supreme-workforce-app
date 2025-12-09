@@ -1198,6 +1198,11 @@ export default function AdminScreen() {
         employee={editingPermissions}
         loading={loading}
       />
+
+      <AvailabilitySnapshot
+        visible={showAvailabilityModal}
+        onClose={() => setShowAvailabilityModal(false)}
+      />
     </ScrollView>
   );
 }
