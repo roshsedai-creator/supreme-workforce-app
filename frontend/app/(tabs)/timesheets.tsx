@@ -68,8 +68,25 @@ export default function TimesheetsScreen() {
 
   const handleEditTimesheet = (timesheet: any) => {
     setSelectedTimesheet(timesheet);
-    setEditClockIn(timesheet.clock_in ? parseISO(timesheet.clock_in) : new Date());
-    setEditClockOut(timesheet.clock_out ? parseISO(timesheet.clock_out) : new Date());
+    
+    try {
+      // Parse dates safely
+      const clockInDate = timesheet.clock_in 
+        ? (typeof timesheet.clock_in === 'string' ? parseISO(timesheet.clock_in) : new Date(timesheet.clock_in))
+        : new Date();
+      
+      const clockOutDate = timesheet.clock_out 
+        ? (typeof timesheet.clock_out === 'string' ? parseISO(timesheet.clock_out) : new Date(timesheet.clock_out))
+        : new Date();
+      
+      setEditClockIn(clockInDate);
+      setEditClockOut(clockOutDate);
+    } catch (error) {
+      console.error('Error parsing dates:', error);
+      setEditClockIn(new Date());
+      setEditClockOut(new Date());
+    }
+    
     setEditBreakMinutes(timesheet.break_minutes?.toString() || '0');
     setEmployeeNotes(timesheet.employee_notes || '');
     setEditModalVisible(true);
