@@ -820,7 +820,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   earningsRow: {
-    marginTop: 8,
+    marginTop: 6,
   },
   earningsText: {
     fontSize: 13,
