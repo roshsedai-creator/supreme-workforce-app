@@ -435,6 +435,29 @@ async def get_timesheet(timesheet_id: str):
         raise HTTPException(status_code=404, detail="Timesheet not found")
     return serialize_doc(timesheet)
 
+@api_router.post("/timesheets/{timesheet_id}/update")
+async def update_timesheet(timesheet_id: str, employee_notes: Optional[str] = None, photo_base64: Optional[str] = None):
+    """Update timesheet with employee notes and/or photo"""
+    timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
+    
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    update_data = {}
+    if employee_notes is not None:
+        update_data["employee_notes"] = employee_notes
+    if photo_base64 is not None:
+        update_data["photo_base64"] = photo_base64
+    
+    if update_data:
+        await db.timesheets.update_one(
+            {"_id": ObjectId(timesheet_id)},
+            {"$set": update_data}
+        )
+    
+    updated = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
+    return {"success": True, "timesheet": serialize_doc(updated)}
+
 @api_router.post("/timesheets/approve")
 async def approve_timesheet(request: ApprovalRequest):
     """Supervisor approves/rejects timesheet"""
