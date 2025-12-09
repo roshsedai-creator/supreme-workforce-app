@@ -55,6 +55,9 @@ export default function AdminScreen() {
   const [role, setRole] = useState('employee');
   const [jobTitle, setJobTitle] = useState('Room Attendant');
   const [pin, setPin] = useState('');
+  const [abn, setAbn] = useState('');
+  const [isContractor, setIsContractor] = useState(false);
+  const [awardLevel, setAwardLevel] = useState(1);
 
   useEffect(() => {
     fetchData();
