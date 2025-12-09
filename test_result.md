@@ -224,6 +224,42 @@ backend:
       - working: true
         agent: "testing"
         comment: "Supervisor dashboard API working correctly. Returns all required fields: active_employees, pending_approvals, active_timesheets, pending_timesheets. Site filtering with ?site_id parameter works properly. Currently shows 2 active employees and 2 pending approvals."
+  
+  - task: "Roster shift management API"
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented roster shift CRUD: POST /api/roster/shifts (create shift), GET /api/roster/shifts (list with filters by employee_id, site_id, date range), PUT /api/roster/shifts/{id} (update), DELETE /api/roster/shifts/{id} (delete). Enriches shifts with employee_name and site_name. Created seed data with 12 shifts. Ready for testing."
+  
+  - task: "Employee availability API"
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented availability management: POST /api/availability (set weekly availability), GET /api/availability/{employee_id} (get availability), POST /api/availability/unavailable-dates (mark date unavailable), GET /api/availability/unavailable-dates/{employee_id} (get unavailable dates), DELETE /api/availability/unavailable-dates/{id}. Seeded default availability for all employees. Ready for testing."
+  
+  - task: "Clock-in roster validation"
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Updated POST /api/timesheets/clock-in to validate employee has an active rostered shift before allowing clock-in. Returns 403 error if not rostered with message 'You are not rostered to work at this time'. Links timesheet to roster_shift_id. Ready for testing."
 
 frontend:
   - task: "Login screen with mock PIN authentication"
