@@ -431,12 +431,26 @@ export default function AdminScreen() {
             <Ionicons name="person" size={24} color={colors.primary} />
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>{user.first_name} {user.last_name}</Text>
-              <Text style={styles.cardSubtitle}>{user.job_title}</Text>
+              <Text style={styles.cardSubtitle}>{user.job_title} • Level {user.award_level || 1}</Text>
               <Text style={styles.cardDetails}>{user.phone} • {user.email}</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleText}>{user.role}</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 }}>
+                <View style={styles.roleBadge}>
+                  <Text style={styles.roleText}>{user.role}</Text>
+                </View>
+                {user.is_contractor && (
+                  <View style={styles.abnBadge}>
+                    <Ionicons name="briefcase" size={10} color={colors.gold} />
+                    <Text style={styles.abnText}>ABN</Text>
+                  </View>
+                )}
               </View>
             </View>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => handleEditEmployee(user)}
+            >
+              <Ionicons name="create-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
           </View>
         ))}
       </View>
