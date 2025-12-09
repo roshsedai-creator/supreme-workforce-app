@@ -55,10 +55,12 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="time" size={60} color={colors.gold} />
-          </View>
-          <Text style={styles.title}>Supreme Hospitality</Text>
+          <Image 
+            source={require('../../assets/logo.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.title}>Supreme Hospitality Services</Text>
           <Text style={styles.subtitle}>Timesheet Management</Text>
         </View>
 
