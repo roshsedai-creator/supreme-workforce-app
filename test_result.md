@@ -286,6 +286,18 @@ frontend:
         agent: "main"
         comment: "Added comprehensive manual editing feature for employees. Features: Edit clock-in/out times using DateTimePicker, edit break minutes, add employee notes, attach photos from camera roll. Only available for pending timesheets. Visual indicators for edited timesheets and attached photos. Shows total pay on approved timesheets. Uses backend /api/timesheets/{id}/update endpoint. Installed @react-native-community/datetimepicker. Ready for testing."
   
+  - task: "Roster management system"
+    implemented: true
+    working: "unknown"
+    file: "app/(tabs)/roster.tsx, server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented complete rostering system. Backend: Created RosterShift and EmployeeAvailability models, API endpoints for roster CRUD (/api/roster/shifts), availability management (/api/availability), updated clock-in validation to require active rostered shift. Frontend: New Roster tab with week calendar view, list view, shift creation modal (Admin/Supervisor), availability management (employees). Seeded 12 test shifts. Features: Create shifts, view calendar, set availability, roster validation on clock-in. Ready for testing."
+  
   - task: "Supervisor approval dashboard"
     implemented: true
     working: "unknown"
