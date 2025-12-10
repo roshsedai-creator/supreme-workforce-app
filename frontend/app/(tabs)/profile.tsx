@@ -256,7 +256,7 @@ export default function ProfileScreen() {
               <Text style={styles.sectionTitle}>🏦 Bank Details</Text>
               <TouchableOpacity 
                 style={styles.editButton}
-                onPress={() => Alert.alert('Coming Soon', 'Bank details editing will be available soon')}
+                onPress={handleOpenBankModal}
               >
                 <Ionicons name="create-outline" size={20} color={colors.primary} />
                 <Text style={styles.editButtonText}>Edit</Text>
