@@ -571,13 +571,38 @@ export default function AdminScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Employees ({users.length})</Text>
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={() => setShowUserModal(true)}
-          >
-            <Ionicons name="add" size={20} color={colors.white} />
-            <Text style={styles.addButtonText}>Add Employee</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.addButton, { backgroundColor: colors.success }]}
+              onPress={() => {
+                const inviteLink = `${process.env.EXPO_PUBLIC_BACKEND_URL?.replace('/api', '')}/register`;
+                Alert.alert(
+                  'Invite Employee',
+                  'Share this link with new employees to let them create their own account:',
+                  [
+                    {
+                      text: 'Copy Link',
+                      onPress: () => {
+                        // In web, we can't copy to clipboard easily, so just show it
+                        Alert.alert('Registration Link', inviteLink);
+                      }
+                    },
+                    { text: 'Close', style: 'cancel' }
+                  ]
+                );
+              }}
+            >
+              <Ionicons name="mail" size={20} color={colors.white} />
+              <Text style={styles.addButtonText}>Invite</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => setShowUserModal(true)}
+            >
+              <Ionicons name="person-add" size={20} color={colors.white} />
+              <Text style={styles.addButtonText}>Add</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {users.map((user) => (
