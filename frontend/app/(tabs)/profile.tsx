@@ -62,9 +62,27 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            logout();
-            router.replace('/');
+          onPress: async () => {
+            try {
+              // Clear auth store
+              logout();
+              
+              // Force navigation to login
+              router.replace('/');
+              
+              // Force reload on web
+              if (typeof window !== 'undefined') {
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 100);
+              }
+            } catch (error) {
+              console.error('Logout error:', error);
+              // Force reload anyway
+              if (typeof window !== 'undefined') {
+                window.location.href = '/';
+              }
+            }
           },
         },
       ]
