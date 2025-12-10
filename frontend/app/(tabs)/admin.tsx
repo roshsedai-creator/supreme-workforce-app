@@ -1209,6 +1209,11 @@ export default function AdminScreen() {
         visible={showAvailabilityModal}
         onClose={() => setShowAvailabilityModal(false)}
       />
+
+      <ReportsCenter
+        visible={showReportsModal}
+        onClose={() => setShowReportsModal(false)}
+      />
     </ScrollView>
   );
 }
