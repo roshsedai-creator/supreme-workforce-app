@@ -30,7 +30,7 @@ export default function AdminScreen() {
   const [sites, setSites] = useState([]);
   const [users, setUsers] = useState([]);
   const [payRates, setPayRates] = useState([]);
-  const [earnings, setEarnings] = useState<any>(null);
+  const [earnings, setEarnings] = useState(null);
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPayRateModal, setShowPayRateModal] = useState(false);
