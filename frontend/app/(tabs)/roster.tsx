@@ -500,6 +500,113 @@ export default function RosterScreen() {
     });
   };
 
+  const handleQuickCreateShift = (date: Date) => {
+    if (!isSupervisor) {
+      Alert.alert('Permission Denied', 'Only supervisors can create shifts');
+      return;
+    }
+    
+    // Set the shift start time to 9 AM on the selected date
+    const shiftStart = new Date(date);
+    shiftStart.setHours(9, 0, 0, 0);
+    
+    const shiftEnd = new Date(date);
+    shiftEnd.setHours(17, 0, 0, 0);
+    
+    setShiftStart(shiftStart);
+    setShiftEnd(shiftEnd);
+    setShowCreateModal(true);
+  };
+
+  const handleShiftLongPress = (shift: RosterShift) => {
+    if (!isSupervisor) return;
+    
+    Alert.alert(
+      'Shift Actions',
+      `${shift.employee_name} • ${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`,
+      [
+        {
+          text: 'Reassign',
+          onPress: () => promptReassignShift(shift)
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => handleDeleteShift(shift.id)
+        },
+        {
+          text: 'Copy to Next Week',
+          onPress: () => handleCopyShift(shift)
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  const handleDeleteShift = async (shiftId: string) => {
+    Alert.alert(
+      'Delete Shift',
+      'Are you sure you want to delete this shift?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await axios.delete(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${shiftId}`
+              );
+              Alert.alert('Success', 'Shift deleted');
+              loadData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete shift');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCopyShift = async (shift: RosterShift) => {
+    try {
+      setLoading(true);
+      
+      // Create new shift one week later
+      const newStartTime = new Date(shift.start_time);
+      newStartTime.setDate(newStartTime.getDate() + 7);
+      
+      const newEndTime = new Date(shift.end_time);
+      newEndTime.setDate(newEndTime.getDate() + 7);
+      
+      await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts`,
+        {
+          employee_id: shift.employee_id,
+          site_id: shift.site_id,
+          role: shift.role,
+          start_time: newStartTime.toISOString(),
+          end_time: newEndTime.toISOString(),
+          notes: shift.notes,
+          created_by: user?.id,
+        }
+      );
+      
+      Alert.alert('Success', 'Shift copied to next week!');
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to copy shift');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderWeekView = () => {
     const weekStart = getWeekStart(selectedDate);
     const days = [];
@@ -519,17 +626,44 @@ export default function RosterScreen() {
           <ScrollView style={styles.dayShifts}>
             {dayShifts.length > 0 ? (
               dayShifts.map(shift => (
-                <View key={shift.id} style={styles.shiftCard}>
-                  {isSupervisor && <Text style={styles.shiftEmployee}>{shift.employee_name}</Text>}
-                  <Text style={styles.shiftTime}>
-                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                <TouchableOpacity
+                  key={shift.id}
+                  style={styles.shiftCard}
+                  onPress={() => isSupervisor && handleShiftLongPress(shift)}
+                  onLongPress={() => handleShiftLongPress(shift)}
+                  activeOpacity={0.7}
+                >
+                  {isSupervisor && (
+                    <View style={styles.shiftEmployeeRow}>
+                      <Ionicons name="person" size={14} color={colors.primary} />
+                      <Text style={styles.shiftEmployee}>{shift.employee_name}</Text>
+                    </View>
+                  )}
+                  <View style={styles.shiftTimeRow}>
+                    <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
+                    <Text style={styles.shiftTime}>
+                      {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                    </Text>
+                  </View>
+                  <Text style={styles.shiftSite} numberOfLines={1}>
+                    📍 {shift.site_name}
                   </Text>
-                  <Text style={styles.shiftSite}>{shift.site_name}</Text>
-                  <Text style={styles.shiftRole}>{shift.role}</Text>
-                </View>
+                  <Text style={styles.shiftRole} numberOfLines={1}>
+                    💼 {shift.role}
+                  </Text>
+                </TouchableOpacity>
               ))
-            ) : (
-              <Text style={styles.noShifts}>No shifts</Text>
+            ) : null}
+            
+            {/* Quick Add Button for Empty Days */}
+            {isSupervisor && (
+              <TouchableOpacity
+                style={styles.addShiftButton}
+                onPress={() => handleQuickCreateShift(date)}
+              >
+                <Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+                <Text style={styles.addShiftText}>Add Shift</Text>
+              </TouchableOpacity>
             )}
           </ScrollView>
         </View>
