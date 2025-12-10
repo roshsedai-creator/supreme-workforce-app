@@ -1089,26 +1089,13 @@ export default function RosterScreen() {
 
         <View style={styles.headerActions}>
           {isSupervisor && (
-            <>
-              <TouchableOpacity 
-                style={styles.createButton}
-                onPress={() => setShowCreateModal(true)}
-              >
-                <Ionicons name="add" size={20} color={colors.white} />
-                <Text style={styles.createButtonText}>Create Shift</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.createButton, { backgroundColor: colors.gold }]}
-                onPress={() => {
-                  loadTemplates();
-                  setShowTemplateModal(true);
-                }}
-              >
-                <Ionicons name="copy-outline" size={20} color={colors.white} />
-                <Text style={styles.createButtonText}>Templates</Text>
-              </TouchableOpacity>
-            </>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => setShowCreateModal(true)}
+            >
+              <Ionicons name="add" size={20} color={colors.white} />
+              <Text style={styles.createButtonText}>Create Shift</Text>
+            </TouchableOpacity>
           )}
           
           <TouchableOpacity 
@@ -1116,21 +1103,23 @@ export default function RosterScreen() {
             onPress={() => setShowAvailabilityModal(true)}
           >
             <Ionicons name="settings-outline" size={20} color={colors.primary} />
-            <Text style={styles.availabilityButtonText}>My Availability</Text>
+            <Text style={styles.availabilityButtonText}>Availability</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={[styles.availabilityButton, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}
-            onPress={() => {
-              loadSwapRequests();
-              setShowSwapRequestsModal(true);
-            }}
-          >
-            <Ionicons name="swap-horizontal" size={20} color={colors.warning} />
-            <Text style={[styles.availabilityButtonText, { color: colors.warning }]}>
-              Swaps {swapRequests.length > 0 && `(${swapRequests.length})`}
-            </Text>
-          </TouchableOpacity>
+          {isSupervisor && (
+            <TouchableOpacity 
+              style={[styles.availabilityButton, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}
+              onPress={() => {
+                loadSwapRequests();
+                setShowSwapRequestsModal(true);
+              }}
+            >
+              <Ionicons name="swap-horizontal" size={20} color={colors.warning} />
+              <Text style={[styles.availabilityButtonText, { color: colors.warning }]}>
+                Swaps {swapRequests.length > 0 && `(${swapRequests.length})`}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.viewToggle}>
