@@ -1049,6 +1049,23 @@ export default function RosterScreen() {
               </View>
 
               <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Shift Type *</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={shiftType}
+                    onValueChange={(value) => setShiftType(value as any)}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="🏢 Work Shift" value="work" />
+                    <Picker.Item label="🏖️ RDO (Rostered Day Off)" value="rdo" />
+                    <Picker.Item label="🤒 Sick Leave" value="sick" />
+                    <Picker.Item label="🌴 Annual Leave" value="annual" />
+                    <Picker.Item label="📋 Other Leave" value="other" />
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Start Time *</Text>
                 <TouchableOpacity
                   style={styles.dateButton}
