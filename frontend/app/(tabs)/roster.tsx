@@ -1963,6 +1963,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text.primary,
     marginBottom: 8,
+    numberOfLines: 1,
   },
   shiftTimeText: {
     fontSize: 14,
