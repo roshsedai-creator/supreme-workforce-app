@@ -380,53 +380,109 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
               <View style={styles.dateRow}>
                 <View style={styles.dateGroup}>
                   <Text style={styles.inputLabel}>Start Date</Text>
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => setShowStartPicker(true)}
-                  >
-                    <Ionicons name="calendar" size={20} color={colors.primary} />
-                    <Text style={styles.dateButtonText}>
-                      {startDate.toLocaleDateString('en-US', { 
-                        year: 'numeric',
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </Text>
-                  </TouchableOpacity>
-                  {showStartPicker && (
-                    <DateTimePicker
-                      value={startDate}
-                      mode="date"
-                      display="default"
-                      onChange={handleStartDateChange}
-                      maximumDate={new Date()}
-                    />
+                  {Platform.OS === 'web' ? (
+                    <View style={styles.dateButton}>
+                      <Ionicons name="calendar" size={20} color={colors.primary} />
+                      <input
+                        type="date"
+                        value={startDate.toISOString().split('T')[0]}
+                        onChange={(e) => {
+                          const newDate = new Date(e.target.value);
+                          if (!isNaN(newDate.getTime())) {
+                            setStartDate(newDate);
+                          }
+                        }}
+                        max={new Date().toISOString().split('T')[0]}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          fontSize: '15px',
+                          color: '#1f2937',
+                          outline: 'none',
+                          flex: 1,
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowStartPicker(true)}
+                      >
+                        <Ionicons name="calendar" size={20} color={colors.primary} />
+                        <Text style={styles.dateButtonText}>
+                          {startDate.toLocaleDateString('en-US', { 
+                            year: 'numeric',
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </Text>
+                      </TouchableOpacity>
+                      {showStartPicker && (
+                        <DateTimePicker
+                          value={startDate}
+                          mode="date"
+                          display="default"
+                          onChange={handleStartDateChange}
+                          maximumDate={new Date()}
+                        />
+                      )}
+                    </>
                   )}
                 </View>
 
                 <View style={styles.dateGroup}>
                   <Text style={styles.inputLabel}>End Date</Text>
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => setShowEndPicker(true)}
-                  >
-                    <Ionicons name="calendar" size={20} color={colors.primary} />
-                    <Text style={styles.dateButtonText}>
-                      {endDate.toLocaleDateString('en-US', { 
-                        year: 'numeric',
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </Text>
-                  </TouchableOpacity>
-                  {showEndPicker && (
-                    <DateTimePicker
-                      value={endDate}
-                      mode="date"
-                      display="default"
-                      onChange={handleEndDateChange}
-                      maximumDate={new Date()}
-                    />
+                  {Platform.OS === 'web' ? (
+                    <View style={styles.dateButton}>
+                      <Ionicons name="calendar" size={20} color={colors.primary} />
+                      <input
+                        type="date"
+                        value={endDate.toISOString().split('T')[0]}
+                        onChange={(e) => {
+                          const newDate = new Date(e.target.value);
+                          if (!isNaN(newDate.getTime())) {
+                            setEndDate(newDate);
+                          }
+                        }}
+                        max={new Date().toISOString().split('T')[0]}
+                        style={{
+                          border: 'none',
+                          background: 'transparent',
+                          fontSize: '15px',
+                          color: '#1f2937',
+                          outline: 'none',
+                          flex: 1,
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                        }}
+                      />
+                    </View>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowEndPicker(true)}
+                      >
+                        <Ionicons name="calendar" size={20} color={colors.primary} />
+                        <Text style={styles.dateButtonText}>
+                          {endDate.toLocaleDateString('en-US', { 
+                            year: 'numeric',
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </Text>
+                      </TouchableOpacity>
+                      {showEndPicker && (
+                        <DateTimePicker
+                          value={endDate}
+                          mode="date"
+                          display="default"
+                          onChange={handleEndDateChange}
+                          maximumDate={new Date()}
+                        />
+                      )}
+                    </>
                   )}
                 </View>
               </View>
