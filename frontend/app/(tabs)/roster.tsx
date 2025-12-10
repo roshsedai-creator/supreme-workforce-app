@@ -1913,16 +1913,16 @@ const styles = StyleSheet.create({
   },
   shiftCard: {
     backgroundColor: colors.white,
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 10,
-    marginHorizontal: 2,
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 12,
+    marginHorizontal: 4,
     borderLeftWidth: 4,
     borderLeftColor: colors.primary,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
   shiftCardDragging: {
@@ -1942,60 +1942,33 @@ const styles = StyleSheet.create({
     color: colors.success,
     marginTop: 8,
   },
-  shiftTypeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
+  shiftTypeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginBottom: 10,
   },
-  shiftTypeIcon: {
-    fontSize: 16,
-  },
-  shiftTypeLabel: {
-    fontSize: 11,
+  shiftTypeBadgeText: {
+    fontSize: 10,
     fontWeight: '700',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    flex: 1,
+    letterSpacing: 0.8,
   },
-  quickEditButton: {
-    padding: 4,
-    borderRadius: 4,
-    backgroundColor: colors.gray[100],
+  shiftEmployeeName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: 8,
   },
-  shiftEmployeeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
-  },
-  shiftEmployee: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
-    flex: 1,
-  },
-  shiftTimeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  shiftTime: {
-    fontSize: 12,
+  shiftTimeText: {
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
+    marginBottom: 6,
   },
-  shiftSite: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    marginBottom: 2,
-  },
-  shiftRole: {
-    fontSize: 11,
+  shiftSiteText: {
+    fontSize: 12,
     color: colors.text.secondary,
   },
   addShiftButton: {
