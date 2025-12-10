@@ -62,15 +62,15 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: () => {
-            // Clear auth store first
+          onPress: async () => {
+            // Clear auth store
             logout();
             
-            // For web - force full page reload to login
+            // For web - just reload the page completely
             if (typeof window !== 'undefined') {
-              window.location.href = '/(auth)/login';
+              window.location.replace('/');
             } else {
-              // For mobile - use router
+              // For mobile
               router.replace('/(auth)/login');
             }
           },
