@@ -1567,6 +1567,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text.primary,
   },
+  textInput: {
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+    padding: 16,
+    fontSize: 15,
+    color: colors.text.primary,
+  },
   textArea: {
     backgroundColor: colors.gray[50],
     borderRadius: 12,
