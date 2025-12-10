@@ -337,7 +337,7 @@ export default function AdminScreen() {
     );
   };
 
-  const updateUserRole = async (user: any, newRole: string) => {
+  const updateUserRole = async (user, newRole) => {
     try {
       setLoading(true);
       await axios.put(
