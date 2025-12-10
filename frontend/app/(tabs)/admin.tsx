@@ -239,7 +239,7 @@ export default function AdminScreen() {
     }
   };
 
-  const handleEditEmployee = (user: any) => {
+  const handleEditEmployee = (user) => {
     setEditingEmployee(user);
     setFirstName(user.first_name);
     setLastName(user.last_name);
