@@ -16,7 +16,9 @@ export default function TabsLayout() {
 
   useEffect(() => {
     // Redirect to login if not authenticated
+    console.log('[TabsLayout] isAuthenticated:', isAuthenticated);
     if (!isAuthenticated) {
+      console.log('[TabsLayout] Not authenticated, redirecting to login');
       router.replace('/(auth)/login');
     }
   }, [isAuthenticated]);
