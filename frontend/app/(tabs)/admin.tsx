@@ -612,7 +612,7 @@ export default function AdminScreen() {
           </TouchableOpacity>
         </View>
 
-        {payRates.map((rate: any) => (
+        {payRates.map((rate) => (
           <View key={rate.id} style={styles.card}>
             <Ionicons name="pricetag" size={24} color={colors.gold} />
             <View style={styles.cardContent}>
