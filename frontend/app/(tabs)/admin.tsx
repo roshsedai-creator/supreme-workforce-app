@@ -744,44 +744,53 @@ export default function AdminScreen() {
                 )}
               </View>
             </View>
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => handleEditPermissions(user)}
-              >
-                <Ionicons name="shield-checkmark" size={20} color={colors.gold} />
-              </TouchableOpacity>
+            <View style={{ flexDirection: 'column', gap: 6 }}>
+              {/* Row 1: Edit & Permissions */}
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => handleEditEmployee(user)}
+                >
+                  <Ionicons name="create-outline" size={18} color={colors.primary} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => handleEditPermissions(user)}
+                >
+                  <Ionicons name="shield-checkmark" size={18} color={colors.gold} />
+                </TouchableOpacity>
+              </View>
               
+              {/* Row 2: Role & Status */}
+              <View style={{ flexDirection: 'row', gap: 6 }}>
+                <TouchableOpacity 
+                  style={[styles.editButton, { backgroundColor: colors.primary + '10' }]}
+                  onPress={() => handleChangeUserRole(user)}
+                >
+                  <Ionicons name="person-circle" size={18} color={colors.primary} />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.editButton, { 
+                    backgroundColor: user.status === 'active' ? colors.warning + '10' : colors.success + '10' 
+                  }]}
+                  onPress={() => handleToggleUserStatus(user)}
+                >
+                  <Ionicons 
+                    name={user.status === 'active' ? "pause" : "play"} 
+                    size={18} 
+                    color={user.status === 'active' ? colors.warning : colors.success} 
+                  />
+                </TouchableOpacity>
+              </View>
+              
+              {/* Row 3: Delete */}
               <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => handleEditEmployee(user)}
-              >
-                <Ionicons name="create-outline" size={20} color={colors.primary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={() => handleChangeUserRole(user)}
-              >
-                <Ionicons name="person-circle" size={20} color={colors.primary} />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.editButton, { backgroundColor: user.status === 'active' ? colors.warning + '15' : colors.success + '15' }]}
-                onPress={() => handleToggleUserStatus(user)}
-              >
-                <Ionicons 
-                  name={user.status === 'active' ? 'pause-circle' : 'play-circle'} 
-                  size={20} 
-                  color={user.status === 'active' ? colors.warning : colors.success} 
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[styles.editButton, { backgroundColor: colors.error + '15' }]}
+                style={[styles.editButton, { backgroundColor: colors.error + '10', width: '100%' }]}
                 onPress={() => handleDeleteUser(user)}
               >
-                <Ionicons name="trash" size={20} color={colors.error} />
+                <Ionicons name="trash" size={18} color={colors.error} />
               </TouchableOpacity>
             </View>
           </View>
