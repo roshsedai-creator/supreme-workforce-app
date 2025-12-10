@@ -8,12 +8,16 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
 import { getTimesheets } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 
 export default function ProfileScreen() {
   const { user, logout, setUser } = useAuthStore();
