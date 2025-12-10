@@ -54,21 +54,31 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Confirm Logout',
-      'Are you sure you want to logout?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Logout',
-          style: 'destructive',
-          onPress: () => {
-            // Clear auth store - navigation will be handled by tabs layout
-            logout();
+    // Platform-specific alert handling
+    if (typeof window !== 'undefined' && Platform.OS === 'web') {
+      // Use browser confirm dialog for web
+      if (window.confirm('Are you sure you want to logout?')) {
+        console.log('[Profile] User confirmed logout');
+        logout();
+      }
+    } else {
+      // Use React Native Alert for mobile
+      Alert.alert(
+        'Confirm Logout',
+        'Are you sure you want to logout?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Logout',
+            style: 'destructive',
+            onPress: () => {
+              console.log('[Profile] User confirmed logout');
+              logout();
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
   return (
