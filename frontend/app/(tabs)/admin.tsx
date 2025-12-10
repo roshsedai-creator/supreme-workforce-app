@@ -458,8 +458,8 @@ export default function AdminScreen() {
     setOvertimeRate('');
   };
 
-  const loadPayRate = (level: number) => {
-    const rate = payRates.find((r: any) => r.award_level === level);
+  const loadPayRate = (level) => {
+    const rate = payRates.find((r) => r.award_level === level);
     if (rate) {
       setWeekdayRate(rate.weekday_rate.toString());
       setSaturdayRate(rate.saturday_rate.toString());
