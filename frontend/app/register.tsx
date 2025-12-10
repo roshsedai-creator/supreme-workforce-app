@@ -122,6 +122,7 @@ export default function RegisterScreen() {
         pin: formData.pin,
         job_title: formData.job_title.trim() || 'Employee',
         award_level: 1,
+        ...(invitationToken && { token: invitationToken }),
       };
       
       console.log('Request data:', requestData);
