@@ -747,34 +747,46 @@ export default function RosterScreen() {
           
           <ScrollView style={styles.dayShifts}>
             {dayShifts.length > 0 ? (
-              dayShifts.map(shift => (
-                <TouchableOpacity
-                  key={shift.id}
-                  style={styles.shiftCard}
-                  onPress={() => isSupervisor && handleShiftLongPress(shift)}
-                  onLongPress={() => handleShiftLongPress(shift)}
-                  activeOpacity={0.7}
-                >
-                  {isSupervisor && (
-                    <View style={styles.shiftEmployeeRow}>
-                      <Ionicons name="person" size={14} color={colors.primary} />
-                      <Text style={styles.shiftEmployee}>{shift.employee_name}</Text>
+              dayShifts.map(shift => {
+                const shiftStyle = getShiftTypeColor(shift.shift_type);
+                return (
+                  <TouchableOpacity
+                    key={shift.id}
+                    style={[
+                      styles.shiftCard,
+                      { backgroundColor: shiftStyle.bg, borderLeftColor: shiftStyle.border }
+                    ]}
+                    onPress={() => isSupervisor && handleShiftLongPress(shift)}
+                    onLongPress={() => handleShiftLongPress(shift)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.shiftTypeRow}>
+                      <Text style={styles.shiftTypeIcon}>{shiftStyle.icon}</Text>
+                      <Text style={[styles.shiftTypeLabel, { color: shiftStyle.border }]}>
+                        {shiftStyle.label}
+                      </Text>
                     </View>
-                  )}
-                  <View style={styles.shiftTimeRow}>
-                    <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
-                    <Text style={styles.shiftTime}>
-                      {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                    {isSupervisor && (
+                      <View style={styles.shiftEmployeeRow}>
+                        <Ionicons name="person" size={14} color={colors.text.primary} />
+                        <Text style={styles.shiftEmployee}>{shift.employee_name}</Text>
+                      </View>
+                    )}
+                    <View style={styles.shiftTimeRow}>
+                      <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
+                      <Text style={styles.shiftTime}>
+                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                      </Text>
+                    </View>
+                    <Text style={styles.shiftSite} numberOfLines={1}>
+                      📍 {shift.site_name}
                     </Text>
-                  </View>
-                  <Text style={styles.shiftSite} numberOfLines={1}>
-                    📍 {shift.site_name}
-                  </Text>
-                  <Text style={styles.shiftRole} numberOfLines={1}>
-                    💼 {shift.role}
-                  </Text>
-                </TouchableOpacity>
-              ))
+                    <Text style={styles.shiftRole} numberOfLines={1}>
+                      💼 {shift.role}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })
             ) : null}
             
             {/* Quick Add Button for Empty Days */}
