@@ -1870,8 +1870,11 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   dayColumn: {
-    flex: 1,
-    marginHorizontal: 4,
+    width: 160,
+    marginHorizontal: 6,
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    padding: 8,
   },
   dayColumnDropZone: {
     backgroundColor: colors.success + '10',
