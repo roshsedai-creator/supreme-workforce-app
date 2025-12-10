@@ -1732,6 +1732,21 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
+  shiftTypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  shiftTypeIcon: {
+    fontSize: 14,
+  },
+  shiftTypeLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   shiftEmployeeRow: {
     flexDirection: 'row',
     alignItems: 'center',
