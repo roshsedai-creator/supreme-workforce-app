@@ -89,7 +89,15 @@ export default function AdminScreen() {
       ]);
       setSites(sitesData);
       setUsers(usersData);
-      setPayRates(payRatesData.data);
+      
+      // Deduplicate pay rates by award_level (keep the first occurrence of each level)
+      const uniquePayRates = payRatesData.data.reduce((acc: any[], rate: any) => {
+        if (!acc.find((r: any) => r.award_level === rate.award_level)) {
+          acc.push(rate);
+        }
+        return acc;
+      }, []);
+      setPayRates(uniquePayRates);
       
       // Fetch earnings
       fetchEarnings();
