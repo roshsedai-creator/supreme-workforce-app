@@ -1935,6 +1935,23 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
+  shiftCardDragging: {
+    opacity: 0.5,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    borderStyle: 'dashed',
+  },
+  dropZoneIndicator: {
+    alignItems: 'center',
+    padding: 16,
+    marginTop: 8,
+  },
+  dropZoneText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.success,
+    marginTop: 8,
+  },
   shiftTypeRow: {
     flexDirection: 'row',
     alignItems: 'center',
