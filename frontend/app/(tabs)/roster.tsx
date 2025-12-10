@@ -926,48 +926,28 @@ export default function RosterScreen() {
                     activeOpacity={0.7}
                     disabled={isDragging && !isBeingDragged}
                   >
-                    <View style={styles.shiftTypeRow}>
-                      <Text style={styles.shiftTypeIcon}>{shiftStyle.icon}</Text>
-                      <Text style={[styles.shiftTypeLabel, { color: shiftStyle.border }]}>
+                    {/* Shift Type Badge */}
+                    <View style={[styles.shiftTypeBadge, { backgroundColor: shiftStyle.bg }]}>
+                      <Text style={[styles.shiftTypeBadgeText, { color: shiftStyle.border }]}>
                         {shiftStyle.label}
                       </Text>
-                      {!isDragging && isSupervisor && (
-                        <TouchableOpacity 
-                          onPress={() => handleEditShift(shift)}
-                          style={styles.quickEditButton}
-                        >
-                          <Ionicons name="create-outline" size={14} color={colors.primary} />
-                        </TouchableOpacity>
-                      )}
                     </View>
+
+                    {/* Employee Name (Supervisor Only) */}
                     {isSupervisor && (
-                      <TouchableOpacity 
-                        onPress={() => !isDragging && handleEditShift(shift)}
-                        disabled={isDragging}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.shiftEmployeeRow}>
-                          <Ionicons name="person" size={14} color={colors.primary} />
-                          <Text style={[styles.shiftEmployee, { color: colors.primary }]}>
-                            {shift.employee_name}
-                          </Text>
-                          {!isDragging && (
-                            <Ionicons name="chevron-forward" size={12} color={colors.primary} />
-                          )}
-                        </View>
-                      </TouchableOpacity>
-                    )}
-                    <View style={styles.shiftTimeRow}>
-                      <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
-                      <Text style={styles.shiftTime}>
-                        {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
+                      <Text style={styles.shiftEmployeeName}>
+                        {shift.employee_name}
                       </Text>
-                    </View>
-                    <Text style={styles.shiftSite} numberOfLines={1}>
-                      📍 {shift.site_name}
+                    )}
+
+                    {/* Time */}
+                    <Text style={styles.shiftTimeText}>
+                      {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                     </Text>
-                    <Text style={styles.shiftRole} numberOfLines={1}>
-                      💼 {shift.role}
+
+                    {/* Site (smaller, less prominent) */}
+                    <Text style={styles.shiftSiteText} numberOfLines={1}>
+                      {shift.site_name}
                     </Text>
                   </TouchableOpacity>
                 );
