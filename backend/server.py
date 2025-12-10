@@ -368,6 +368,21 @@ async def verify_otp_login(phone: str, otp: str):
 @api_router.post("/auth/register")
 async def employee_self_register(registration: dict):
     """Employee self-registration endpoint"""
+    # Check if this is an invitation-based registration
+    invitation_data = None
+    if registration.get("token"):
+        invitation = await db.invitations.find_one({"token": registration["token"]})
+        if not invitation:
+            raise HTTPException(status_code=404, detail="Invalid invitation token")
+        
+        if invitation.get("status") == "accepted":
+            raise HTTPException(status_code=400, detail="Invitation has already been used")
+        
+        if invitation.get("expires_at") and invitation["expires_at"] < datetime.utcnow():
+            raise HTTPException(status_code=400, detail="Invitation has expired")
+        
+        invitation_data = invitation
+    
     # Validate required fields
     required_fields = ["first_name", "last_name", "phone", "email", "pin"]
     for field in required_fields:
@@ -391,10 +406,10 @@ async def employee_self_register(registration: dict):
         "phone": registration["phone"],
         "email": registration["email"],
         "pin": registration["pin"],
-        "role": "employee",  # Default role
-        "job_title": registration.get("job_title", ""),
+        "role": invitation_data.get("role", "employee") if invitation_data else "employee",
+        "job_title": invitation_data.get("job_title", registration.get("job_title", "")) if invitation_data else registration.get("job_title", ""),
+        "site_id": invitation_data.get("site_id") if invitation_data else None,
         "award_level": registration.get("award_level", 1),
-        "sites": [],  # Admin will assign sites later
         "bank_details": None,
         "is_contractor": False,
         "status": "active",
@@ -404,6 +419,13 @@ async def employee_self_register(registration: dict):
     result = await db.users.insert_one(user_dict)
     user_dict["id"] = str(result.inserted_id)
     del user_dict["_id"]
+    
+    # Mark invitation as accepted if it was used
+    if invitation_data:
+        await db.invitations.update_one(
+            {"_id": invitation_data["_id"]},
+            {"$set": {"status": "accepted", "accepted_at": datetime.utcnow()}}
+        )
     
     return {
         "success": True,
