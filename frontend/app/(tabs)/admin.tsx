@@ -157,7 +157,7 @@ export default function AdminScreen() {
       setShowSiteModal(false);
       resetSiteForm();
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to create site');
     } finally {
       setLoading(false);
@@ -199,7 +199,7 @@ export default function AdminScreen() {
       setShowUserModal(false);
       resetUserForm();
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to create employee');
     } finally {
       setLoading(false);
@@ -232,7 +232,7 @@ export default function AdminScreen() {
       Alert.alert('Success', 'Permissions updated successfully!');
       setShowPermissionsModal(false);
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to update permissions');
     } finally {
       setLoading(false);
@@ -276,7 +276,7 @@ export default function AdminScreen() {
               );
               Alert.alert('Success', `User ${action.toLowerCase()}d successfully`);
               fetchData();
-            } catch (error: any) {
+            } catch (error) {
               Alert.alert('Error', error.response?.data?.detail || `Failed to ${action.toLowerCase()} user`);
             } finally {
               setLoading(false);
@@ -304,7 +304,7 @@ export default function AdminScreen() {
               );
               Alert.alert('Success', 'User deleted successfully');
               fetchData();
-            } catch (error: any) {
+            } catch (error) {
               Alert.alert('Error', error.response?.data?.detail || 'Failed to delete user');
             } finally {
               setLoading(false);
@@ -346,7 +346,7 @@ export default function AdminScreen() {
       );
       Alert.alert('Success', `Role changed to ${newRole}`);
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to change role');
     } finally {
       setLoading(false);
@@ -389,7 +389,7 @@ export default function AdminScreen() {
       setIsEditMode(false);
       setEditingEmployee(null);
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to update employee');
     } finally {
       setLoading(false);
@@ -442,7 +442,7 @@ export default function AdminScreen() {
       setShowPayRateModal(false);
       resetPayRateForm();
       fetchData();
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to update pay rate');
     } finally {
       setLoading(false);
@@ -488,7 +488,7 @@ export default function AdminScreen() {
       );
       
       console.log('CSV Data:', response.data.csv_data);
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to export payroll');
     } finally {
       setLoading(false);
@@ -516,7 +516,7 @@ export default function AdminScreen() {
       );
       
       console.log('Excel file generated successfully');
-    } catch (error: any) {
+    } catch (error) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to export Excel');
     } finally {
       setLoading(false);
