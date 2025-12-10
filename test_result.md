@@ -270,6 +270,51 @@ backend:
         agent: "testing"
         comment: "Clock-in roster validation working perfectly. Tested both scenarios: 1) Employee WITHOUT rostered shift (Lisa) correctly blocked with 403 error and message 'You are not rostered to work at this time. Please check your roster or contact your supervisor.' 2) Employee WITH active rostered shift (Emma) successfully clocks in, timesheet linked to roster_shift_id, response includes full rostered_shift details. Validation logic is robust and secure."
 
+  - task: "Admin user management - DELETE user endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented DELETE /api/users/{user_id} endpoint for admin user management. Deletes user and cascades to remove timesheets and unassign roster shifts. Includes proper error handling for invalid user IDs."
+      - working: true
+        agent: "testing"
+        comment: "P0 Admin User Management DELETE endpoint working correctly. Successfully deletes users with valid IDs (200 response with success flag), properly removes user from database (verified with 404 on subsequent GET), handles invalid user IDs correctly (404 response). Cascade deletion functionality implemented for timesheets and roster shifts."
+
+  - task: "Admin user management - PUT user status endpoint"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented PUT /api/users/{user_id} endpoint for updating user status (active/inactive). Inactive users cannot login. Includes proper validation and error handling."
+      - working: true
+        agent: "testing"
+        comment: "P0 User Status Management working perfectly. Successfully updates user status from active to inactive (200 response, status field updated), inactive users properly blocked from login (404 response), successfully reactivates users from inactive to active. All status transitions working correctly with proper authentication validation."
+
+  - task: "Bank details management - Save and retrieve"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented bank details management using PUT /api/users/{user_id} with bank_details payload. Supports saving and updating bank details (bank_name, account_name, bsb, account_number). Bank details included in GET /api/users and GET /api/users/{user_id} responses."
+      - working: true
+        agent: "testing"
+        comment: "P0 Bank Details Management fully functional. Successfully saves all bank detail fields (bank_name, account_name, bsb, account_number) via PUT request, updates existing bank details correctly, retrieves bank details via GET /api/users/{user_id} (single user), includes bank details in GET /api/users (all users list). All CRUD operations working with proper field validation and data persistence."
+
 frontend:
   - task: "Login screen with mock PIN authentication"
     implemented: true
