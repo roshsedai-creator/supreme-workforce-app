@@ -199,6 +199,21 @@ export default function RosterScreen() {
     return end;
   };
 
+  const getShiftTypeColor = (shiftType?: string) => {
+    switch (shiftType) {
+      case 'rdo':
+        return { bg: '#10B981' + '20', border: '#10B981', icon: '🏖️', label: 'RDO' };
+      case 'sick':
+        return { bg: '#EF4444' + '20', border: '#EF4444', icon: '🤒', label: 'Sick' };
+      case 'annual':
+        return { bg: '#F59E0B' + '20', border: '#F59E0B', icon: '🌴', label: 'Annual' };
+      case 'other':
+        return { bg: '#6B7280' + '20', border: '#6B7280', icon: '📋', label: 'Leave' };
+      default:
+        return { bg: colors.primary + '15', border: colors.primary, icon: '💼', label: 'Work' };
+    }
+  };
+
   const getDayName = (dayNum: number) => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     return days[dayNum];
