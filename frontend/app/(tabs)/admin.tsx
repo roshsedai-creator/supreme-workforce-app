@@ -964,6 +964,112 @@ export default function AdminScreen() {
         visible={showReportsModal}
         onClose={() => setShowReportsModal(false)}
       />
+
+      {/* Bank Details Modal */}
+      <Modal
+        visible={showBankDetailsModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowBankDetailsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Employee Bank Details</Text>
+              <TouchableOpacity onPress={() => setShowBankDetailsModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>
+                  Bank details for payroll processing. Keep this information confidential.
+                </Text>
+              </View>
+
+              {users.filter((u: any) => u.role === 'employee' || u.role === 'supervisor').length === 0 ? (
+                <View style={styles.emptyBankState}>
+                  <Ionicons name="people" size={64} color={colors.gray[300]} />
+                  <Text style={styles.emptyBankText}>No employees found</Text>
+                </View>
+              ) : (
+                users
+                  .filter((u: any) => u.role === 'employee' || u.role === 'supervisor')
+                  .map((employee: any) => (
+                    <View key={employee.id} style={styles.bankCard}>
+                      <View style={styles.bankCardHeader}>
+                        <Ionicons name="person-circle" size={32} color={colors.primary} />
+                        <View style={styles.bankCardInfo}>
+                          <Text style={styles.bankCardName}>
+                            {employee.first_name} {employee.last_name}
+                          </Text>
+                          <Text style={styles.bankCardSubtitle}>
+                            {employee.job_title} • Level {employee.award_level || 1}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {employee.bank_details ? (
+                        <View style={styles.bankDetailsContent}>
+                          <View style={styles.bankDetailRow}>
+                            <Ionicons name="business" size={18} color={colors.text.secondary} />
+                            <Text style={styles.bankDetailLabel}>Bank:</Text>
+                            <Text style={styles.bankDetailValue}>
+                              {employee.bank_details.bank_name || 'Not provided'}
+                            </Text>
+                          </View>
+
+                          <View style={styles.bankDetailRow}>
+                            <Ionicons name="person" size={18} color={colors.text.secondary} />
+                            <Text style={styles.bankDetailLabel}>Account Name:</Text>
+                            <Text style={styles.bankDetailValue}>
+                              {employee.bank_details.account_name || 'Not provided'}
+                            </Text>
+                          </View>
+
+                          <View style={styles.bankDetailRow}>
+                            <Ionicons name="card" size={18} color={colors.text.secondary} />
+                            <Text style={styles.bankDetailLabel}>BSB:</Text>
+                            <Text style={styles.bankDetailValue}>
+                              {employee.bank_details.bsb || 'Not provided'}
+                            </Text>
+                          </View>
+
+                          <View style={styles.bankDetailRow}>
+                            <Ionicons name="keypad" size={18} color={colors.text.secondary} />
+                            <Text style={styles.bankDetailLabel}>Account Number:</Text>
+                            <Text style={[styles.bankDetailValue, { fontFamily: 'monospace' }]}>
+                              {employee.bank_details.account_number || 'Not provided'}
+                            </Text>
+                          </View>
+                        </View>
+                      ) : (
+                        <View style={styles.noBankDetails}>
+                          <Ionicons name="alert-circle" size={20} color={colors.warning} />
+                          <Text style={styles.noBankDetailsText}>
+                            No bank details provided
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  ))
+              )}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={() => Alert.alert('Export', 'CSV export coming soon!')}
+              >
+                <Ionicons name="download" size={20} color={colors.white} />
+                <Text style={styles.exportButtonText}>Export to CSV</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
