@@ -1536,17 +1536,29 @@ const styles = StyleSheet.create({
   },
   shiftCard: {
     backgroundColor: colors.primary + '15',
-    padding: 8,
+    padding: 10,
     borderRadius: 8,
     marginBottom: 8,
     borderLeftWidth: 3,
     borderLeftColor: colors.primary,
   },
+  shiftEmployeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
   shiftEmployee: {
     fontSize: 11,
     fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: 4,
+    flex: 1,
+  },
+  shiftTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
   },
   shiftTime: {
     fontSize: 11,
