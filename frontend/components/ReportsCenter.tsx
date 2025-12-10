@@ -380,7 +380,10 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                   <Text style={styles.inputLabel}>Start Date</Text>
                   <TouchableOpacity
                     style={styles.dateButton}
-                    onPress={() => setShowStartPicker(true)}
+                    onPress={() => {
+                      console.log('Start date clicked');
+                      setShowStartPicker(true);
+                    }}
                   >
                     <Ionicons name="calendar" size={20} color={colors.primary} />
                     <Text style={styles.dateButtonText}>
@@ -391,13 +394,24 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                       })}
                     </Text>
                   </TouchableOpacity>
+                  {showStartPicker && (
+                    <DateTimePicker
+                      value={startDate}
+                      mode="date"
+                      display="default"
+                      onChange={handleStartDateChange}
+                    />
+                  )}
                 </View>
 
                 <View style={styles.dateGroup}>
                   <Text style={styles.inputLabel}>End Date</Text>
                   <TouchableOpacity
                     style={styles.dateButton}
-                    onPress={() => setShowEndPicker(true)}
+                    onPress={() => {
+                      console.log('End date clicked');
+                      setShowEndPicker(true);
+                    }}
                   >
                     <Ionicons name="calendar" size={20} color={colors.primary} />
                     <Text style={styles.dateButtonText}>
@@ -408,26 +422,16 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                       })}
                     </Text>
                   </TouchableOpacity>
+                  {showEndPicker && (
+                    <DateTimePicker
+                      value={endDate}
+                      mode="date"
+                      display="default"
+                      onChange={handleEndDateChange}
+                    />
+                  )}
                 </View>
               </View>
-
-              {showStartPicker && (
-                <DateTimePicker
-                  value={startDate}
-                  mode="date"
-                  display="default"
-                  onChange={handleStartDateChange}
-                />
-              )}
-
-              {showEndPicker && (
-                <DateTimePicker
-                  value={endDate}
-                  mode="date"
-                  display="default"
-                  onChange={handleEndDateChange}
-                />
-              )}
             </View>
 
             {/* Generate Button */}
