@@ -64,7 +64,7 @@ export default function AdminScreen() {
   const [abn, setAbn] = useState('');
   const [isContractor, setIsContractor] = useState(false);
   const [awardLevel, setAwardLevel] = useState(1);
-  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [editingEmployee, setEditingEmployee] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState('');
   
