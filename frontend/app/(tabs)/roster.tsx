@@ -851,6 +851,24 @@ export default function RosterScreen() {
             <Text style={styles.weekText}>
               {getWeekStart(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - {getWeekEnd(selectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
+            {isSupervisor && shifts.length > 0 && (
+              <View style={styles.weekActionsRow}>
+                <TouchableOpacity 
+                  style={styles.weekActionButton}
+                  onPress={handleCopyWeek}
+                >
+                  <Ionicons name="copy" size={14} color={colors.success} />
+                  <Text style={styles.weekActionText}>Copy Week</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.weekActionButton}
+                  onPress={handlePublishWeek}
+                >
+                  <Ionicons name="checkmark-done" size={14} color={colors.primary} />
+                  <Text style={styles.weekActionText}>Publish</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
           
           <TouchableOpacity onPress={nextWeek} style={styles.navButton}>
