@@ -1106,8 +1106,14 @@ export default function RosterScreen() {
         >
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Roster Shift</Text>
-              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+              <Text style={styles.modalTitle}>
+                {editingShift ? 'Edit Shift' : 'Create Roster Shift'}
+              </Text>
+              <TouchableOpacity onPress={() => {
+                setShowCreateModal(false);
+                setEditingShift(null);
+                resetCreateForm();
+              }}>
                 <Ionicons name="close" size={24} color={colors.text.primary} />
               </TouchableOpacity>
             </View>
