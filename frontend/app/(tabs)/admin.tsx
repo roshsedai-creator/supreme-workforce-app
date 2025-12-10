@@ -37,6 +37,8 @@ export default function AdminScreen() {
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
   const [showBankDetailsModal, setShowBankDetailsModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
   const [loading, setLoading] = useState(false);
   
   // Pay rate form
