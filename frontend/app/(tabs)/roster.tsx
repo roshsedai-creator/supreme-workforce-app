@@ -918,24 +918,7 @@ export default function RosterScreen() {
                     }}
                     onLongPress={() => {
                       if (!isDragging && isSupervisor) {
-                        Alert.alert(
-                          'Quick Actions',
-                          'What would you like to do?',
-                          [
-                            {
-                              text: '🚚 Move Shift (Drag)',
-                              onPress: () => handleStartDrag(shift)
-                            },
-                            {
-                              text: '⚙️ More Options',
-                              onPress: () => handleShiftLongPress(shift)
-                            },
-                            {
-                              text: 'Cancel',
-                              style: 'cancel'
-                            }
-                          ]
-                        );
+                        handleStartDrag(shift);
                       }
                     }}
                     activeOpacity={0.7}
