@@ -93,10 +93,7 @@ export default function TabsLayout() {
         <Tabs.Screen
           name="payroll"
           options={{
-            title: 'Payroll',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="cash" size={size} color={color} />
-            ),
+            href: null, // Hide from tabs - reports now in Admin
           }}
         />
       )}
