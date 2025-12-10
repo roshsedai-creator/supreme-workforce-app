@@ -287,7 +287,7 @@ export default function AdminScreen() {
     );
   };
 
-  const handleDeleteUser = async (user: any) => {
+  const handleDeleteUser = async (user) => {
     Alert.alert(
       'Delete User',
       `Are you sure you want to permanently delete ${user.first_name} ${user.last_name}?\n\nThis will:\n- Remove their account\n- Delete all their timesheets\n- Remove them from roster\n\nThis action cannot be undone!`,
