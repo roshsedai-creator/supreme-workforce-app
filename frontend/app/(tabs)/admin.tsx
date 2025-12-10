@@ -1249,6 +1249,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.error,
+    textAlign: 'center',
+    marginTop: 50,
+  },
   quickActionsSection: {
     padding: 16,
     paddingBottom: 8,
