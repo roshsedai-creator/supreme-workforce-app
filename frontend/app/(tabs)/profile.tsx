@@ -62,26 +62,16 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              // Clear auth store
-              logout();
-              
-              // Force navigation to login
-              router.replace('/');
-              
-              // Force reload on web
-              if (typeof window !== 'undefined') {
-                setTimeout(() => {
-                  window.location.href = '/';
-                }, 100);
-              }
-            } catch (error) {
-              console.error('Logout error:', error);
-              // Force reload anyway
-              if (typeof window !== 'undefined') {
-                window.location.href = '/';
-              }
+          onPress: () => {
+            // Clear auth store first
+            logout();
+            
+            // For web - force full page reload to login
+            if (typeof window !== 'undefined') {
+              window.location.href = '/(auth)/login';
+            } else {
+              // For mobile - use router
+              router.replace('/(auth)/login');
             }
           },
         },
