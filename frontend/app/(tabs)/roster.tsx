@@ -977,6 +977,281 @@ export default function RosterScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Roster Templates Modal */}
+      <Modal
+        visible={showTemplateModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowTemplateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Roster Templates</Text>
+              <TouchableOpacity onPress={() => setShowTemplateModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              <Text style={styles.availabilityInfo}>
+                Create recurring shift templates to quickly generate weekly schedules.
+              </Text>
+
+              {/* Existing Templates */}
+              {templates.length > 0 && (
+                <View style={{ marginBottom: 24 }}>
+                  <Text style={[styles.inputLabel, { marginBottom: 12 }]}>Saved Templates</Text>
+                  {templates.map((template: any) => (
+                    <View key={template.id} style={styles.listCard}>
+                      <View style={styles.listCardHeader}>
+                        <Ionicons name="copy-outline" size={24} color={colors.gold} />
+                        <View style={styles.listCardInfo}>
+                          <Text style={styles.listCardDate}>{template.name}</Text>
+                          <Text style={styles.listCardTime}>
+                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][template.day_of_week]}
+                            {' • '}
+                            {template.start_time} - {template.end_time}
+                          </Text>
+                        </View>
+                      </View>
+                      <View style={styles.listCardDetails}>
+                        <View style={styles.detailRow}>
+                          <Ionicons name="person" size={16} color={colors.text.secondary} />
+                          <Text style={styles.detailText}>{template.employee_name}</Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <Ionicons name="location" size={16} color={colors.text.secondary} />
+                          <Text style={styles.detailText}>{template.site_name}</Text>
+                        </View>
+                        <View style={styles.detailRow}>
+                          <Ionicons name="briefcase" size={16} color={colors.text.secondary} />
+                          <Text style={styles.detailText}>{template.role}</Text>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        style={[styles.submitButton, { marginTop: 12 }]}
+                        onPress={() => handleGenerateFromTemplate(template.id, 4)}
+                      >
+                        <Ionicons name="calendar" size={18} color={colors.white} />
+                        <Text style={styles.submitButtonText}>Generate 4 Weeks</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Create New Template Form */}
+              <Text style={[styles.inputLabel, { marginTop: 8, marginBottom: 16 }]}>Create New Template</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Template Name</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={templateName}
+                  onChangeText={setTemplateName}
+                  placeholder="e.g., Morning Shift - Room Attendant"
+                  placeholderTextColor={colors.gray[400]}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Employee</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={templateEmployee}
+                    onValueChange={setTemplateEmployee}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select Employee" value="" />
+                    {employees.map((emp: any) => (
+                      <Picker.Item
+                        key={emp.id}
+                        label={`${emp.first_name} ${emp.last_name}`}
+                        value={emp.id}
+                      />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Site</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={templateSite}
+                    onValueChange={setTemplateSite}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Select Site" value="" />
+                    {sites.map((site: any) => (
+                      <Picker.Item key={site.id} label={site.name} value={site.id} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Role</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={templateRole}
+                  onChangeText={setTemplateRole}
+                  placeholder="Room Attendant"
+                  placeholderTextColor={colors.gray[400]}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Day of Week</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={templateDay}
+                    onValueChange={(value) => setTemplateDay(Number(value))}
+                    style={styles.picker}
+                  >
+                    <Picker.Item label="Monday" value={0} />
+                    <Picker.Item label="Tuesday" value={1} />
+                    <Picker.Item label="Wednesday" value={2} />
+                    <Picker.Item label="Thursday" value={3} />
+                    <Picker.Item label="Friday" value={4} />
+                    <Picker.Item label="Saturday" value={5} />
+                    <Picker.Item label="Sunday" value={6} />
+                  </Picker>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Start Time (HH:MM)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={templateStartTime}
+                  onChangeText={setTemplateStartTime}
+                  placeholder="09:00"
+                  placeholderTextColor={colors.gray[400]}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>End Time (HH:MM)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={templateEndTime}
+                  onChangeText={setTemplateEndTime}
+                  placeholder="17:00"
+                  placeholderTextColor={colors.gray[400]}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleCreateTemplate}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="add" size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>Create Template</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Shift Swap Requests Modal */}
+      <Modal
+        visible={showSwapRequestsModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowSwapRequestsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Shift Swap Requests</Text>
+              <TouchableOpacity onPress={() => setShowSwapRequestsModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {swapRequests.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="swap-horizontal" size={64} color={colors.gray[300]} />
+                  <Text style={styles.emptyText}>No Pending Swap Requests</Text>
+                  <Text style={styles.emptySubtext}>
+                    Shift swap requests will appear here for approval
+                  </Text>
+                </View>
+              ) : (
+                swapRequests.map((swap: any) => (
+                  <View key={swap.id} style={styles.listCard}>
+                    <View style={styles.listCardHeader}>
+                      <Ionicons name="swap-horizontal" size={24} color={colors.warning} />
+                      <View style={styles.listCardInfo}>
+                        <Text style={styles.listCardDate}>
+                          {swap.requester_name} → {swap.requested_employee_name}
+                        </Text>
+                        <Text style={styles.listCardTime}>
+                          {formatDate(swap.shift_start_time)} • {formatTime(swap.shift_start_time)} - {formatTime(swap.shift_end_time)}
+                        </Text>
+                      </View>
+                      <View style={[styles.statusBadge, { backgroundColor: colors.warning + '20' }]}>
+                        <Text style={[styles.statusText, { color: colors.warning }]}>
+                          {swap.status}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.listCardDetails}>
+                      <View style={styles.detailRow}>
+                        <Ionicons name="location" size={16} color={colors.text.secondary} />
+                        <Text style={styles.detailText}>{swap.site_name}</Text>
+                      </View>
+                      <View style={styles.detailRow}>
+                        <Ionicons name="briefcase" size={16} color={colors.text.secondary} />
+                        <Text style={styles.detailText}>{swap.role}</Text>
+                      </View>
+                      {swap.reason && (
+                        <View style={styles.detailRow}>
+                          <Ionicons name="document-text" size={16} color={colors.text.secondary} />
+                          <Text style={styles.detailText}>{swap.reason}</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    {isSupervisor && swap.status === 'pending' && (
+                      <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                        <TouchableOpacity
+                          style={[styles.submitButton, { flex: 1, backgroundColor: colors.success }]}
+                          onPress={() => handleSwapAction(swap.id, 'approved')}
+                        >
+                          <Ionicons name="checkmark" size={18} color={colors.white} />
+                          <Text style={styles.submitButtonText}>Approve</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.submitButton, { flex: 1, backgroundColor: colors.error }]}
+                          onPress={() => handleSwapAction(swap.id, 'rejected')}
+                        >
+                          <Ionicons name="close" size={18} color={colors.white} />
+                          <Text style={styles.submitButtonText}>Reject</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
