@@ -70,7 +70,7 @@ export default function AdminScreen() {
   
   // Permissions modal
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-  const [editingPermissions, setEditingPermissions] = useState<any>(null);
+  const [editingPermissions, setEditingPermissions] = useState(null);
   const [permissions, setPermissions] = useState({
     view_own_pay: false,
     view_all_timesheets: false,
