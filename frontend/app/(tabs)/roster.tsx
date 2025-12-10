@@ -440,6 +440,7 @@ export default function RosterScreen() {
     setSelectedEmployee('');
     setSelectedSite('');
     setSelectedRole('');
+    setShiftType('work');
     setShiftStart(new Date());
     setShiftEnd(new Date());
     setShiftNotes('');
