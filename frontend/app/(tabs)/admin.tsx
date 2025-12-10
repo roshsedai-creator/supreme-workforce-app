@@ -43,6 +43,7 @@ export default function AdminScreen() {
       </View>
     );
   }
+
   const [sites, setSites] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [payRates, setPayRates] = useState<any[]>([]);
