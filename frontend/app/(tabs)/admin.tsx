@@ -31,6 +31,7 @@ export default function AdminScreen() {
   const [showPayRateModal, setShowPayRateModal] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [showReportsModal, setShowReportsModal] = useState(false);
+  const [showBankDetailsModal, setShowBankDetailsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Pay rate form
