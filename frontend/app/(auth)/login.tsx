@@ -55,66 +55,143 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Background Gradient */}
+      <LinearGradient
+        colors={['#6366F1', '#8B5CF6', '#EC4899']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFillObject}
+      />
+
+      {/* Decorative Circles */}
+      <View style={styles.circle1} />
+      <View style={styles.circle2} />
+      <View style={styles.circle3} />
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
+        {/* Logo and Header */}
         <View style={styles.header}>
-          <Image 
-            source={require('../../assets/logo.jpg')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Supreme Hospitality Services</Text>
-          <Text style={styles.subtitle}>Timesheet Management</Text>
+          <View style={styles.logoContainer}>
+            <LinearGradient
+              colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0.1)']}
+              style={styles.logoGradient}
+            >
+              <Image 
+                source={require('../../assets/logo.jpg')}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </LinearGradient>
+          </View>
+          
+          <Text style={styles.title}>Supreme Hospitality</Text>
+          <Text style={styles.subtitle}>Workforce Management</Text>
+          
+          {/* Feature Pills */}
+          <View style={styles.featurePills}>
+            <View style={styles.pill}>
+              <Ionicons name="time-outline" size={14} color="white" />
+              <Text style={styles.pillText}>Smart Timesheets</Text>
+            </View>
+            <View style={styles.pill}>
+              <Ionicons name="calendar-outline" size={14} color="white" />
+              <Text style={styles.pillText}>Easy Roster</Text>
+            </View>
+          </View>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Ionicons name="person-outline" size={20} color={colors.gray[400]} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone or Email"
-              placeholderTextColor={colors.gray[400]}
-              value={identifier}
-              onChangeText={setIdentifier}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
+        {/* Login Card */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Welcome Back</Text>
+            <Text style={styles.cardSubtitle}>Sign in to your account</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Ionicons name="lock-closed-outline" size={20} color={colors.gray[400]} style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="PIN"
-              placeholderTextColor={colors.gray[400]}
-              value={pin}
-              onChangeText={setPin}
-              secureTextEntry
-              keyboardType="number-pad"
-              maxLength={4}
-            />
+          <View style={styles.form}>
+            {/* Phone/Email Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Phone or Email</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="person" size={20} color={colors.primary} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your phone or email"
+                  placeholderTextColor={colors.gray[400]}
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+              </View>
+            </View>
+
+            {/* PIN Input */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>PIN Code</Text>
+              <View style={styles.inputContainer}>
+                <Ionicons name="lock-closed" size={20} color={colors.primary} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your 4-digit PIN"
+                  placeholderTextColor={colors.gray[400]}
+                  value={pin}
+                  onChangeText={setPin}
+                  secureTextEntry
+                  keyboardType="number-pad"
+                  maxLength={4}
+                />
+              </View>
+            </View>
+
+            {/* Sign In Button */}
+            <TouchableOpacity
+              style={[styles.button, loading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={loading ? ['#9CA3AF', '#9CA3AF'] : ['#6366F1', '#8B5CF6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>Sign In</Text>
+                    <Ionicons name="arrow-forward" size={20} color="white" style={{ marginLeft: 8 }} />
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Register Link */}
+            <TouchableOpacity 
+              style={styles.registerLink}
+              onPress={() => router.push('/register')}
+            >
+              <Text style={styles.registerText}>
+                New employee? <Text style={styles.registerTextBold}>Register here</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.white} />
-            ) : (
-              <Text style={styles.buttonText}>Sign In</Text>
-            )}
-          </TouchableOpacity>
-
-          <View style={styles.infoBox}>
-            <Ionicons name="information-circle" size={20} color={colors.primary} />
-            <Text style={styles.infoText}>
-              Enter your phone number (0457 802 302) or email and PIN to access your timesheet.
-            </Text>
+          {/* Security Badge */}
+          <View style={styles.securityBadge}>
+            <Ionicons name="shield-checkmark" size={16} color={colors.success} />
+            <Text style={styles.securityText}>Secure & Encrypted</Text>
           </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>© 2024 Supreme Hospitality</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
