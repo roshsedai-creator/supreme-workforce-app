@@ -450,13 +450,25 @@ export default function AdminScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Quick Action - Availability Snapshot */}
+      {/* Quick Actions */}
       <View style={styles.quickActionsSection}>
+        <TouchableOpacity
+          style={styles.reportsButton}
+          onPress={() => setShowReportsModal(true)}
+        >
+          <Ionicons name="bar-chart" size={28} color={colors.white} />
+          <View style={styles.availabilityButtonContent}>
+            <Text style={styles.availabilityButtonTitle}>Reports Center</Text>
+            <Text style={styles.availabilityButtonSubtitle}>Generate payroll, roster, timesheet & ABN reports</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={styles.availabilityButton}
           onPress={() => setShowAvailabilityModal(true)}
         >
-          <Ionicons name="calendar-outline" size={24} color={colors.white} />
+          <Ionicons name="people" size={24} color={colors.white} />
           <View style={styles.availabilityButtonContent}>
             <Text style={styles.availabilityButtonTitle}>Employee Availability</Text>
             <Text style={styles.availabilityButtonSubtitle}>View weekly snapshot by site</Text>
