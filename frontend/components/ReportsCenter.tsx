@@ -292,8 +292,8 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
 
   const handleStartDateChange = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || startDate;
-    setShowStartPicker(Platform.OS === 'ios'); // Keep open on iOS
-    if (Platform.OS === 'android') {
+    // Close picker on Android and Web after selection
+    if (Platform.OS !== 'ios') {
       setShowStartPicker(false);
     }
     setStartDate(currentDate);
@@ -301,8 +301,8 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
 
   const handleEndDateChange = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || endDate;
-    setShowEndPicker(Platform.OS === 'ios'); // Keep open on iOS
-    if (Platform.OS === 'android') {
+    // Close picker on Android and Web after selection
+    if (Platform.OS !== 'ios') {
       setShowEndPicker(false);
     }
     setEndDate(currentDate);
