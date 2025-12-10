@@ -255,7 +255,7 @@ export default function AdminScreen() {
     setShowUserModal(true);
   };
 
-  const handleToggleUserStatus = async (user: any) => {
+  const handleToggleUserStatus = async (user) => {
     const newStatus = user.status === 'active' ? 'inactive' : 'active';
     const action = newStatus === 'inactive' ? 'Disable' : 'Enable';
     
