@@ -757,6 +757,31 @@ export default function AdminScreen() {
               >
                 <Ionicons name="create-outline" size={20} color={colors.primary} />
               </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => handleChangeUserRole(user)}
+              >
+                <Ionicons name="person-circle" size={20} color={colors.primary} />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.editButton, { backgroundColor: user.status === 'active' ? colors.warning + '15' : colors.success + '15' }]}
+                onPress={() => handleToggleUserStatus(user)}
+              >
+                <Ionicons 
+                  name={user.status === 'active' ? 'pause-circle' : 'play-circle'} 
+                  size={20} 
+                  color={user.status === 'active' ? colors.warning : colors.success} 
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.editButton, { backgroundColor: colors.error + '15' }]}
+                onPress={() => handleDeleteUser(user)}
+              >
+                <Ionicons name="trash" size={20} color={colors.error} />
+              </TouchableOpacity>
             </View>
           </View>
         ))}
