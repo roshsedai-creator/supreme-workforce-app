@@ -31,6 +31,9 @@ export default function RegisterScreen() {
   });
 
   const handleRegister = async () => {
+    console.log('handleRegister called');
+    console.log('Form data:', formData);
+    
     // Validation
     if (!formData.first_name || !formData.last_name || !formData.phone || !formData.email || !formData.pin) {
       Alert.alert('Error', 'Please fill in all required fields');
@@ -64,18 +67,26 @@ export default function RegisterScreen() {
 
     try {
       setLoading(true);
+      console.log('Sending registration request...');
+      
+      const requestData = {
+        first_name: formData.first_name.trim(),
+        last_name: formData.last_name.trim(),
+        phone: formData.phone.trim(),
+        email: formData.email.trim().toLowerCase(),
+        pin: formData.pin,
+        job_title: formData.job_title.trim() || 'Employee',
+        award_level: 1,
+      };
+      
+      console.log('Request data:', requestData);
+      
       const response = await axios.post(
         `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/auth/register`,
-        {
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          phone: formData.phone,
-          email: formData.email,
-          pin: formData.pin,
-          job_title: formData.job_title || 'Employee',
-          award_level: 1,
-        }
+        requestData
       );
+
+      console.log('Response:', response.data);
 
       if (response.data.success) {
         Alert.alert(
@@ -91,10 +102,13 @@ export default function RegisterScreen() {
       }
     } catch (error: any) {
       console.error('Registration error:', error);
-      Alert.alert(
-        'Registration Failed',
-        error.response?.data?.detail || 'Unable to create account. Please try again.'
-      );
+      console.error('Error response:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.detail || 
+                          error.message || 
+                          'Unable to create account. Please try again.';
+      
+      Alert.alert('Registration Failed', errorMessage);
     } finally {
       setLoading(false);
     }
