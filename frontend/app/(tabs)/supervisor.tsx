@@ -793,6 +793,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.primary,
   },
+  deleteBtn: {
+    backgroundColor: colors.error + '15',
+    paddingHorizontal: 12,
+    minWidth: 48,
+  },
   reviewBtn: {
     flex: 2,
     backgroundColor: colors.primary,
