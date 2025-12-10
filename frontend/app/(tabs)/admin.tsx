@@ -41,6 +41,14 @@ export default function AdminScreen() {
   const [inviteLink, setInviteLink] = useState('');
   const [loading, setLoading] = useState(false);
   
+  // Invitation form
+  const [inviteFirstName, setInviteFirstName] = useState('');
+  const [inviteLastName, setInviteLastName] = useState('');
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePhone, setInvitePhone] = useState('');
+  const [inviteJobTitle, setInviteJobTitle] = useState('Room Attendant');
+  const [inviteSiteId, setInviteSiteId] = useState('');
+  
   // Pay rate form
   const [selectedLevel, setSelectedLevel] = useState(1);
   const [weekdayRate, setWeekdayRate] = useState('');
