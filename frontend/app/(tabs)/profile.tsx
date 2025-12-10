@@ -90,6 +90,62 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleOpenBankModal = () => {
+    // Pre-fill with existing data if available
+    if (user?.bank_details) {
+      setBankName(user.bank_details.bank_name || '');
+      setAccountName(user.bank_details.account_name || '');
+      setBsb(user.bank_details.bsb || '');
+      setAccountNumber(user.bank_details.account_number || '');
+    }
+    setShowBankModal(true);
+  };
+
+  const handleSaveBankDetails = async () => {
+    if (!accountName || !bsb || !accountNumber) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    // Validate BSB format (6 digits)
+    if (!/^\d{6}$/.test(bsb.replace('-', ''))) {
+      Alert.alert('Error', 'BSB must be 6 digits (e.g., 123-456)');
+      return;
+    }
+
+    // Validate account number (basic check)
+    if (!/^\d+$/.test(accountNumber)) {
+      Alert.alert('Error', 'Account number must contain only digits');
+      return;
+    }
+
+    try {
+      setSavingBank(true);
+      const response = await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${user?.id}`,
+        {
+          bank_details: {
+            bank_name: bankName,
+            account_name: accountName,
+            bsb: bsb,
+            account_number: accountNumber,
+          }
+        }
+      );
+
+      // Update local user state
+      const updatedUser = response.data.user;
+      setUser(updatedUser, user?.token || '');
+
+      Alert.alert('Success', 'Bank details saved successfully');
+      setShowBankModal(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to save bank details');
+    } finally {
+      setSavingBank(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
