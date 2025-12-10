@@ -114,8 +114,8 @@ export default function AdminScreen() {
       setUsers(usersData);
       
       // Deduplicate pay rates by award_level (keep the first occurrence of each level)
-      const uniquePayRates = payRatesData.data.reduce((acc: any[], rate: any) => {
-        if (!acc.find((r: any) => r.award_level === rate.award_level)) {
+      const uniquePayRates = payRatesData.data.reduce((acc, rate) => {
+        if (!acc.find((r) => r.award_level === rate.award_level)) {
           acc.push(rate);
         }
         return acc;
