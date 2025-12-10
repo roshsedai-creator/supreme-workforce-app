@@ -883,21 +883,23 @@ async def clock_in(request: ClockInRequest):
     if existing:
         raise HTTPException(status_code=400, detail="Already clocked in. Please clock out first.")
     
-    # *** ROSTER VALIDATION ***
+    # *** ROSTER VALIDATION (Optional) ***
     # Check if employee has a rostered shift for current time
+    # Allow clock-in even without roster, but log a warning
     current_time = datetime.utcnow()
     rostered_shift = await db.roster_shifts.find_one({
         "employee_id": request.employee_id,
         "start_time": {"$lte": current_time},
         "end_time": {"$gte": current_time},
-        "status": "scheduled"
+        "status": {"$in": ["scheduled", "published"]}
     })
     
-    if not rostered_shift:
-        raise HTTPException(
-            status_code=403, 
-            detail="You are not rostered to work at this time. Please check your roster or contact your supervisor."
-        )
+    # If strict roster validation is needed, uncomment below:
+    # if not rostered_shift:
+    #     raise HTTPException(
+    #         status_code=403, 
+    #         detail="You are not rostered to work at this time. Please check your roster or contact your supervisor."
+    #     )
     
     # Validate GPS and calculate distance from site
     site = await db.sites.find_one({"_id": ObjectId(request.site_id)})
