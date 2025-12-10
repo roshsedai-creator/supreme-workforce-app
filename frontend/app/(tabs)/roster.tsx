@@ -935,7 +935,7 @@ export default function RosterScreen() {
 
                     {/* Employee Name (Supervisor Only) */}
                     {isSupervisor && (
-                      <Text style={styles.shiftEmployeeName}>
+                      <Text style={styles.shiftEmployeeName} numberOfLines={1} ellipsizeMode="tail">
                         {shift.employee_name}
                       </Text>
                     )}
