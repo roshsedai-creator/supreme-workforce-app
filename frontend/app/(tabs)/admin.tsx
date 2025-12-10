@@ -1226,6 +1226,20 @@ const styles = StyleSheet.create({
   quickActionsSection: {
     padding: 16,
     paddingBottom: 8,
+    gap: 12,
+  },
+  reportsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.success,
+    padding: 20,
+    borderRadius: 16,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
   availabilityButton: {
     flexDirection: 'row',
