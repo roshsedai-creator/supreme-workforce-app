@@ -1212,6 +1212,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  quickActionsSection: {
+    padding: 16,
+    paddingBottom: 8,
+  },
+  availabilityButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    padding: 20,
+    borderRadius: 16,
+    gap: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  availabilityButtonContent: {
+    flex: 1,
+  },
+  availabilityButtonTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.white,
+  },
+  availabilityButtonSubtitle: {
+    fontSize: 13,
+    color: colors.white,
+    opacity: 0.9,
+    marginTop: 4,
+  },
   section: {
     padding: 16,
   },
