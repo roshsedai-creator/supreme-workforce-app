@@ -363,6 +363,88 @@ export default function AdminScreen() {
     }
   };
 
+  const handleCreateInvitation = async () => {
+    if (!inviteFirstName || !inviteLastName || !inviteEmail || !invitePhone || !inviteSiteId) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/invitations`,
+        {
+          first_name: inviteFirstName,
+          last_name: inviteLastName,
+          email: inviteEmail,
+          phone: invitePhone,
+          job_title: inviteJobTitle,
+          role: 'employee',
+          site_id: inviteSiteId
+        }
+      );
+
+      const fullLink = `${process.env.EXPO_PACKAGER_HOSTNAME}/register?token=${response.data.token}`;
+      setInviteLink(fullLink);
+      
+      Alert.alert(
+        'Invitation Created!',
+        `Share this link with ${inviteFirstName} ${inviteLastName}`,
+        [
+          {
+            text: 'Copy Link',
+            onPress: () => {
+              // Show the link since we can't copy on web easily
+              Alert.alert('Registration Link', fullLink);
+            }
+          },
+          { text: 'OK' }
+        ]
+      );
+      
+      // Reset form
+      setInviteFirstName('');
+      setInviteLastName('');
+      setInviteEmail('');
+      setInvitePhone('');
+      setInviteJobTitle('Room Attendant');
+      setInviteSiteId('');
+      
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to create invitation');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteSite = async (site) => {
+    Alert.alert(
+      'Delete Site',
+      `Are you sure you want to delete ${site.name}?\n\nNote: You can only delete sites with no assigned employees or roster shifts.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await axios.delete(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/sites/${site.id}`
+              );
+              Alert.alert('Success', 'Site deleted successfully');
+              fetchData();
+            } catch (error) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete site');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleUpdateEmployee = async () => {
     if (!firstName || !lastName || !phone || !email) {
       Alert.alert('Error', 'Please fill in all required fields');
