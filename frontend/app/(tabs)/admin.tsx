@@ -582,7 +582,7 @@ export default function AdminScreen() {
               </View>
             </View>
 
-            {earnings.employees?.map((emp: any) => (
+            {earnings.employees?.map((emp) => (
               <View key={emp.employee_id} style={styles.card}>
                 <Ionicons name="person-circle" size={24} color={colors.success} />
                 <View style={styles.cardContent}>
