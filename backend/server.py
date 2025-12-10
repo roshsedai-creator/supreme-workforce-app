@@ -203,6 +203,7 @@ class RosterShift(BaseModel):
     employee_id: str
     site_id: str
     role: str  # job title
+    shift_type: str = "work"  # work, rdo, sick, annual, other
     start_time: datetime
     end_time: datetime
     status: str = "scheduled"  # scheduled, completed, cancelled
@@ -215,6 +216,7 @@ class RosterShiftCreate(BaseModel):
     employee_id: str
     site_id: str
     role: str
+    shift_type: str = "work"  # work, rdo, sick, annual, other
     start_time: datetime
     end_time: datetime
     notes: Optional[str] = None
