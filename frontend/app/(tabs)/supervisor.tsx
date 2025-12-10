@@ -236,6 +236,13 @@ export default function SupervisorScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={[styles.actionBtn, styles.deleteBtn]}
+            onPress={() => handleDeleteTimesheet(item)}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.error} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.actionBtn, styles.reviewBtn]}
             onPress={() => {
               setSelectedTimesheet(item);
