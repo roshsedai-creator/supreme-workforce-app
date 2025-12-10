@@ -965,6 +965,262 @@ def test_clock_in_roster_validation():
     
     return results
 
+def test_admin_user_management():
+    """Test P0 Admin User Management features"""
+    results = TestResults()
+    
+    print("\n🗑️ TESTING ADMIN USER MANAGEMENT (P0)")
+    print("-" * 40)
+    
+    # Get admin credentials
+    admin_login = make_request("POST", "/auth/login", {
+        "identifier": TEST_ACCOUNTS["admin"]["phone"],
+        "pin": TEST_ACCOUNTS["admin"]["pin"]
+    })
+    
+    if not admin_login or admin_login.status_code != 200:
+        results.add_result("Admin user management setup", False, "Could not login admin")
+        return results
+    
+    admin_id = admin_login.json()["user"]["id"]
+    
+    # Test 1: Create a test user to delete
+    test_user_data = {
+        "first_name": "Test",
+        "last_name": "DeleteUser",
+        "phone": "0400000001",
+        "email": "test.delete@example.com",
+        "role": "employee",
+        "job_title": "Room Attendant",
+        "pin": "9999"
+    }
+    
+    create_response = make_request("POST", "/users", test_user_data)
+    
+    if create_response and create_response.status_code == 200:
+        test_user = create_response.json()
+        user_id = test_user.get('id')
+        
+        if user_id:
+            # Test 2: Delete the user
+            delete_response = make_request("DELETE", f"/users/{user_id}")
+            
+            if delete_response and delete_response.status_code == 200:
+                delete_data = delete_response.json()
+                if delete_data.get('success'):
+                    results.add_result("Delete user - Valid ID", True, f"User deleted successfully")
+                    
+                    # Verify user is actually deleted
+                    get_response = make_request("GET", f"/users/{user_id}")
+                    if get_response and get_response.status_code == 404:
+                        results.add_result("Delete user - Verification", True, "User removed from database")
+                    else:
+                        results.add_result("Delete user - Verification", False, "User still exists after deletion")
+                else:
+                    results.add_result("Delete user - Valid ID", False, "Success flag not set")
+            else:
+                status = delete_response.status_code if delete_response else "No response"
+                results.add_result("Delete user - Valid ID", False, f"HTTP {status}")
+        else:
+            results.add_result("Create test user for deletion", False, "No user ID returned")
+    else:
+        status = create_response.status_code if create_response else "No response"
+        results.add_result("Create test user for deletion", False, f"HTTP {status}")
+    
+    # Test 3: Try to delete non-existent user
+    fake_id = "507f1f77bcf86cd799439011"  # Valid ObjectId format but non-existent
+    invalid_delete = make_request("DELETE", f"/users/{fake_id}")
+    
+    if invalid_delete and invalid_delete.status_code == 404:
+        results.add_result("Delete user - Invalid ID", True, "Correctly returned 404 for non-existent user")
+    else:
+        status = invalid_delete.status_code if invalid_delete else "No response"
+        results.add_result("Delete user - Invalid ID", False, f"Expected 404, got {status}")
+    
+    # Test 4: User status update (active/inactive)
+    # Get an existing employee
+    employees_response = make_request("GET", "/users?role=employee")
+    if employees_response and employees_response.status_code == 200:
+        employees = employees_response.json()
+        if employees:
+            test_employee = employees[0]
+            employee_id = test_employee.get('id')
+            
+            # Update status to inactive
+            update_response = make_request("PUT", f"/users/{employee_id}", {"status": "inactive"})
+            
+            if update_response and update_response.status_code == 200:
+                data = update_response.json()
+                if data.get('success') and data.get('user', {}).get('status') == 'inactive':
+                    results.add_result("Update user status - Active to Inactive", True, "Status updated successfully")
+                    
+                    # Test login with inactive user (should fail)
+                    login_data = {
+                        "identifier": test_employee.get('phone'),
+                        "pin": test_employee.get('pin', '1111')
+                    }
+                    login_response = make_request("POST", "/auth/login", login_data)
+                    
+                    if login_response and login_response.status_code == 404:
+                        results.add_result("Inactive user login blocked", True, "Inactive user cannot login")
+                    else:
+                        status = login_response.status_code if login_response else "No response"
+                        results.add_result("Inactive user login blocked", False, f"Expected 404, got {status}")
+                    
+                    # Reactivate user
+                    reactivate_response = make_request("PUT", f"/users/{employee_id}", {"status": "active"})
+                    
+                    if reactivate_response and reactivate_response.status_code == 200:
+                        reactivate_data = reactivate_response.json()
+                        if reactivate_data.get('success') and reactivate_data.get('user', {}).get('status') == 'active':
+                            results.add_result("Update user status - Inactive to Active", True, "User reactivated successfully")
+                        else:
+                            results.add_result("Update user status - Inactive to Active", False, "Failed to reactivate user")
+                    else:
+                        status = reactivate_response.status_code if reactivate_response else "No response"
+                        results.add_result("Update user status - Inactive to Active", False, f"HTTP {status}")
+                else:
+                    results.add_result("Update user status - Active to Inactive", False, "Status not updated correctly")
+            else:
+                status = update_response.status_code if update_response else "No response"
+                results.add_result("Update user status - Active to Inactive", False, f"HTTP {status}")
+    
+    return results
+
+def test_bank_details_management():
+    """Test P0 Bank Details Management features"""
+    results = TestResults()
+    
+    print("\n🏦 TESTING BANK DETAILS MANAGEMENT (P0)")
+    print("-" * 40)
+    
+    # Get an existing employee for testing
+    employees_response = make_request("GET", "/users?role=employee")
+    if not employees_response or employees_response.status_code != 200:
+        results.add_result("Bank details setup", False, "Could not get employees")
+        return results
+    
+    employees = employees_response.json()
+    if not employees:
+        results.add_result("Bank details setup", False, "No employees found")
+        return results
+    
+    test_employee = employees[0]
+    user_id = test_employee.get('id')
+    
+    # Test 1: Save bank details
+    bank_details_data = {
+        "bank_details": {
+            "bank_name": "ANZ",
+            "account_name": "John Admin",
+            "bsb": "123456",
+            "account_number": "98765432"
+        }
+    }
+    
+    save_response = make_request("PUT", f"/users/{user_id}", bank_details_data)
+    
+    if save_response and save_response.status_code == 200:
+        data = save_response.json()
+        if data.get('success'):
+            saved_bank_details = data.get('user', {}).get('bank_details', {})
+            
+            # Verify all fields are saved correctly
+            expected_fields = ["bank_name", "account_name", "bsb", "account_number"]
+            all_correct = all(
+                saved_bank_details.get(field) == bank_details_data["bank_details"][field]
+                for field in expected_fields
+            )
+            
+            if all_correct:
+                results.add_result("Save bank details - All fields", True, "All bank details saved correctly")
+            else:
+                results.add_result("Save bank details - All fields", False, f"Field mismatch: {saved_bank_details}")
+        else:
+            results.add_result("Save bank details - All fields", False, "Success flag not set")
+    else:
+        status = save_response.status_code if save_response else "No response"
+        results.add_result("Save bank details - All fields", False, f"HTTP {status}")
+    
+    # Test 2: Update existing bank details
+    updated_bank_details = {
+        "bank_details": {
+            "bank_name": "Commonwealth Bank",
+            "account_name": "John Updated",
+            "bsb": "654321",
+            "account_number": "12345678"
+        }
+    }
+    
+    update_response = make_request("PUT", f"/users/{user_id}", updated_bank_details)
+    
+    if update_response and update_response.status_code == 200:
+        data = update_response.json()
+        if data.get('success'):
+            updated_saved_details = data.get('user', {}).get('bank_details', {})
+            
+            if updated_saved_details.get('bank_name') == 'Commonwealth Bank':
+                results.add_result("Update bank details", True, "Bank details updated successfully")
+            else:
+                results.add_result("Update bank details", False, f"Update failed: {updated_saved_details}")
+        else:
+            results.add_result("Update bank details", False, "Success flag not set")
+    else:
+        status = update_response.status_code if update_response else "No response"
+        results.add_result("Update bank details", False, f"HTTP {status}")
+    
+    # Test 3: Retrieve bank details via GET /users/{user_id}
+    get_user_response = make_request("GET", f"/users/{user_id}")
+    
+    if get_user_response and get_user_response.status_code == 200:
+        user_data = get_user_response.json()
+        bank_details = user_data.get('bank_details', {})
+        
+        if bank_details and bank_details.get('bank_name') == 'Commonwealth Bank':
+            results.add_result("Retrieve bank details - Single user", True, "Bank details retrieved correctly")
+        else:
+            results.add_result("Retrieve bank details - Single user", False, f"Bank details missing or incorrect: {bank_details}")
+    else:
+        status = get_user_response.status_code if get_user_response else "No response"
+        results.add_result("Retrieve bank details - Single user", False, f"HTTP {status}")
+    
+    # Test 4: Retrieve bank details via GET /users (all users)
+    all_users_response = make_request("GET", "/users")
+    
+    if all_users_response and all_users_response.status_code == 200:
+        all_users = all_users_response.json()
+        
+        # Find our test user in the list
+        test_user_found = False
+        for user in all_users:
+            if user.get('id') == user_id:
+                test_user_found = True
+                user_bank_details = user.get('bank_details', {})
+                
+                if user_bank_details and user_bank_details.get('bank_name') == 'Commonwealth Bank':
+                    results.add_result("Retrieve bank details - All users", True, "Bank details included in users list")
+                else:
+                    results.add_result("Retrieve bank details - All users", False, f"Bank details missing in list: {user_bank_details}")
+                break
+        
+        if not test_user_found:
+            results.add_result("Retrieve bank details - All users", False, "Test user not found in users list")
+    else:
+        status = all_users_response.status_code if all_users_response else "No response"
+        results.add_result("Retrieve bank details - All users", False, f"HTTP {status}")
+    
+    # Test 5: Bank details with invalid user ID
+    fake_id = "507f1f77bcf86cd799439011"
+    invalid_response = make_request("PUT", f"/users/{fake_id}", bank_details_data)
+    
+    if invalid_response and invalid_response.status_code == 404:
+        results.add_result("Bank details - Invalid user ID", True, "Correctly returned 404 for non-existent user")
+    else:
+        status = invalid_response.status_code if invalid_response else "No response"
+        results.add_result("Bank details - Invalid user ID", False, f"Expected 404, got {status}")
+    
+    return results
+
 def main():
     """Run all backend API tests"""
     print("🚀 SUPREME HOSPITALITY TIMESHEET BACKEND API TESTS")
@@ -985,7 +1241,9 @@ def main():
         ("Supervisor Dashboard", test_supervisor_dashboard),
         ("Roster Management", test_roster_management),
         ("Availability Management", test_availability_management),
-        ("Clock-in Roster Validation", test_clock_in_roster_validation)
+        ("Clock-in Roster Validation", test_clock_in_roster_validation),
+        ("Admin User Management (P0)", test_admin_user_management),
+        ("Bank Details Management (P0)", test_bank_details_management)
     ]
     
     for suite_name, test_func in test_suites:
