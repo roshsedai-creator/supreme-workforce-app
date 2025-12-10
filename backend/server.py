@@ -358,6 +358,52 @@ async def verify_otp_login(phone: str, otp: str):
         "token": f"otp_token_{user['id']}"
     }
 
+@api_router.post("/auth/register")
+async def employee_self_register(registration: dict):
+    """Employee self-registration endpoint"""
+    # Validate required fields
+    required_fields = ["first_name", "last_name", "phone", "email", "pin"]
+    for field in required_fields:
+        if not registration.get(field):
+            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
+    
+    # Check if phone already exists
+    existing_user = await db.users.find_one({"phone": registration["phone"]})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Phone number already registered")
+    
+    # Check if email already exists
+    existing_email = await db.users.find_one({"email": registration["email"]})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user account
+    user_dict = {
+        "first_name": registration["first_name"],
+        "last_name": registration["last_name"],
+        "phone": registration["phone"],
+        "email": registration["email"],
+        "pin": registration["pin"],
+        "role": "employee",  # Default role
+        "job_title": registration.get("job_title", ""),
+        "award_level": registration.get("award_level", 1),
+        "sites": [],  # Admin will assign sites later
+        "bank_details": None,
+        "is_contractor": False,
+        "status": "active",
+        "created_at": datetime.utcnow()
+    }
+    
+    result = await db.users.insert_one(user_dict)
+    user_dict["id"] = str(result.inserted_id)
+    del user_dict["_id"]
+    
+    return {
+        "success": True,
+        "message": "Registration successful! You can now login.",
+        "user": user_dict
+    }
+
 # =====================
 # USER ENDPOINTS
 # =====================
