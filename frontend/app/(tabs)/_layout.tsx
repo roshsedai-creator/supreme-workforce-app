@@ -1,5 +1,5 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
+import React, { useEffect } from 'react';
+import { Tabs, useRouter, useSegments } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,10 +7,24 @@ import { useAuthStore } from '../../store/authStore';
 import { colors } from '../../constants/colors';
 
 export default function TabsLayout() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const segments = useSegments();
   const insets = useSafeAreaInsets();
   const isSupervisor = user?.role === 'supervisor' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!isAuthenticated) {
+      router.replace('/(auth)/login');
+    }
+  }, [isAuthenticated]);
+
+  // If not authenticated, don't render tabs (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <Tabs
