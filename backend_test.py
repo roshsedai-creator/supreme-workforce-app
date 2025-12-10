@@ -10,7 +10,7 @@ from datetime import datetime
 import time
 
 # Configuration
-BASE_URL = "https://timeclock-20.preview.emergentagent.com/api"
+BASE_URL = "https://stafftracker-21.preview.emergentagent.com/api"
 
 # Test accounts from seed data
 TEST_ACCOUNTS = {
