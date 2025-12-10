@@ -1351,6 +1351,29 @@ async def approve_timesheet(request: ApprovalRequest):
     updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
     return {"success": True, "timesheet": serialize_doc(updated)}
 
+@api_router.delete("/timesheets/{timesheet_id}")
+async def delete_timesheet(timesheet_id: str):
+    """Delete a timesheet (for invalid/erroneous entries)"""
+    try:
+        timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
+        if not timesheet:
+            raise HTTPException(status_code=404, detail="Timesheet not found")
+        
+        # Delete the timesheet
+        result = await db.timesheets.delete_one({"_id": ObjectId(timesheet_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Timesheet not found")
+        
+        return {
+            "success": True,
+            "message": "Timesheet deleted successfully"
+        }
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Failed to delete timesheet: {str(e)}")
+
 # =====================
 # DASHBOARD ENDPOINTS
 # =====================
