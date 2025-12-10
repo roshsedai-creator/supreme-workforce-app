@@ -1159,15 +1159,15 @@ export default function AdminScreen() {
                 </Text>
               </View>
 
-              {users.filter((u: any) => u.role === 'employee' || u.role === 'supervisor').length === 0 ? (
+              {users.filter((u) => u.role === 'employee' || u.role === 'supervisor').length === 0 ? (
                 <View style={styles.emptyBankState}>
                   <Ionicons name="people" size={64} color={colors.gray[300]} />
                   <Text style={styles.emptyBankText}>No employees found</Text>
                 </View>
               ) : (
                 users
-                  .filter((u: any) => u.role === 'employee' || u.role === 'supervisor')
-                  .map((employee: any) => (
+                  .filter((u) => u.role === 'employee' || u.role === 'supervisor')
+                  .map((employee) => (
                     <View key={employee.id} style={styles.bankCard}>
                       <View style={styles.bankCardHeader}>
                         <Ionicons name="person-circle" size={32} color={colors.primary} />
