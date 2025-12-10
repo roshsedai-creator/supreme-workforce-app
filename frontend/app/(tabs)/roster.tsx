@@ -1900,6 +1900,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 4,
   },
+  dayColumnDropZone: {
+    backgroundColor: colors.success + '10',
+    borderWidth: 2,
+    borderColor: colors.success,
+    borderStyle: 'dashed',
+  },
   dayHeader: {
     backgroundColor: colors.white,
     padding: 8,
