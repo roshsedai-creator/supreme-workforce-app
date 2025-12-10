@@ -177,6 +177,66 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>🏦 Bank Details</Text>
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => Alert.alert('Coming Soon', 'Bank details editing will be available soon')}
+              >
+                <Ionicons name="create-outline" size={20} color={colors.primary} />
+                <Text style={styles.editButtonText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.infoCard}>
+              {user?.bank_details ? (
+                <>
+                  <View style={styles.infoRow}>
+                    <Ionicons name="business" size={20} color={colors.text.secondary} />
+                    <Text style={styles.infoLabel}>Bank Name</Text>
+                    <Text style={styles.infoValue}>{user?.bank_details?.bank_name || 'Not provided'}</Text>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Ionicons name="person" size={20} color={colors.text.secondary} />
+                    <Text style={styles.infoLabel}>Account Name</Text>
+                    <Text style={styles.infoValue}>{user?.bank_details?.account_name || 'Not provided'}</Text>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Ionicons name="card" size={20} color={colors.text.secondary} />
+                    <Text style={styles.infoLabel}>BSB</Text>
+                    <Text style={styles.infoValue}>{user?.bank_details?.bsb || 'Not provided'}</Text>
+                  </View>
+                  
+                  <View style={styles.infoRow}>
+                    <Ionicons name="keypad" size={20} color={colors.text.secondary} />
+                    <Text style={styles.infoLabel}>Account Number</Text>
+                    <Text style={styles.infoValue}>
+                      {user?.bank_details?.account_number 
+                        ? `****${user.bank_details.account_number.slice(-4)}` 
+                        : 'Not provided'}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.emptyBankDetails}>
+                  <Ionicons name="information-circle" size={48} color={colors.gray[300]} />
+                  <Text style={styles.emptyText}>No bank details added</Text>
+                  <Text style={styles.emptySubtext}>Add your bank details to receive salary payments</Text>
+                  <TouchableOpacity 
+                    style={styles.addBankButton}
+                    onPress={() => Alert.alert('Coming Soon', 'Bank details editing will be available soon')}
+                  >
+                    <Ionicons name="add-circle" size={20} color={colors.white} />
+                    <Text style={styles.addBankButtonText}>Add Bank Details</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>ℹ️ App Information</Text>
             
             <View style={styles.infoCard}>
