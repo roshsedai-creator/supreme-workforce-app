@@ -815,6 +815,61 @@ export default function RosterScreen() {
     }
   };
 
+  const handleStartDrag = (shift: RosterShift) => {
+    if (!isSupervisor) return;
+    setDraggedShift(shift);
+    setIsDragging(true);
+    Alert.alert(
+      '📦 Shift Selected',
+      `Moving: ${shift.employee_name}\n${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}\n\nTap a day to move this shift there, or tap Cancel.`,
+      [
+        {
+          text: 'Cancel',
+          onPress: () => {
+            setDraggedShift(null);
+            setIsDragging(false);
+          },
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  const handleDropShift = async (targetDate: Date) => {
+    if (!draggedShift || !isDragging) return;
+
+    try {
+      setLoading(true);
+      
+      // Calculate new start and end times for the target date
+      const originalStart = new Date(draggedShift.start_time);
+      const originalEnd = new Date(draggedShift.end_time);
+      
+      const newStart = new Date(targetDate);
+      newStart.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+      
+      const newEnd = new Date(targetDate);
+      newEnd.setHours(originalEnd.getHours(), originalEnd.getMinutes(), 0, 0);
+      
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${draggedShift.id}`,
+        {
+          start_time: newStart.toISOString(),
+          end_time: newEnd.toISOString(),
+        }
+      );
+      
+      Alert.alert('Success', `Shift moved to ${targetDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}!`);
+      setDraggedShift(null);
+      setIsDragging(false);
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to move shift');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderWeekView = () => {
     const weekStart = getWeekStart(selectedDate);
     const days = [];
@@ -823,28 +878,68 @@ export default function RosterScreen() {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
       const dayShifts = getShiftsForDate(date);
+      const isDropZone = isDragging;
       
       days.push(
-        <View key={i} style={styles.dayColumn}>
+        <TouchableOpacity
+          key={i}
+          style={[
+            styles.dayColumn,
+            isDropZone && styles.dayColumnDropZone
+          ]}
+          onPress={() => isDropZone && handleDropShift(date)}
+          activeOpacity={isDropZone ? 0.7 : 1}
+          disabled={!isDropZone}
+        >
           <View style={styles.dayHeader}>
             <Text style={styles.dayName}>{date.toLocaleDateString('en-US', { weekday: 'short' })}</Text>
             <Text style={styles.dayDate}>{date.getDate()}</Text>
+            {isDropZone && (
+              <Ionicons name="arrow-down-circle" size={16} color={colors.success} />
+            )}
           </View>
           
           <ScrollView style={styles.dayShifts}>
             {dayShifts.length > 0 ? (
               dayShifts.map(shift => {
                 const shiftStyle = getShiftTypeColor(shift.shift_type);
+                const isBeingDragged = draggedShift?.id === shift.id;
                 return (
                   <TouchableOpacity
                     key={shift.id}
                     style={[
                       styles.shiftCard,
-                      { backgroundColor: shiftStyle.bg, borderLeftColor: shiftStyle.border }
+                      { backgroundColor: shiftStyle.bg, borderLeftColor: shiftStyle.border },
+                      isBeingDragged && styles.shiftCardDragging
                     ]}
-                    onPress={() => isSupervisor && handleShiftLongPress(shift)}
-                    onLongPress={() => handleShiftLongPress(shift)}
+                    onPress={() => {
+                      if (isDragging) return;
+                      if (isSupervisor) handleShiftLongPress(shift);
+                    }}
+                    onLongPress={() => {
+                      if (!isDragging && isSupervisor) {
+                        Alert.alert(
+                          'Quick Actions',
+                          'What would you like to do?',
+                          [
+                            {
+                              text: '🚚 Move Shift (Drag)',
+                              onPress: () => handleStartDrag(shift)
+                            },
+                            {
+                              text: '⚙️ More Options',
+                              onPress: () => handleShiftLongPress(shift)
+                            },
+                            {
+                              text: 'Cancel',
+                              style: 'cancel'
+                            }
+                          ]
+                        );
+                      }
+                    }}
                     activeOpacity={0.7}
+                    disabled={isDragging && !isBeingDragged}
                   >
                     <View style={styles.shiftTypeRow}>
                       <Text style={styles.shiftTypeIcon}>{shiftStyle.icon}</Text>
