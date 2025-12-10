@@ -456,6 +456,38 @@ async def update_user(user_id: str, update_data: dict):
     updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
     return {"success": True, "user": serialize_doc(updated_user)}
 
+@api_router.delete("/users/{user_id}")
+async def delete_user(user_id: str):
+    """Delete a user and all their associated data"""
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Delete user's timesheets
+        await db.timesheets.delete_many({"employee_id": user_id})
+        
+        # Delete user from roster shifts
+        await db.RosterShifts.update_many(
+            {"employee_id": user_id},
+            {"$set": {"employee_id": None, "employee_name": "Unassigned"}}
+        )
+        
+        # Delete the user
+        result = await db.users.delete_one({"_id": ObjectId(user_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "success": True,
+            "message": f"User {user.get('first_name')} {user.get('last_name')} deleted successfully"
+        }
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
+
 # =====================
 # SITE ENDPOINTS
 # =====================
