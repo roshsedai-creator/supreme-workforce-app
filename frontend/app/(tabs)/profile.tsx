@@ -16,10 +16,16 @@ import { colors } from '../../constants/colors';
 import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuthStore();
+  const { user, logout, setUser } = useAuthStore();
   const router = useRouter();
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showBankModal, setShowBankModal] = useState(false);
+  const [bankName, setBankName] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [bsb, setBsb] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [savingBank, setSavingBank] = useState(false);
 
   useEffect(() => {
     fetchStats();
