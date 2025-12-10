@@ -62,17 +62,9 @@ export default function ProfileScreen() {
         {
           text: 'Logout',
           style: 'destructive',
-          onPress: async () => {
-            // Clear auth store
+          onPress: () => {
+            // Clear auth store - navigation will be handled by tabs layout
             logout();
-            
-            // For web - just reload the page completely
-            if (typeof window !== 'undefined') {
-              window.location.replace('/');
-            } else {
-              // For mobile
-              router.replace('/(auth)/login');
-            }
           },
         },
       ]
