@@ -19,6 +19,7 @@ import { colors } from '../../constants/colors';
 import axios from 'axios';
 import PermissionsModal from '../../components/PermissionsModal';
 import AvailabilitySnapshot from '../../components/AvailabilitySnapshot';
+import ReportsCenter from '../../components/ReportsCenter';
 
 export default function AdminScreen() {
   const [sites, setSites] = useState<any[]>([]);
@@ -28,9 +29,8 @@ export default function AdminScreen() {
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showPayRateModal, setShowPayRateModal] = useState(false);
-  const [showContractModal, setShowContractModal] = useState(false);
-  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [showReportsModal, setShowReportsModal] = useState(false);
   const [loading, setLoading] = useState(false);
   
   // Pay rate form
@@ -40,12 +40,6 @@ export default function AdminScreen() {
   const [sundayRate, setSundayRate] = useState('');
   const [publicHolidayRate, setPublicHolidayRate] = useState('');
   const [overtimeRate, setOvertimeRate] = useState('');
-  
-  // Contract/Invoice form
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [contractType, setContractType] = useState('employment');
-  const [invoiceStartDate, setInvoiceStartDate] = useState('');
-  const [invoiceEndDate, setInvoiceEndDate] = useState('');
 
   // Site form
   const [siteName, setSiteName] = useState('');
