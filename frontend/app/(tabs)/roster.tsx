@@ -642,16 +642,84 @@ export default function RosterScreen() {
     setShowCreateModal(true);
   };
 
+  const handleEditShift = (shift: RosterShift) => {
+    // Pre-fill form with existing shift data
+    setEditingShift(shift);
+    setSelectedEmployee(shift.employee_id);
+    setSelectedSite(shift.site_id);
+    setSelectedRole(shift.role);
+    setShiftType((shift.shift_type || 'work') as any);
+    setShiftStart(new Date(shift.start_time));
+    setShiftEnd(new Date(shift.end_time));
+    setShiftNotes(shift.notes || '');
+    setShowCreateModal(true);
+  };
+
+  const handleUpdateShift = async () => {
+    if (!selectedEmployee || !selectedSite || !selectedRole || !editingShift) {
+      Alert.alert('Error', 'Please fill all required fields');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${editingShift.id}`,
+        {
+          employee_id: selectedEmployee,
+          site_id: selectedSite,
+          role: selectedRole,
+          shift_type: shiftType,
+          start_time: shiftStart.toISOString(),
+          end_time: shiftEnd.toISOString(),
+          notes: shiftNotes,
+        }
+      );
+      
+      const shiftTypeLabel = shiftType === 'work' ? 'Shift' : 
+                            shiftType === 'rdo' ? 'RDO' :
+                            shiftType === 'sick' ? 'Sick Leave' :
+                            shiftType === 'annual' ? 'Annual Leave' : 'Leave';
+      Alert.alert('Success', `${shiftTypeLabel} updated successfully!`);
+      setShowCreateModal(false);
+      setEditingShift(null);
+      resetCreateForm();
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update shift');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleShiftLongPress = (shift: RosterShift) => {
     if (!isSupervisor) return;
     
+    const shiftStyle = getShiftTypeColor(shift.shift_type);
+    
     Alert.alert(
       'Shift Actions',
-      `${shift.employee_name} • ${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`,
+      `${shiftStyle.icon} ${shift.employee_name} • ${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`,
       [
         {
-          text: 'Reassign',
+          text: 'Edit',
+          onPress: () => handleEditShift(shift)
+        },
+        {
+          text: 'Change to Sick Leave',
+          onPress: () => handleQuickChangeType(shift, 'sick')
+        },
+        {
+          text: 'Change to RDO',
+          onPress: () => handleQuickChangeType(shift, 'rdo')
+        },
+        {
+          text: 'Reassign Employee',
           onPress: () => promptReassignShift(shift)
+        },
+        {
+          text: 'Copy to Next Week',
+          onPress: () => handleCopyShift(shift)
         },
         {
           text: 'Delete',
@@ -659,15 +727,31 @@ export default function RosterScreen() {
           onPress: () => handleDeleteShift(shift.id)
         },
         {
-          text: 'Copy to Next Week',
-          onPress: () => handleCopyShift(shift)
-        },
-        {
           text: 'Cancel',
           style: 'cancel'
         }
       ]
     );
+  };
+
+  const handleQuickChangeType = async (shift: RosterShift, newType: string) => {
+    try {
+      setLoading(true);
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${shift.id}`,
+        { shift_type: newType }
+      );
+      
+      const typeLabel = newType === 'sick' ? 'Sick Leave' : 
+                       newType === 'rdo' ? 'RDO' : 
+                       newType === 'annual' ? 'Annual Leave' : 'Leave';
+      Alert.alert('Success', `Shift changed to ${typeLabel}`);
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update shift');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDeleteShift = async (shiftId: string) => {
