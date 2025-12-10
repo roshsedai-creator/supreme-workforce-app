@@ -971,7 +971,7 @@ export default function RosterScreen() {
             ) : null}
             
             {/* Quick Add Button for Empty Days */}
-            {isSupervisor && (
+            {isSupervisor && !isDragging && (
               <TouchableOpacity
                 style={styles.addShiftButton}
                 onPress={() => handleQuickCreateShift(date)}
@@ -980,8 +980,16 @@ export default function RosterScreen() {
                 <Text style={styles.addShiftText}>Add Shift</Text>
               </TouchableOpacity>
             )}
+            
+            {/* Drop Zone Indicator */}
+            {isDropZone && (
+              <View style={styles.dropZoneIndicator}>
+                <Ionicons name="hand-left" size={24} color={colors.success} />
+                <Text style={styles.dropZoneText}>Tap to drop here</Text>
+              </View>
+            )}
           </ScrollView>
-        </View>
+        </TouchableOpacity>
       );
     }
     
