@@ -380,57 +380,87 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
               <View style={styles.dateRow}>
                 <View style={styles.dateGroup}>
                   <Text style={styles.inputLabel}>Start Date</Text>
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => {
-                      console.log('Start date clicked');
-                      setShowStartPicker(true);
-                    }}
-                  >
-                    <Ionicons name="calendar" size={20} color={colors.primary} />
-                    <Text style={styles.dateButtonText}>
-                      {startDate.toLocaleDateString('en-US', { 
-                        year: 'numeric',
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </Text>
-                  </TouchableOpacity>
-                  {showStartPicker && (
-                    <DateTimePicker
-                      value={startDate}
-                      mode="date"
-                      display="default"
-                      onChange={handleStartDateChange}
+                  {Platform.OS === 'web' ? (
+                    <TextInput
+                      style={styles.dateInput}
+                      value={startDate.toISOString().split('T')[0]}
+                      onChangeText={(text) => {
+                        const newDate = new Date(text);
+                        if (!isNaN(newDate.getTime())) {
+                          setStartDate(newDate);
+                        }
+                      }}
+                      placeholder="YYYY-MM-DD"
+                      // @ts-ignore - web-specific prop
+                      type="date"
                     />
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowStartPicker(true)}
+                      >
+                        <Ionicons name="calendar" size={20} color={colors.primary} />
+                        <Text style={styles.dateButtonText}>
+                          {startDate.toLocaleDateString('en-US', { 
+                            year: 'numeric',
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </Text>
+                      </TouchableOpacity>
+                      {showStartPicker && (
+                        <DateTimePicker
+                          value={startDate}
+                          mode="date"
+                          display="default"
+                          onChange={handleStartDateChange}
+                        />
+                      )}
+                    </>
                   )}
                 </View>
 
                 <View style={styles.dateGroup}>
                   <Text style={styles.inputLabel}>End Date</Text>
-                  <TouchableOpacity
-                    style={styles.dateButton}
-                    onPress={() => {
-                      console.log('End date clicked');
-                      setShowEndPicker(true);
-                    }}
-                  >
-                    <Ionicons name="calendar" size={20} color={colors.primary} />
-                    <Text style={styles.dateButtonText}>
-                      {endDate.toLocaleDateString('en-US', { 
-                        year: 'numeric',
-                        month: 'short', 
-                        day: 'numeric' 
-                      })}
-                    </Text>
-                  </TouchableOpacity>
-                  {showEndPicker && (
-                    <DateTimePicker
-                      value={endDate}
-                      mode="date"
-                      display="default"
-                      onChange={handleEndDateChange}
+                  {Platform.OS === 'web' ? (
+                    <TextInput
+                      style={styles.dateInput}
+                      value={endDate.toISOString().split('T')[0]}
+                      onChangeText={(text) => {
+                        const newDate = new Date(text);
+                        if (!isNaN(newDate.getTime())) {
+                          setEndDate(newDate);
+                        }
+                      }}
+                      placeholder="YYYY-MM-DD"
+                      // @ts-ignore - web-specific prop
+                      type="date"
                     />
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.dateButton}
+                        onPress={() => setShowEndPicker(true)}
+                      >
+                        <Ionicons name="calendar" size={20} color={colors.primary} />
+                        <Text style={styles.dateButtonText}>
+                          {endDate.toLocaleDateString('en-US', { 
+                            year: 'numeric',
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                        </Text>
+                      </TouchableOpacity>
+                      {showEndPicker && (
+                        <DateTimePicker
+                          value={endDate}
+                          mode="date"
+                          display="default"
+                          onChange={handleEndDateChange}
+                        />
+                      )}
+                    </>
                   )}
                 </View>
               </View>
