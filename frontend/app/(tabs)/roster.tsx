@@ -500,6 +500,102 @@ export default function RosterScreen() {
     });
   };
 
+  const handleCopyWeek = async () => {
+    if (!isSupervisor) return;
+    
+    Alert.alert(
+      'Copy Week',
+      'Copy all shifts from this week to next week?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Copy',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              
+              let successCount = 0;
+              const promises = shifts.map(async (shift) => {
+                const newStartTime = new Date(shift.start_time);
+                newStartTime.setDate(newStartTime.getDate() + 7);
+                
+                const newEndTime = new Date(shift.end_time);
+                newEndTime.setDate(newEndTime.getDate() + 7);
+                
+                try {
+                  await axios.post(
+                    `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts`,
+                    {
+                      employee_id: shift.employee_id,
+                      site_id: shift.site_id,
+                      role: shift.role,
+                      start_time: newStartTime.toISOString(),
+                      end_time: newEndTime.toISOString(),
+                      notes: shift.notes,
+                      created_by: user?.id,
+                    }
+                  );
+                  successCount++;
+                } catch (error) {
+                  console.error('Failed to copy shift:', error);
+                }
+              });
+              
+              await Promise.all(promises);
+              
+              Alert.alert('Success', `Copied ${successCount} shifts to next week!`);
+              // Move to next week
+              nextWeek();
+              await loadData();
+            } catch (error: any) {
+              Alert.alert('Error', 'Failed to copy shifts');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handlePublishWeek = async () => {
+    if (!isSupervisor) return;
+    
+    const weekStart = getWeekStart(selectedDate);
+    const weekEnd = getWeekEnd(selectedDate);
+    
+    Alert.alert(
+      'Publish Week',
+      `Publish all shifts for the week of ${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}?\n\nEmployees will be notified of their shifts.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Publish',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              
+              await axios.post(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/publish`,
+                {
+                  week_start: weekStart.toISOString(),
+                  week_end: weekEnd.toISOString(),
+                }
+              );
+              
+              Alert.alert('Success', 'Week published! Employees can now view their shifts.');
+              loadData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to publish week');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleQuickCreateShift = (date: Date) => {
     if (!isSupervisor) {
       Alert.alert('Permission Denied', 'Only supervisors can create shifts');
