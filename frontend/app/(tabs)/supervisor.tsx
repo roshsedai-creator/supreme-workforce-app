@@ -133,6 +133,34 @@ export default function SupervisorScreen() {
     }
   };
 
+  const handleDeleteTimesheet = (timesheet: any) => {
+    Alert.alert(
+      'Delete Timesheet',
+      'Are you sure you want to delete this timesheet? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              await axios.delete(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheet.id}`
+              );
+              Alert.alert('Success', 'Timesheet deleted successfully');
+              fetchData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete timesheet');
+            } finally {
+              setActionLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const renderActiveEmployee = ({ item }: any) => {
     const clockIn = new Date(item.clock_in);
     const now = new Date();
