@@ -374,6 +374,91 @@ export default function ProfileScreen() {
         <Text style={styles.footerText}>Made with ❤️ for Supreme Hospitality</Text>
         <Text style={styles.footerSubtext}>© 2024 All rights reserved</Text>
       </View>
+
+      {/* Bank Details Modal */}
+      <Modal
+        visible={showBankModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowBankModal(false)}
+      >
+        <KeyboardAvoidingView 
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Bank Details</Text>
+              <TouchableOpacity onPress={() => setShowBankModal(false)}>
+                <Ionicons name="close" size={28} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Bank Name (Optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., ANZ, CommBank, Westpac"
+                value={bankName}
+                onChangeText={setBankName}
+              />
+
+              <Text style={styles.inputLabel}>Account Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Full name on account"
+                value={accountName}
+                onChangeText={setAccountName}
+              />
+
+              <Text style={styles.inputLabel}>BSB *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="123-456"
+                value={bsb}
+                onChangeText={setBsb}
+                keyboardType="numeric"
+                maxLength={7}
+              />
+
+              <Text style={styles.inputLabel}>Account Number *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter account number"
+                value={accountNumber}
+                onChangeText={setAccountNumber}
+                keyboardType="numeric"
+                secureTextEntry
+              />
+
+              <Text style={styles.helperText}>
+                * Required fields. Your bank details are stored securely and used only for salary payments.
+              </Text>
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowBankModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.saveButton, savingBank && styles.saveButtonDisabled]}
+                onPress={handleSaveBankDetails}
+                disabled={savingBank}
+              >
+                {savingBank ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveButtonText}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScrollView>
   );
 }
