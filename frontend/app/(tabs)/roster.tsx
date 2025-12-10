@@ -819,12 +819,14 @@ export default function RosterScreen() {
     if (!isSupervisor) return;
     setDraggedShift(shift);
     setIsDragging(true);
+    
+    // Show instructions with auto-dismiss
     Alert.alert(
-      '📦 Shift Selected',
-      `Moving: ${shift.employee_name}\n${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}\n\nTap a day to move this shift there, or tap Cancel.`,
+      '🚚 Drag Mode Active',
+      `Moving:\n${shift.employee_name}\n${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}\n\n✅ TAP any GREEN DAY to drop\n❌ TAP CANCEL to abort`,
       [
         {
-          text: 'Cancel',
+          text: 'Cancel Move',
           onPress: () => {
             setDraggedShift(null);
             setIsDragging(false);
