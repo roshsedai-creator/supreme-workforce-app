@@ -82,9 +82,26 @@ export default function AdminScreen() {
     export_payroll: false,
   });
 
+  // Security check - only admins can access
+  useEffect(() => {
+    if (user?.role !== 'admin') {
+      Alert.alert('Access Denied', 'You do not have permission to access this page');
+      router.replace('/home');
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Don't render anything if not admin
+  if (user?.role !== 'admin') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Access Denied</Text>
+      </View>
+    );
+  }
 
   const fetchData = async () => {
     try {
