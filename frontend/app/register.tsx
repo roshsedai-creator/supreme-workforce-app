@@ -160,6 +160,17 @@ export default function RegisterScreen() {
     }
   };
 
+  if (loadingInvite) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ marginTop: 16, color: colors.text.secondary }}>
+          Loading invitation details...
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
@@ -172,8 +183,12 @@ export default function RegisterScreen() {
       >
         <View style={styles.header}>
           <Ionicons name="person-add" size={64} color={colors.primary} />
-          <Text style={styles.title}>Join Our Team</Text>
-          <Text style={styles.subtitle}>Create your employee account</Text>
+          <Text style={styles.title}>
+            {invitationToken ? '📧 Complete Your Invitation' : 'Join Our Team'}
+          </Text>
+          <Text style={styles.subtitle}>
+            {invitationToken ? 'You\'ve been invited! Just set your PIN.' : 'Create your employee account'}
+          </Text>
         </View>
 
         <View style={styles.form}>
