@@ -206,7 +206,7 @@ export default function AdminScreen() {
     }
   };
 
-  const handleEditPermissions = (user: any) => {
+  const handleEditPermissions = (user) => {
     setEditingPermissions(user);
     setPermissions(user.permissions || {
       view_own_pay: false,
