@@ -929,12 +929,31 @@ export default function RosterScreen() {
                       <Text style={[styles.shiftTypeLabel, { color: shiftStyle.border }]}>
                         {shiftStyle.label}
                       </Text>
+                      {!isDragging && isSupervisor && (
+                        <TouchableOpacity 
+                          onPress={() => handleEditShift(shift)}
+                          style={styles.quickEditButton}
+                        >
+                          <Ionicons name="create-outline" size={14} color={colors.primary} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                     {isSupervisor && (
-                      <View style={styles.shiftEmployeeRow}>
-                        <Ionicons name="person" size={14} color={colors.text.primary} />
-                        <Text style={styles.shiftEmployee}>{shift.employee_name}</Text>
-                      </View>
+                      <TouchableOpacity 
+                        onPress={() => !isDragging && handleEditShift(shift)}
+                        disabled={isDragging}
+                        activeOpacity={0.7}
+                      >
+                        <View style={styles.shiftEmployeeRow}>
+                          <Ionicons name="person" size={14} color={colors.primary} />
+                          <Text style={[styles.shiftEmployee, { color: colors.primary }]}>
+                            {shift.employee_name}
+                          </Text>
+                          {!isDragging && (
+                            <Ionicons name="chevron-forward" size={12} color={colors.primary} />
+                          )}
+                        </View>
+                      </TouchableOpacity>
                     )}
                     <View style={styles.shiftTimeRow}>
                       <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
