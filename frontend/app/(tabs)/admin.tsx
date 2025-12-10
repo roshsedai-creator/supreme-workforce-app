@@ -315,7 +315,7 @@ export default function AdminScreen() {
     );
   };
 
-  const handleChangeUserRole = async (user: any) => {
+  const handleChangeUserRole = async (user) => {
     Alert.alert(
       'Change Role',
       `Select new role for ${user.first_name} ${user.last_name}`,
