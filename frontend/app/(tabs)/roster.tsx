@@ -83,7 +83,8 @@ export default function RosterScreen() {
   const [templateEndTime, setTemplateEndTime] = useState('17:00');
   const [templates, setTemplates] = useState<any[]>([]);
   
-  // Create shift form
+  // Create/Edit shift form
+  const [editingShift, setEditingShift] = useState<RosterShift | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedSite, setSelectedSite] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
