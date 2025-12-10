@@ -20,8 +20,29 @@ import axios from 'axios';
 import PermissionsModal from '../../components/PermissionsModal';
 import AvailabilitySnapshot from '../../components/AvailabilitySnapshot';
 import ReportsCenter from '../../components/ReportsCenter';
+import { useAuthStore } from '../../store/authStore';
+import { useRouter } from 'expo-router';
 
 export default function AdminScreen() {
+  const { user } = useAuthStore();
+  const router = useRouter();
+
+  // Security check - only admins can access
+  useEffect(() => {
+    if (user?.role !== 'admin') {
+      Alert.alert('Access Denied', 'You do not have permission to access this page');
+      router.replace('/home');
+    }
+  }, [user]);
+
+  // Don't render anything if not admin
+  if (user?.role !== 'admin') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Access Denied</Text>
+      </View>
+    );
+  }
   const [sites, setSites] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [payRates, setPayRates] = useState<any[]>([]);
