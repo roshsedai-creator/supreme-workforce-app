@@ -1,33 +1,18 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, Redirect } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { colors } from '../constants/colors';
 
 export default function Index() {
-  const router = useRouter();
   const { isAuthenticated } = useAuthStore();
 
-  useEffect(() => {
-    // Navigate based on auth status
-    const timer = setTimeout(() => {
-      if (isAuthenticated) {
-        router.replace('/(tabs)/home');
-      } else {
-        router.replace('/(auth)/login');
-      }
-    }, 500);
+  // Immediate redirect based on auth status
+  if (isAuthenticated) {
+    return <Redirect href="/(tabs)/home" />;
+  }
 
-    return () => clearTimeout(timer);
-  }, [isAuthenticated]);
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Supreme Hospitality</Text>
-      <Text style={styles.subtitle}>Timesheet Management</Text>
-      <ActivityIndicator size="large" color={colors.primary} style={styles.loader} />
-    </View>
-  );
+  return <Redirect href="/(auth)/login" />;
 }
 
 const styles = StyleSheet.create({
