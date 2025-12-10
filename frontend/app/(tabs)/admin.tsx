@@ -419,6 +419,18 @@ export default function AdminScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
+          style={[styles.availabilityButton, { backgroundColor: colors.success }]}
+          onPress={() => setShowBankDetailsModal(true)}
+        >
+          <Ionicons name="card" size={24} color={colors.white} />
+          <View style={styles.availabilityButtonContent}>
+            <Text style={styles.availabilityButtonTitle}>Employee Bank Details</Text>
+            <Text style={styles.availabilityButtonSubtitle}>View all bank accounts for payroll</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.availabilityButton}
           onPress={() => setShowAvailabilityModal(true)}
         >
