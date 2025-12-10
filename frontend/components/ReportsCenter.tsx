@@ -492,6 +492,92 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                     </Text>
                   )}
                 </View>
+
+                {/* View Details Button */}
+                <TouchableOpacity
+                  style={styles.viewDetailsButton}
+                  onPress={() => setShowDetailedView(!showDetailedView)}
+                >
+                  <Ionicons 
+                    name={showDetailedView ? "chevron-up" : "chevron-down"} 
+                    size={20} 
+                    color={colors.primary} 
+                  />
+                  <Text style={styles.viewDetailsText}>
+                    {showDetailedView ? 'Hide Details' : 'View Detailed Records'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Detailed View */}
+                {showDetailedView && (
+                  <View style={styles.detailedView}>
+                    <Text style={styles.detailedTitle}>Detailed Records</Text>
+                    <ScrollView style={styles.detailedScroll} nestedScrollEnabled>
+                      {reportData.data.slice(0, 50).map((record: any, index: number) => (
+                        <View key={index} style={styles.recordCard}>
+                          {selectedReport === 'payroll' && (
+                            <>
+                              <Text style={styles.recordTitle}>{record.employee_name || record.first_name + ' ' + record.last_name}</Text>
+                              <Text style={styles.recordDetail}>Hours: {record.total_hours || 0}</Text>
+                              <Text style={styles.recordDetail}>Pay: ${record.total_pay || 0}</Text>
+                              <Text style={styles.recordDetail}>Date: {new Date(record.clock_in || record.created_at).toLocaleDateString()}</Text>
+                            </>
+                          )}
+                          {selectedReport === 'roster' && (
+                            <>
+                              <Text style={styles.recordTitle}>{record.employee_name}</Text>
+                              <Text style={styles.recordDetail}>Site: {record.site_name}</Text>
+                              <Text style={styles.recordDetail}>Role: {record.role}</Text>
+                              <Text style={styles.recordDetail}>
+                                {new Date(record.start_time).toLocaleString()} - {new Date(record.end_time).toLocaleTimeString()}
+                              </Text>
+                              <Text style={[styles.recordDetail, { color: colors.success }]}>
+                                Status: {record.status}
+                              </Text>
+                            </>
+                          )}
+                          {selectedReport === 'availability' && (
+                            <>
+                              <Text style={styles.recordTitle}>{record.first_name} {record.last_name}</Text>
+                              <Text style={styles.recordDetail}>Job: {record.job_title}</Text>
+                              <Text style={styles.recordDetail}>Phone: {record.phone}</Text>
+                              <Text style={styles.recordDetail}>Email: {record.email || 'N/A'}</Text>
+                            </>
+                          )}
+                          {selectedReport === 'timesheets' && (
+                            <>
+                              <Text style={styles.recordTitle}>{record.employee_name || 'Employee'}</Text>
+                              <Text style={styles.recordDetail}>Clock In: {new Date(record.clock_in).toLocaleString()}</Text>
+                              {record.clock_out && (
+                                <Text style={styles.recordDetail}>Clock Out: {new Date(record.clock_out).toLocaleString()}</Text>
+                              )}
+                              <Text style={styles.recordDetail}>Hours: {record.total_hours || 0}</Text>
+                              <Text style={[styles.recordDetail, { 
+                                color: record.approval_status === 'approved' ? colors.success : 
+                                       record.approval_status === 'rejected' ? colors.error : colors.warning 
+                              }]}>
+                                Status: {record.approval_status}
+                              </Text>
+                            </>
+                          )}
+                          {selectedReport === 'abn' && (
+                            <>
+                              <Text style={styles.recordTitle}>{record.first_name} {record.last_name}</Text>
+                              <Text style={styles.recordDetail}>ABN: {record.abn}</Text>
+                              <Text style={styles.recordDetail}>Job: {record.job_title}</Text>
+                              <Text style={styles.recordDetail}>Phone: {record.phone}</Text>
+                            </>
+                          )}
+                        </View>
+                      ))}
+                      {reportData.data.length > 50 && (
+                        <Text style={styles.moreRecordsText}>
+                          Showing first 50 of {reportData.data.length} records
+                        </Text>
+                      )}
+                    </ScrollView>
+                  </View>
+                )}
               </View>
             )}
           </ScrollView>
