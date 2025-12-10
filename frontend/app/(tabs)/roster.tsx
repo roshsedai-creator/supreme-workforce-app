@@ -228,13 +228,18 @@ export default function RosterScreen() {
           employee_id: selectedEmployee,
           site_id: selectedSite,
           role: selectedRole,
+          shift_type: shiftType,
           start_time: shiftStart.toISOString(),
           end_time: shiftEnd.toISOString(),
           notes: shiftNotes,
         }
       );
       
-      Alert.alert('Success', 'Shift created successfully!');
+      const shiftTypeLabel = shiftType === 'work' ? 'Shift' : 
+                            shiftType === 'rdo' ? 'RDO' :
+                            shiftType === 'sick' ? 'Sick Leave' :
+                            shiftType === 'annual' ? 'Annual Leave' : 'Leave';
+      Alert.alert('Success', `${shiftTypeLabel} created successfully!`);
       setShowCreateModal(false);
       resetCreateForm();
       loadData();
