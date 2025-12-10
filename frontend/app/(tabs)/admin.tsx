@@ -254,6 +254,104 @@ export default function AdminScreen() {
     setShowUserModal(true);
   };
 
+  const handleToggleUserStatus = async (user: any) => {
+    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+    const action = newStatus === 'inactive' ? 'Disable' : 'Enable';
+    
+    Alert.alert(
+      `${action} User`,
+      `Are you sure you want to ${action.toLowerCase()} ${user.first_name} ${user.last_name}?${newStatus === 'inactive' ? '\n\nThey will not be able to login.' : ''}`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: action,
+          style: newStatus === 'inactive' ? 'destructive' : 'default',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await axios.put(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${user.id}`,
+                { status: newStatus }
+              );
+              Alert.alert('Success', `User ${action.toLowerCase()}d successfully`);
+              fetchData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || `Failed to ${action.toLowerCase()} user`);
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDeleteUser = async (user: any) => {
+    Alert.alert(
+      'Delete User',
+      `Are you sure you want to permanently delete ${user.first_name} ${user.last_name}?\n\nThis will:\n- Remove their account\n- Delete all their timesheets\n- Remove them from roster\n\nThis action cannot be undone!`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await axios.delete(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${user.id}`
+              );
+              Alert.alert('Success', 'User deleted successfully');
+              fetchData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete user');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleChangeUserRole = async (user: any) => {
+    Alert.alert(
+      'Change Role',
+      `Select new role for ${user.first_name} ${user.last_name}`,
+      [
+        {
+          text: 'Employee',
+          onPress: () => updateUserRole(user, 'employee')
+        },
+        {
+          text: 'Supervisor',
+          onPress: () => updateUserRole(user, 'supervisor')
+        },
+        {
+          text: 'Admin',
+          onPress: () => updateUserRole(user, 'admin')
+        },
+        { text: 'Cancel', style: 'cancel' }
+      ]
+    );
+  };
+
+  const updateUserRole = async (user: any, newRole: string) => {
+    try {
+      setLoading(true);
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${user.id}`,
+        { role: newRole }
+      );
+      Alert.alert('Success', `Role changed to ${newRole}`);
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to change role');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpdateEmployee = async () => {
     if (!firstName || !lastName || !phone || !email) {
       Alert.alert('Error', 'Please fill in all required fields');
