@@ -86,11 +86,16 @@ export default function RosterScreen() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedSite, setSelectedSite] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
+  const [shiftType, setShiftType] = useState<'work' | 'rdo' | 'sick' | 'annual' | 'other'>('work');
   const [shiftStart, setShiftStart] = useState(new Date());
   const [shiftEnd, setShiftEnd] = useState(new Date());
   const [shiftNotes, setShiftNotes] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
+  
+  // Drag and drop state
+  const [draggedShift, setDraggedShift] = useState<RosterShift | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   
   // Availability state
   const [availability, setAvailability] = useState([
