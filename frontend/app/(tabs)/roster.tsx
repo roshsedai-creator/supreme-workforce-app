@@ -977,7 +977,15 @@ export default function RosterScreen() {
       );
     }
     
-    return <View style={styles.weekContainer}>{days}</View>;
+    return (
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        style={styles.weekScrollView}
+      >
+        <View style={styles.weekContainer}>{days}</View>
+      </ScrollView>
+    );
   };
 
   const renderListView = () => {
