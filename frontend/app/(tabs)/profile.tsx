@@ -59,7 +59,6 @@ export default function ProfileScreen() {
     if (typeof window !== 'undefined' && Platform.OS === 'web') {
       // Use browser confirm dialog for web
       if (window.confirm('Are you sure you want to logout?')) {
-        console.log('[Profile] User confirmed logout');
         logout();
       }
     } else {
@@ -73,7 +72,6 @@ export default function ProfileScreen() {
             text: 'Logout',
             style: 'destructive',
             onPress: () => {
-              console.log('[Profile] User confirmed logout');
               logout();
             },
           },
