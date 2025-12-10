@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,14 +11,17 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
 import { colors } from '../constants/colors';
 
 export default function RegisterScreen() {
   const router = useRouter();
+  const { token } = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
+  const [loadingInvite, setLoadingInvite] = useState(!!token);
+  const [invitationToken, setInvitationToken] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -29,6 +32,48 @@ export default function RegisterScreen() {
     confirmPin: '',
     job_title: '',
   });
+
+  // Fetch invitation data if token is provided
+  useEffect(() => {
+    if (token && typeof token === 'string') {
+      fetchInvitation(token);
+    }
+  }, [token]);
+
+  const fetchInvitation = async (inviteToken: string) => {
+    try {
+      setLoadingInvite(true);
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/invitations/${inviteToken}`
+      );
+      
+      const invite = response.data;
+      setFormData(prev => ({
+        ...prev,
+        first_name: invite.first_name || '',
+        last_name: invite.last_name || '',
+        email: invite.email || '',
+        phone: invite.phone || '',
+        job_title: invite.job_title || '',
+      }));
+      setInvitationToken(inviteToken);
+      
+      Alert.alert(
+        'Welcome!',
+        `You've been invited to join as ${invite.job_title}. Please complete your registration.`
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Invalid Invitation',
+        error.response?.data?.detail || 'This invitation link is invalid or has expired.',
+        [
+          { text: 'OK', onPress: () => router.replace('/register') }
+        ]
+      );
+    } finally {
+      setLoadingInvite(false);
+    }
+  };
 
   const handleRegister = async () => {
     console.log('handleRegister called');
