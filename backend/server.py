@@ -608,16 +608,127 @@ async def create_invitation(invitation: InvitationCreate):
     result = await db.invitations.insert_one(invitation_dict)
     invitation_dict["id"] = str(result.inserted_id)
     
-    # In a real app, you would send an email here
-    # For now, we'll just return the invitation link
+    # Send invitation email
+    app_url = os.getenv("APP_URL", "https://timekeeper-227.preview.emergentagent.com")
+    invitation_link = f"{app_url}/register?token={token}"
+    
+    email_sent = await send_invitation_email(
+        invitation.email,
+        invitation.first_name,
+        invitation.last_name,
+        invitation.job_title,
+        invitation_link
+    )
     
     return {
         "success": True,
         "invitation_id": str(result.inserted_id),
         "token": token,
-        "invitation_link": f"/register?token={token}",
-        "message": "Invitation created successfully"
+        "invitation_link": invitation_link,
+        "email_sent": email_sent,
+        "message": "Invitation created successfully" + (" and email sent!" if email_sent else " (email disabled)")
     }
+
+async def send_invitation_email(email: str, first_name: str, last_name: str, job_title: str, invitation_link: str):
+    """Send invitation email to employee"""
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        
+        # Get SMTP settings from environment
+        smtp_enabled = os.getenv("SMTP_ENABLED", "false").lower() == "true"
+        if not smtp_enabled:
+            print("Email disabled: SMTP_ENABLED is not set to true")
+            return False
+        
+        smtp_host = os.getenv("SMTP_HOST")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username = os.getenv("SMTP_USERNAME")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        smtp_from = os.getenv("SMTP_FROM_EMAIL", smtp_username)
+        company_name = os.getenv("COMPANY_NAME", "Supreme Hospitality")
+        
+        if not all([smtp_host, smtp_username, smtp_password]):
+            print("Email disabled: SMTP credentials not configured")
+            return False
+        
+        # Create message
+        message = MIMEMultipart("alternative")
+        message["Subject"] = f"Join {company_name} - Complete Your Registration"
+        message["From"] = smtp_from
+        message["To"] = email
+        
+        # HTML email body
+        html_body = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                .header {{ background-color: #4F46E5; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+                .content {{ background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+                .button {{ display: inline-block; padding: 15px 30px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #666; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1>Welcome to {company_name}!</h1>
+                </div>
+                <div class="content">
+                    <p>Hi {first_name} {last_name},</p>
+                    
+                    <p>You've been invited to join {company_name} as a <strong>{job_title}</strong>!</p>
+                    
+                    <p>To complete your registration and start using the app, please click the button below:</p>
+                    
+                    <p style="text-align: center;">
+                        <a href="{invitation_link}" class="button">Complete Registration</a>
+                    </p>
+                    
+                    <p>Or copy and paste this link into your browser:</p>
+                    <p style="background-color: #e9e9e9; padding: 10px; word-break: break-all; font-family: monospace; font-size: 12px;">
+                        {invitation_link}
+                    </p>
+                    
+                    <p><strong>What's next?</strong></p>
+                    <ul>
+                        <li>Click the link above</li>
+                        <li>Your details will be pre-filled</li>
+                        <li>Set a secure 4-6 digit PIN</li>
+                        <li>Start clocking in and managing your shifts!</li>
+                    </ul>
+                    
+                    <p style="color: #666; font-size: 14px;"><em>This invitation link will expire in 7 days.</em></p>
+                </div>
+                <div class="footer">
+                    <p>If you didn't expect this invitation, please ignore this email.</p>
+                    <p>&copy; 2024 {company_name}. All rights reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Attach HTML body
+        html_part = MIMEText(html_body, "html")
+        message.attach(html_part)
+        
+        # Send email
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.send_message(message)
+        
+        print(f"Invitation email sent successfully to {email}")
+        return True
+        
+    except Exception as e:
+        print(f"Failed to send invitation email: {str(e)}")
+        return False
 
 @api_router.get("/invitations/{token}")
 async def get_invitation(token: str):
