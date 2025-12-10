@@ -597,30 +597,6 @@ export default function AdminScreen() {
         ))}
       </View>
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Contracts & Invoices</Text>
-        </View>
-
-        <TouchableOpacity style={styles.featureCard} onPress={() => setShowContractModal(true)}>
-          <Ionicons name="document-text" size={32} color={colors.primary} />
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Send Employment Contracts</Text>
-            <Text style={styles.featureSubtitle}>Send contracts to employees for digital signature</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.featureCard} onPress={() => setShowInvoiceModal(true)}>
-          <Ionicons name="receipt" size={32} color={colors.gold} />
-          <View style={styles.featureContent}>
-            <Text style={styles.featureTitle}>Generate ABN Invoices</Text>
-            <Text style={styles.featureSubtitle}>Create invoices for independent contractors (ABN)</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
-        </TouchableOpacity>
-      </View>
-
       {/* Add Site Modal */}
       <Modal
         visible={showSiteModal}
