@@ -27,9 +27,9 @@ export default function AdminScreen() {
   const { user } = useAuthStore();
   const router = useRouter();
 
-  const [sites, setSites] = useState<any[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
-  const [payRates, setPayRates] = useState<any[]>([]);
+  const [sites, setSites] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [payRates, setPayRates] = useState([]);
   const [earnings, setEarnings] = useState<any>(null);
   const [showSiteModal, setShowSiteModal] = useState(false);
   const [showUserModal, setShowUserModal] = useState(false);
