@@ -33,7 +33,7 @@ Your app is currently running in **development mode**. Employees **CANNOT** down
 
 1. **Your app is already live at:**
    ```
-   https://stafftracker-21.preview.emergentagent.com
+   https://timekeeper-227.preview.emergentagent.com
    ```
 
 2. **Send this link to 2-3 test employees:**
@@ -42,7 +42,7 @@ Your app is currently running in **development mode**. Employees **CANNOT** down
 
    Please test our new Staff Tracker app:
    🌐 Open this link on your phone: 
-   https://stafftracker-21.preview.emergentagent.com
+   https://timekeeper-227.preview.emergentagent.com
 
    Login with:
    📱 Phone: [their phone number]
@@ -259,7 +259,7 @@ Hi Team,
 We've launched our new Staff Tracker app for clock-in/out and roster management!
 
 QUICK TEST (right now on your phone):
-🌐 Open: https://stafftracker-21.preview.emergentagent.com
+🌐 Open: https://timekeeper-227.preview.emergentagent.com
 
 Your login:
 📱 Phone: [your number]
@@ -444,7 +444,7 @@ Questions? Call me: [your number]
 **Your immediate next step:**
 
 1. **Test yourself first:**
-   - Open https://stafftracker-21.preview.emergentagent.com
+   - Open https://timekeeper-227.preview.emergentagent.com
    - Login as admin (0457802302 / 1234)
    - Try all features
 
