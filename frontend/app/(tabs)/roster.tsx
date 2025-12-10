@@ -1873,6 +1873,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  weekScrollView: {
+    flex: 1,
+  },
   weekContainer: {
     flexDirection: 'row',
     padding: 8,
