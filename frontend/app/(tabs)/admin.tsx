@@ -1331,6 +1331,122 @@ export default function AdminScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Invitation Modal */}
+      <Modal
+        visible={showInviteModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowInviteModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Invite New Employee</Text>
+              <TouchableOpacity onPress={() => setShowInviteModal(false)}>
+                <Ionicons name="close" size={28} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>First Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter first name"
+                value={inviteFirstName}
+                onChangeText={setInviteFirstName}
+              />
+
+              <Text style={styles.inputLabel}>Last Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter last name"
+                value={inviteLastName}
+                onChangeText={setInviteLastName}
+              />
+
+              <Text style={styles.inputLabel}>Email *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="employee@example.com"
+                value={inviteEmail}
+                onChangeText={setInviteEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={styles.inputLabel}>Phone *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="04XX XXX XXX"
+                value={invitePhone}
+                onChangeText={setInvitePhone}
+                keyboardType="phone-pad"
+              />
+
+              <Text style={styles.inputLabel}>Job Title *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Room Attendant"
+                value={inviteJobTitle}
+                onChangeText={setInviteJobTitle}
+              />
+
+              <Text style={styles.inputLabel}>Assign to Site *</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={inviteSiteId}
+                  onValueChange={(value) => setInviteSiteId(value)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Select a site" value="" />
+                  {sites.map((site) => (
+                    <Picker.Item key={site.id} label={site.name} value={site.id} />
+                  ))}
+                </Picker>
+              </View>
+
+              <Text style={styles.helperText}>
+                * All fields are required. An invitation link will be generated that you can share with the employee.
+              </Text>
+
+              {inviteLink ? (
+                <View style={styles.linkContainer}>
+                  <Text style={styles.linkLabel}>📧 Invitation Link:</Text>
+                  <Text style={styles.linkText} selectable={true}>{inviteLink}</Text>
+                  <Text style={styles.linkHelper}>
+                    Copy this link and share it with the employee via email, SMS, or any messaging app.
+                  </Text>
+                </View>
+              ) : null}
+            </ScrollView>
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  setShowInviteModal(false);
+                  setInviteLink('');
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Close</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+                onPress={handleCreateInvitation}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveButtonText}>Generate Link</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
