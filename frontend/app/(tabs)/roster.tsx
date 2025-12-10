@@ -27,6 +27,7 @@ interface RosterShift {
   site_id: string;
   site_name: string;
   role: string;
+  shift_type?: string;
   start_time: string;
   end_time: string;
   status: string;
