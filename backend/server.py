@@ -518,6 +518,101 @@ async def get_site(site_id: str):
         raise HTTPException(status_code=404, detail="Site not found")
     return serialize_doc(site)
 
+@api_router.delete("/sites/{site_id}")
+async def delete_site(site_id: str):
+    """Delete a site and handle associated data"""
+    try:
+        site = await db.sites.find_one({"_id": ObjectId(site_id)})
+        if not site:
+            raise HTTPException(status_code=404, detail="Site not found")
+        
+        # Check if there are users assigned to this site
+        users_count = await db.users.count_documents({"site_id": site_id})
+        if users_count > 0:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete site. {users_count} employee(s) are still assigned to this site. Please reassign them first."
+            )
+        
+        # Check if there are roster shifts for this site
+        shifts_count = await db.RosterShifts.count_documents({"site_id": site_id})
+        if shifts_count > 0:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot delete site. {shifts_count} roster shift(s) exist for this site. Please remove them first."
+            )
+        
+        # Delete the site
+        result = await db.sites.delete_one({"_id": ObjectId(site_id)})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Site not found")
+        
+        return {
+            "success": True,
+            "message": f"Site {site.get('name')} deleted successfully"
+        }
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Failed to delete site: {str(e)}")
+
+# =====================
+# INVITATION ENDPOINTS
+# =====================
+
+class InvitationCreate(BaseModel):
+    first_name: str
+    last_name: str
+    email: EmailStr
+    phone: str
+    role: str = "employee"
+    job_title: str
+    site_id: Optional[str] = None
+
+@api_router.post("/invitations")
+async def create_invitation(invitation: InvitationCreate):
+    """Create an invitation for a new employee"""
+    # Generate a unique invitation token
+    import secrets
+    token = secrets.token_urlsafe(32)
+    
+    invitation_dict = invitation.model_dump()
+    invitation_dict["token"] = token
+    invitation_dict["status"] = "pending"  # pending, accepted, expired
+    invitation_dict["created_at"] = datetime.utcnow()
+    invitation_dict["expires_at"] = datetime.utcnow() + timedelta(days=7)  # 7 days to accept
+    
+    result = await db.invitations.insert_one(invitation_dict)
+    invitation_dict["id"] = str(result.inserted_id)
+    
+    # In a real app, you would send an email here
+    # For now, we'll just return the invitation link
+    
+    return {
+        "success": True,
+        "invitation_id": str(result.inserted_id),
+        "token": token,
+        "invitation_link": f"/register?token={token}",
+        "message": "Invitation created successfully"
+    }
+
+@api_router.get("/invitations/{token}")
+async def get_invitation(token: str):
+    """Get invitation details by token"""
+    invitation = await db.invitations.find_one({"token": token})
+    if not invitation:
+        raise HTTPException(status_code=404, detail="Invitation not found")
+    
+    # Check if invitation has expired
+    if invitation.get("status") == "accepted":
+        raise HTTPException(status_code=400, detail="Invitation has already been used")
+    
+    if invitation.get("expires_at") and invitation["expires_at"] < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Invitation has expired")
+    
+    return serialize_doc(invitation)
+
 # =====================
 # SHIFT ENDPOINTS
 # =====================
