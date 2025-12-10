@@ -57,6 +57,12 @@ class SiteCreate(BaseModel):
     gps_long: float
     radius_meters: int = 100
 
+class BankDetails(BaseModel):
+    bank_name: Optional[str] = None
+    account_name: Optional[str] = None
+    bsb: Optional[str] = None
+    account_number: Optional[str] = None
+
 class User(BaseModel):
     id: Optional[str] = None
     first_name: str
@@ -79,6 +85,7 @@ class User(BaseModel):
         "manage_sites": False,
         "export_payroll": False
     }
+    bank_details: Optional[BankDetails] = None
     created_at: Optional[datetime] = None
 
 class UserCreate(BaseModel):
