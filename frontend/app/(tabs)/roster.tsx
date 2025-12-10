@@ -1264,15 +1264,17 @@ export default function RosterScreen() {
             <View style={styles.modalFooter}>
               <TouchableOpacity
                 style={[styles.submitButton, loading && styles.buttonDisabled]}
-                onPress={handleCreateShift}
+                onPress={editingShift ? handleUpdateShift : handleCreateShift}
                 disabled={loading}
               >
                 {loading ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
                   <>
-                    <Ionicons name="checkmark" size={20} color={colors.white} />
-                    <Text style={styles.submitButtonText}>Create Shift</Text>
+                    <Ionicons name={editingShift ? "save" : "checkmark"} size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>
+                      {editingShift ? 'Update Shift' : 'Create Shift'}
+                    </Text>
                   </>
                 )}
               </TouchableOpacity>
