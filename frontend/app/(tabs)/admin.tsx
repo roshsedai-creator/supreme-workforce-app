@@ -742,6 +742,12 @@ export default function AdminScreen() {
                 GPS: {site.gps_lat.toFixed(6)}, {site.gps_long.toFixed(6)}
               </Text>
             </View>
+            <TouchableOpacity
+              style={[styles.editButton, { backgroundColor: colors.error + '10' }]}
+              onPress={() => handleDeleteSite(site)}
+            >
+              <Ionicons name="trash" size={20} color={colors.error} />
+            </TouchableOpacity>
           </View>
         ))}
       </View>
