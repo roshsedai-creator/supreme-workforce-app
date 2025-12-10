@@ -41,6 +41,7 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
   const [showEndPicker, setShowEndPicker] = useState(false);
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
+  const [showDetailedView, setShowDetailedView] = useState(false);
 
   const reportTypes = [
     { id: 'payroll', name: 'Payroll Report', icon: 'cash', description: 'Employee earnings and pay details' },
