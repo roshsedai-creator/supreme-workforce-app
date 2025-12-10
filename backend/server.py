@@ -916,11 +916,11 @@ async def clock_in(request: ClockInRequest):
     radius = site.get("radius_meters", 100)
     out_of_bounds = distance > radius
     
-    # Create timesheet linked to roster shift
+    # Create timesheet linked to roster shift (if available)
     timesheet = {
         "employee_id": request.employee_id,
         "site_id": request.site_id,
-        "roster_shift_id": str(rostered_shift["_id"]),
+        "roster_shift_id": str(rostered_shift["_id"]) if rostered_shift else None,
         "clock_in": datetime.utcnow(),
         "gps_in_lat": request.gps_lat,
         "gps_in_long": request.gps_long,
@@ -941,7 +941,8 @@ async def clock_in(request: ClockInRequest):
         "geo_fence_warning": out_of_bounds,
         "distance_meters": round(distance, 2),
         "allowed_radius": radius,
-        "rostered_shift": serialize_doc(rostered_shift)
+        "rostered_shift": serialize_doc(rostered_shift) if rostered_shift else None,
+        "roster_warning": not rostered_shift  # Flag if clocking in without roster
     }
 
 @api_router.post("/timesheets/clock-out")
