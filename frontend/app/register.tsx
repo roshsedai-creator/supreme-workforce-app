@@ -90,11 +90,11 @@ export default function RegisterScreen() {
 
       if (response.data.success) {
         Alert.alert(
-          'Success!',
-          'Your account has been created. You can now login with your phone and PIN.',
+          '✅ Registration Completed!',
+          `Welcome ${formData.first_name}!\n\nYour account has been successfully created.\n\nYour Login Details:\n📱 Phone: ${formData.phone}\n🔐 PIN: ${formData.pin}\n\nYou can now login and start using the app.`,
           [
             {
-              text: 'Login Now',
+              text: 'Go to Login',
               onPress: () => router.replace('/')
             }
           ]
