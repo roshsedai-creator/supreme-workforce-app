@@ -1544,6 +1544,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text.primary,
   },
+  weekActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  weekActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.white,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+  },
+  weekActionText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
   headerActions: {
     flexDirection: 'row',
     gap: 12,
