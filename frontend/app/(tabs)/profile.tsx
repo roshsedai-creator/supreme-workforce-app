@@ -301,7 +301,7 @@ export default function ProfileScreen() {
                   <Text style={styles.emptySubtext}>Add your bank details to receive salary payments</Text>
                   <TouchableOpacity 
                     style={styles.addBankButton}
-                    onPress={() => Alert.alert('Coming Soon', 'Bank details editing will be available soon')}
+                    onPress={handleOpenBankModal}
                   >
                     <Ionicons name="add-circle" size={20} color={colors.white} />
                     <Text style={styles.addBankButtonText}>Add Bank Details</Text>
