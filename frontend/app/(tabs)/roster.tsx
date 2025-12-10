@@ -1970,6 +1970,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    flex: 1,
+  },
+  quickEditButton: {
+    padding: 4,
+    borderRadius: 4,
+    backgroundColor: colors.white,
   },
   shiftEmployeeRow: {
     flexDirection: 'row',
