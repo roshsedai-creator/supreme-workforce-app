@@ -743,7 +743,7 @@ class BulkRegistration(BaseModel):
 @api_router.post("/users/fix-permissions")
 async def fix_user_permissions():
     """
-    Fix permissions for existing users who don't have permissions set
+    Fix permissions for ALL users to have the new permission structure
     This is a migration endpoint - run once to update all users
     """
     updated_count = 0
@@ -752,16 +752,15 @@ async def fix_user_permissions():
     users = await db.users.find().to_list(None)
     
     for user in users:
-        # Check if user has permissions field
-        if "permissions" not in user or not user.get("permissions"):
-            role = user.get("role", "employee")
-            default_perms = get_default_permissions(role)
-            
-            await db.users.update_one(
-                {"_id": user["_id"]},
-                {"$set": {"permissions": default_perms}}
-            )
-            updated_count += 1
+        role = user.get("role", "employee")
+        default_perms = get_default_permissions(role)
+        
+        # Always update to ensure new permission structure
+        await db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"permissions": default_perms}}
+        )
+        updated_count += 1
     
     return {
         "success": True,
