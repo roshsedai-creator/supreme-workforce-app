@@ -1231,10 +1231,11 @@ export default function AdminScreen() {
         visible={showPermissionsModal}
         onClose={() => setShowPermissionsModal(false)}
         onSave={handleSavePermissions}
-        permissions={permissions}
-        setPermissions={setPermissions}
-        employee={editingPermissions}
+        permissions={userPermissions}
+        setPermissions={setUserPermissions}
+        employee={selectedUserForPermissions}
         loading={loading}
+        togglePermission={togglePermission}
       />
 
       <AvailabilitySnapshot
