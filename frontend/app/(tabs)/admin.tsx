@@ -143,6 +143,20 @@ export default function AdminScreen() {
     }
   };
 
+  // Call fetchData on mount
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // Don't render anything if not admin
+  if (user?.role !== 'admin') {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.errorText}>Access Denied</Text>
+      </View>
+    );
+  }
+
   const handleCreateSite = async () => {
     if (!siteName || !siteAddress || !siteGpsLat || !siteGpsLong) {
       Alert.alert('Error', 'Please fill in all fields');
