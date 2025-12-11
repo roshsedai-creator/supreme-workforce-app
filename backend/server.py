@@ -862,13 +862,20 @@ async def send_invitation_email(email: str, first_name: str, last_name: str, job
         html_part = MIMEText(html_body, "html")
         message.attach(html_part)
         
-        # Send email
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_username, smtp_password)
-            server.send_message(message)
+        # Send email - Handle both SSL (port 465) and TLS (port 587)
+        if smtp_port == 465:
+            # Use SMTP_SSL for port 465 (GoDaddy)
+            with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
+                server.login(smtp_username, smtp_password)
+                server.send_message(message)
+        else:
+            # Use SMTP with STARTTLS for port 587
+            with smtplib.SMTP(smtp_host, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_username, smtp_password)
+                server.send_message(message)
         
-        print(f"Invitation email sent successfully to {email}")
+        print(f"✅ Invitation email sent successfully to {email}")
         return True
         
     except Exception as e:
