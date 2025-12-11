@@ -223,21 +223,6 @@ export default function AdminScreen() {
     }
   };
 
-  const handleEditPermissions = (user) => {
-    setEditingPermissions(user);
-    setPermissions(user.permissions || {
-      view_own_pay: false,
-      view_all_timesheets: false,
-      edit_timesheets: false,
-      approve_timesheets: false,
-      view_reports: false,
-      manage_users: false,
-      manage_sites: false,
-      export_payroll: false,
-    });
-    setShowPermissionsModal(true);
-  };
-
   const handleSavePermissions = async () => {
     if (!editingPermissions) return;
 
