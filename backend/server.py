@@ -34,6 +34,63 @@ def serialize_doc(doc):
         del doc["_id"]
     return doc
 
+def get_default_permissions(role: str) -> dict:
+    """Get default permissions based on user role"""
+    if role == "admin":
+        return {
+            "view_home": True,
+            "view_own_timesheets": True,
+            "clock_in_out": True,
+            "view_roster": True,
+            "request_time_off": True,
+            "view_own_pay": True,
+            "view_all_timesheets": True,
+            "edit_timesheets": True,
+            "approve_timesheets": True,
+            "manage_roster": True,
+            "view_reports": True,
+            "manage_users": True,
+            "manage_sites": True,
+            "export_payroll": True,
+            "manage_permissions": True,
+        }
+    elif role == "supervisor":
+        return {
+            "view_home": True,
+            "view_own_timesheets": True,
+            "clock_in_out": True,
+            "view_roster": True,
+            "request_time_off": True,
+            "view_own_pay": True,
+            "view_all_timesheets": True,
+            "edit_timesheets": True,
+            "approve_timesheets": True,
+            "manage_roster": True,
+            "view_reports": True,
+            "manage_users": False,
+            "manage_sites": False,
+            "export_payroll": False,
+            "manage_permissions": False,
+        }
+    else:  # employee / room attendant
+        return {
+            "view_home": True,
+            "view_own_timesheets": True,
+            "clock_in_out": True,
+            "view_roster": False,  # Can be enabled by admin
+            "request_time_off": False,  # Can be enabled by admin
+            "view_own_pay": False,  # Can be enabled by admin
+            "view_all_timesheets": False,
+            "edit_timesheets": False,
+            "approve_timesheets": False,
+            "manage_roster": False,
+            "view_reports": False,
+            "manage_users": False,
+            "manage_sites": False,
+            "export_payroll": False,
+            "manage_permissions": False,
+        }
+
 # =====================
 # MODELS
 # =====================
