@@ -107,19 +107,7 @@ export default function AdminScreen() {
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Don't render anything if not admin
-  if (user?.role !== 'admin') {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>Access Denied</Text>
-      </View>
-    );
-  }
-
+  // Define fetchData BEFORE using it in useEffect
   const fetchData = async () => {
     try {
       const [sitesData, usersData, payRatesData] = await Promise.all([
