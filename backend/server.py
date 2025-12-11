@@ -76,14 +76,21 @@ class User(BaseModel):
     pin: str  # Mock PIN for authentication
     status: str = "active"  # active, inactive
     permissions: dict = {
-        "view_own_pay": False,
-        "view_all_timesheets": False,
-        "edit_timesheets": False,
-        "approve_timesheets": False,
-        "view_reports": False,
-        "manage_users": False,
-        "manage_sites": False,
-        "export_payroll": False
+        "view_home": True,  # Everyone can see home
+        "view_own_timesheets": True,  # View own timesheet data
+        "clock_in_out": True,  # Can clock in/out
+        "view_roster": False,  # Can view roster schedule
+        "request_time_off": False,  # Can request time off
+        "view_own_pay": False,  # View own pay details
+        "view_all_timesheets": False,  # Supervisor: see all timesheets
+        "edit_timesheets": False,  # Supervisor: edit timesheets
+        "approve_timesheets": False,  # Supervisor: approve timesheets
+        "manage_roster": False,  # Supervisor: create/edit roster
+        "view_reports": False,  # Supervisor: view reports
+        "manage_users": False,  # Admin: manage employees
+        "manage_sites": False,  # Admin: manage sites
+        "export_payroll": False,  # Admin: export payroll
+        "manage_permissions": False,  # Admin: manage user permissions
     }
     bank_details: Optional[BankDetails] = None
     created_at: Optional[datetime] = None
