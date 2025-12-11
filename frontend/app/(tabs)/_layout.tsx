@@ -80,12 +80,13 @@ export default function TabsLayout() {
         name="roster"
         options={{
           title: 'Roster',
+          href: canViewRoster ? undefined : null, // Hide if no permission
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar-outline" size={size} color={color} />
           ),
         }}
       />
-      {isSupervisor && (
+      {canAccessSupervisor && (
         <Tabs.Screen
           name="supervisor"
           options={{
@@ -96,7 +97,7 @@ export default function TabsLayout() {
           }}
         />
       )}
-      {isAdmin && (
+      {canAccessAdmin && (
         <Tabs.Screen
           name="admin"
           options={{
