@@ -135,16 +135,25 @@ export default function RegisterScreen() {
       console.log('Response:', response.data);
 
       if (response.data.success) {
-        Alert.alert(
-          '✅ Registration Completed!',
-          `Welcome ${formData.first_name}!\n\nYour account has been successfully created.\n\nYour Login Details:\n📱 Phone: ${formData.phone}\n🔐 PIN: ${formData.pin}\n\nYou can now login and start using the app.`,
-          [
-            {
-              text: 'Go to Login',
-              onPress: () => router.replace('/')
-            }
-          ]
-        );
+        // Platform-specific success message
+        if (typeof window !== 'undefined' && Platform.OS === 'web') {
+          if (window.confirm(`✅ Registration Completed!\n\nWelcome ${formData.first_name}!\n\nYour account has been successfully created.\n\nLogin Details:\n📱 Phone: ${formData.phone}\n🔐 PIN: ${formData.pin}\n\nClick OK to login now.`)) {
+            router.replace('/');
+          } else {
+            router.replace('/');
+          }
+        } else {
+          Alert.alert(
+            '✅ Registration Completed!',
+            `Welcome ${formData.first_name}!\n\nYour account has been successfully created.\n\nYour Login Details:\n📱 Phone: ${formData.phone}\n🔐 PIN: ${formData.pin}\n\nYou can now login and start using the app.`,
+            [
+              {
+                text: 'Go to Login',
+                onPress: () => router.replace('/')
+              }
+            ]
+          );
+        }
       }
     } catch (error: any) {
       console.error('Registration error:', error);
