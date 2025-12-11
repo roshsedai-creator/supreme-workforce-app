@@ -384,12 +384,13 @@ export default function AdminScreen() {
         }
       );
 
-      const fullLink = `${process.env.EXPO_PACKAGER_HOSTNAME}/register?token=${response.data.token}`;
+      // Use the invitation_link from backend response which has the correct domain
+      const fullLink = response.data.invitation_link;
       setInviteLink(fullLink);
       
       Alert.alert(
         'Invitation Created!',
-        `Share this link with ${inviteFirstName} ${inviteLastName}`,
+        `${response.data.email_sent ? 'Email sent to' : 'Share this link with'} ${inviteFirstName} ${inviteLastName}${response.data.email_sent ? ' ✅' : ''}`,
         [
           {
             text: 'Copy Link',
