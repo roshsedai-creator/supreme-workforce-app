@@ -80,16 +80,23 @@ export default function AdminScreen() {
   
   // Permissions modal
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-  const [editingPermissions, setEditingPermissions] = useState(null);
-  const [permissions, setPermissions] = useState({
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
+  const [userPermissions, setUserPermissions] = useState({
+    view_home: true,
+    view_own_timesheets: true,
+    clock_in_out: true,
+    view_roster: false,
+    request_time_off: false,
     view_own_pay: false,
     view_all_timesheets: false,
     edit_timesheets: false,
     approve_timesheets: false,
+    manage_roster: false,
     view_reports: false,
     manage_users: false,
     manage_sites: false,
     export_payroll: false,
+    manage_permissions: false,
   });
 
   // Security check - only admins can access
