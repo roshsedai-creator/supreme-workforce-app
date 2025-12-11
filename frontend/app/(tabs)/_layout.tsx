@@ -108,7 +108,7 @@ export default function TabsLayout() {
           }}
         />
       )}
-      {isAdmin && (
+      {canAccessAdmin && (
         <Tabs.Screen
           name="payroll"
           options={{
