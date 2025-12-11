@@ -740,6 +740,35 @@ class InvitationCreate(BaseModel):
 class BulkRegistration(BaseModel):
     employees: list
 
+@api_router.post("/users/fix-permissions")
+async def fix_user_permissions():
+    """
+    Fix permissions for existing users who don't have permissions set
+    This is a migration endpoint - run once to update all users
+    """
+    updated_count = 0
+    
+    # Get all users
+    users = await db.users.find().to_list(None)
+    
+    for user in users:
+        # Check if user has permissions field
+        if "permissions" not in user or not user.get("permissions"):
+            role = user.get("role", "employee")
+            default_perms = get_default_permissions(role)
+            
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {"$set": {"permissions": default_perms}}
+            )
+            updated_count += 1
+    
+    return {
+        "success": True,
+        "updated_count": updated_count,
+        "message": f"Updated {updated_count} users with default permissions"
+    }
+
 @api_router.post("/users/bulk-register")
 async def bulk_register_employees(bulk_data: BulkRegistration):
     """
