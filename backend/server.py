@@ -464,19 +464,21 @@ async def employee_self_register(registration: dict):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create user account
+    role = invitation_data.get("role", "employee") if invitation_data else "employee"
     user_dict = {
         "first_name": registration["first_name"],
         "last_name": registration["last_name"],
         "phone": registration["phone"],
         "email": registration["email"],
         "pin": registration["pin"],
-        "role": invitation_data.get("role", "employee") if invitation_data else "employee",
+        "role": role,
         "job_title": invitation_data.get("job_title", registration.get("job_title", "")) if invitation_data else registration.get("job_title", ""),
         "site_id": invitation_data.get("site_id") if invitation_data else None,
         "award_level": registration.get("award_level", 1),
         "bank_details": None,
         "is_contractor": False,
         "status": "active",
+        "permissions": get_default_permissions(role),
         "created_at": datetime.utcnow()
     }
     
