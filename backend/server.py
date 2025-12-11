@@ -1433,6 +1433,21 @@ async def clock_out(request: ClockOutRequest):
     total_seconds = (clock_out - clock_in).total_seconds()
     total_hours = (total_seconds - (timesheet.get("break_minutes", 0) * 60)) / 3600
     
+    # Check if this is a public holiday
+    is_holiday, holiday_name = is_public_holiday(clock_in)
+    
+    # Get user's pay rate
+    user = await db.users.find_one({"_id": ObjectId(timesheet["employee_id"])})
+    base_rate = 25.0  # Default rate
+    if user:
+        # Get pay rate from award level or job title
+        pay_rate_doc = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+        if pay_rate_doc:
+            base_rate = pay_rate_doc.get("hourly_rate", 25.0)
+    
+    # Calculate pay with holiday consideration
+    pay_calculation = calculate_pay_rate_with_holiday(base_rate, clock_in, total_hours)
+    
     # Update timesheet
     await db.timesheets.update_one(
         {"_id": ObjectId(request.timesheet_id)},
@@ -1442,7 +1457,12 @@ async def clock_out(request: ClockOutRequest):
             "gps_out_long": request.gps_long,
             "gps_out_distance": round(distance, 2),
             "gps_out_out_of_bounds": out_of_bounds,
-            "total_hours": round(total_hours, 2)
+            "total_hours": round(total_hours, 2),
+            "is_public_holiday": is_holiday,
+            "holiday_name": holiday_name,
+            "pay_rate": pay_calculation["effective_rate"],
+            "pay_multiplier": pay_calculation["multiplier"],
+            "total_pay": pay_calculation["total_pay"]
         }}
     )
     
