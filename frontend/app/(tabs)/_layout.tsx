@@ -12,11 +12,11 @@ export default function TabsLayout() {
   const segments = useSegments();
   const insets = useSafeAreaInsets();
   
-  // Check permissions instead of roles
+  // Check permissions ONLY - no role fallbacks
   const permissions = user?.permissions || {};
-  const canViewRoster = permissions.view_roster || permissions.manage_roster;
-  const canAccessSupervisor = permissions.view_all_timesheets || permissions.edit_timesheets || permissions.approve_timesheets || permissions.manage_roster;
-  const canAccessAdmin = permissions.manage_users || permissions.manage_sites || user?.role === 'admin';
+  const canViewRoster = permissions.view_roster === true || permissions.manage_roster === true;
+  const canAccessSupervisor = permissions.view_all_timesheets === true || permissions.edit_timesheets === true || permissions.approve_timesheets === true || permissions.manage_roster === true;
+  const canAccessAdmin = permissions.manage_users === true || permissions.manage_sites === true;
 
   useEffect(() => {
     // Redirect to login if not authenticated
