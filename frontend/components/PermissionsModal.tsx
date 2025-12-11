@@ -285,6 +285,16 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 20,
   },
+  categorySection: {
+    marginBottom: 24,
+  },
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: 12,
+    paddingLeft: 4,
+  },
   permissionItem: {
     flexDirection: 'row',
     alignItems: 'center',
