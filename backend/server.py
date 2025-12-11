@@ -737,6 +737,69 @@ class InvitationCreate(BaseModel):
     job_title: str
     site_id: Optional[str] = None
 
+class BulkRegistration(BaseModel):
+    employees: list
+
+@api_router.post("/users/bulk-register")
+async def bulk_register_employees(bulk_data: BulkRegistration):
+    """
+    Bulk register employees directly without invitation links
+    Admin can upload CSV and create all accounts at once
+    """
+    created_users = []
+    errors = []
+    
+    for idx, emp in enumerate(bulk_data.employees):
+        try:
+            # Check if user already exists
+            existing = await db.users.find_one({"phone": emp.get("phone")})
+            if existing:
+                errors.append(f"Row {idx+1}: Phone {emp.get('phone')} already exists")
+                continue
+            
+            # Create user with default PIN
+            default_pin = emp.get("pin", "1234")  # Use provided PIN or default
+            role = emp.get("role", "employee")
+            
+            user_dict = {
+                "first_name": emp.get("first_name"),
+                "last_name": emp.get("last_name"),
+                "phone": emp.get("phone"),
+                "email": emp.get("email", f"{emp.get('phone')}@temp.com"),
+                "pin": default_pin,
+                "role": role,
+                "job_title": emp.get("job_title", "Employee"),
+                "site_id": emp.get("site_id"),
+                "award_level": emp.get("award_level", 1),
+                "bank_details": None,
+                "is_contractor": False,
+                "status": "active",
+                "permissions": get_default_permissions(role),
+                "created_at": datetime.utcnow()
+            }
+            
+            result = await db.users.insert_one(user_dict)
+            user_dict["id"] = str(result.inserted_id)
+            created_users.append({
+                "name": f"{user_dict['first_name']} {user_dict['last_name']}",
+                "phone": user_dict["phone"],
+                "pin": default_pin,
+                "email": user_dict["email"],
+                "job_title": user_dict["job_title"]
+            })
+            
+        except Exception as e:
+            errors.append(f"Row {idx+1}: {str(e)}")
+    
+    return {
+        "success": True,
+        "created_count": len(created_users),
+        "error_count": len(errors),
+        "created_users": created_users,
+        "errors": errors,
+        "message": f"Successfully created {len(created_users)} accounts"
+    }
+
 @api_router.post("/invitations")
 async def create_invitation(invitation: InvitationCreate):
     """Create an invitation for a new employee"""
