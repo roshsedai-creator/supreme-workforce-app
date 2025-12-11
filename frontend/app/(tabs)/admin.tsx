@@ -223,24 +223,6 @@ export default function AdminScreen() {
     }
   };
 
-  const handleSavePermissions = async () => {
-    if (!editingPermissions) return;
-
-    setLoading(true);
-    try {
-      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${editingPermissions.id}`, {
-        permissions
-      });
-      Alert.alert('Success', 'Permissions updated successfully!');
-      setShowPermissionsModal(false);
-      fetchData();
-    } catch (error) {
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to update permissions');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleEditEmployee = (user) => {
     setEditingEmployee(user);
     setFirstName(user.first_name);
