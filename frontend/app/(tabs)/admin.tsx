@@ -453,6 +453,52 @@ export default function AdminScreen() {
     );
   };
 
+  const handleOpenPermissionsModal = (user) => {
+    setSelectedUserForPermissions(user);
+    setUserPermissions(user.permissions || {
+      view_home: true,
+      view_own_timesheets: true,
+      clock_in_out: true,
+      view_roster: false,
+      request_time_off: false,
+      view_own_pay: false,
+      view_all_timesheets: false,
+      edit_timesheets: false,
+      approve_timesheets: false,
+      manage_roster: false,
+      view_reports: false,
+      manage_users: false,
+      manage_sites: false,
+      export_payroll: false,
+      manage_permissions: false,
+    });
+    setShowPermissionsModal(true);
+  };
+
+  const handleSavePermissions = async () => {
+    try {
+      setLoading(true);
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${selectedUserForPermissions.id}`,
+        { permissions: userPermissions }
+      );
+      Alert.alert('Success', 'Permissions updated successfully');
+      setShowPermissionsModal(false);
+      fetchData();
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to update permissions');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePermission = (key) => {
+    setUserPermissions(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
   const handleUpdateEmployee = async () => {
     if (!firstName || !lastName || !phone || !email) {
       Alert.alert('Error', 'Please fill in all required fields');
