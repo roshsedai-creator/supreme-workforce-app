@@ -176,23 +176,36 @@ export default function PermissionsModal({
               </Text>
             </View>
 
-            {Object.entries(permissionLabels).map(([key, data]: [string, any]) => (
-              <View key={key} style={styles.permissionItem}>
-                <View style={styles.permissionIcon}>
-                  <Ionicons name={data.icon} size={24} color={colors.primary} />
+            {Object.entries(categories).map(([categoryKey, categoryName]) => {
+              const categoryPermissions = Object.entries(permissionLabels).filter(
+                ([_, data]: [string, any]) => data.category === categoryKey
+              );
+              
+              if (categoryPermissions.length === 0) return null;
+              
+              return (
+                <View key={categoryKey} style={styles.categorySection}>
+                  <Text style={styles.categoryTitle}>{categoryName}</Text>
+                  {categoryPermissions.map(([key, data]: [string, any]) => (
+                    <View key={key} style={styles.permissionItem}>
+                      <View style={styles.permissionIcon}>
+                        <Ionicons name={data.icon} size={24} color={colors.primary} />
+                      </View>
+                      <View style={styles.permissionInfo}>
+                        <Text style={styles.permissionTitle}>{data.title}</Text>
+                        <Text style={styles.permissionDescription}>{data.description}</Text>
+                      </View>
+                      <Switch
+                        value={permissions[key] || false}
+                        onValueChange={() => togglePermission(key)}
+                        trackColor={{ false: colors.gray[300], true: colors.primary + '60' }}
+                        thumbColor={permissions[key] ? colors.primary : colors.gray[400]}
+                      />
+                    </View>
+                  ))}
                 </View>
-                <View style={styles.permissionInfo}>
-                  <Text style={styles.permissionTitle}>{data.title}</Text>
-                  <Text style={styles.permissionDescription}>{data.description}</Text>
-                </View>
-                <Switch
-                  value={permissions[key]}
-                  onValueChange={() => togglePermission(key)}
-                  trackColor={{ false: colors.gray[300], true: colors.primary + '60' }}
-                  thumbColor={permissions[key] ? colors.primary : colors.gray[400]}
-                />
-              </View>
-            ))}
+              );
+            })}
           </ScrollView>
 
           <View style={styles.modalFooter}>
