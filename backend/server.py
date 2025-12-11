@@ -34,6 +34,85 @@ def serialize_doc(doc):
         del doc["_id"]
     return doc
 
+# Australian Public Holidays 2024-2025
+AUSTRALIAN_PUBLIC_HOLIDAYS = {
+    # 2024
+    "2024-01-01": "New Year's Day",
+    "2024-01-26": "Australia Day",
+    "2024-03-29": "Good Friday",
+    "2024-03-30": "Easter Saturday",
+    "2024-04-01": "Easter Monday",
+    "2024-04-25": "ANZAC Day",
+    "2024-06-10": "Queen's Birthday",
+    "2024-12-25": "Christmas Day",
+    "2024-12-26": "Boxing Day",
+    
+    # 2025
+    "2025-01-01": "New Year's Day",
+    "2025-01-26": "Australia Day",
+    "2025-01-27": "Australia Day (observed)",
+    "2025-04-18": "Good Friday",
+    "2025-04-19": "Easter Saturday",
+    "2025-04-21": "Easter Monday",
+    "2025-04-25": "ANZAC Day",
+    "2025-06-09": "Queen's Birthday",
+    "2025-12-25": "Christmas Day",
+    "2025-12-26": "Boxing Day",
+    
+    # 2026
+    "2026-01-01": "New Year's Day",
+    "2026-01-26": "Australia Day",
+    "2026-04-03": "Good Friday",
+    "2026-04-04": "Easter Saturday",
+    "2026-04-06": "Easter Monday",
+    "2026-04-25": "ANZAC Day",
+    "2026-06-08": "Queen's Birthday",
+    "2026-12-25": "Christmas Day",
+    "2026-12-26": "Boxing Day",
+}
+
+def is_public_holiday(date: datetime) -> tuple[bool, str]:
+    """
+    Check if a date is a public holiday
+    Returns: (is_holiday, holiday_name)
+    """
+    date_str = date.strftime("%Y-%m-%d")
+    if date_str in AUSTRALIAN_PUBLIC_HOLIDAYS:
+        return (True, AUSTRALIAN_PUBLIC_HOLIDAYS[date_str])
+    return (False, "")
+
+def calculate_pay_rate_with_holiday(base_rate: float, date: datetime, hours: float) -> dict:
+    """
+    Calculate pay considering public holidays
+    Public holidays typically get 2.5x pay rate
+    """
+    is_holiday, holiday_name = is_public_holiday(date)
+    
+    if is_holiday:
+        multiplier = 2.5  # Public holiday rate
+        total_pay = base_rate * multiplier * hours
+        return {
+            "base_rate": base_rate,
+            "multiplier": multiplier,
+            "effective_rate": base_rate * multiplier,
+            "hours": hours,
+            "total_pay": round(total_pay, 2),
+            "is_public_holiday": True,
+            "holiday_name": holiday_name
+        }
+    else:
+        # Regular rate
+        total_pay = base_rate * hours
+        return {
+            "base_rate": base_rate,
+            "multiplier": 1.0,
+            "effective_rate": base_rate,
+            "hours": hours,
+            "total_pay": round(total_pay, 2),
+            "is_public_holiday": False,
+            "holiday_name": ""
+        }
+
 def get_default_permissions(role: str) -> dict:
     """Get default permissions based on user role"""
     if role == "admin":
