@@ -32,46 +32,110 @@ export default function PermissionsModal({
   loading,
 }: PermissionsModalProps) {
   const permissionLabels = {
-    view_own_pay: {
-      title: 'View Own Pay',
-      description: 'See their own pay rates and total earnings',
-      icon: 'cash-outline',
+    // Basic Permissions (Usually always enabled)
+    view_home: {
+      title: '🏠 View Home',
+      description: 'Access home dashboard',
+      icon: 'home-outline',
+      category: 'basic',
     },
+    view_own_timesheets: {
+      title: '📋 View Own Timesheets',
+      description: 'See their personal timesheet records',
+      icon: 'list-outline',
+      category: 'basic',
+    },
+    clock_in_out: {
+      title: '⏰ Clock In/Out',
+      description: 'Ability to clock in and clock out',
+      icon: 'time-outline',
+      category: 'basic',
+    },
+    
+    // Employee Features (Can be granted)
+    view_roster: {
+      title: '📅 View Roster',
+      description: 'See roster schedule and shifts',
+      icon: 'calendar-outline',
+      category: 'employee',
+    },
+    request_time_off: {
+      title: '🏖️ Request Time Off',
+      description: 'Submit leave and time-off requests',
+      icon: 'calendar-clear-outline',
+      category: 'employee',
+    },
+    view_own_pay: {
+      title: '💰 View Own Pay',
+      description: 'See their own pay rates and earnings',
+      icon: 'cash-outline',
+      category: 'employee',
+    },
+    
+    // Supervisor Permissions
     view_all_timesheets: {
-      title: 'View All Timesheets',
+      title: '📊 View All Timesheets',
       description: 'Access timesheets of all employees',
       icon: 'documents-outline',
+      category: 'supervisor',
     },
     edit_timesheets: {
-      title: 'Edit Timesheets',
+      title: '✏️ Edit Timesheets',
       description: 'Manually edit timesheet entries',
       icon: 'create-outline',
+      category: 'supervisor',
     },
     approve_timesheets: {
-      title: 'Approve Timesheets',
+      title: '✅ Approve Timesheets',
       description: 'Approve or reject employee timesheets',
       icon: 'checkmark-circle-outline',
+      category: 'supervisor',
+    },
+    manage_roster: {
+      title: '🗓️ Manage Roster',
+      description: 'Create and edit roster shifts',
+      icon: 'calendar',
+      category: 'supervisor',
     },
     view_reports: {
-      title: 'View Reports',
+      title: '📈 View Reports',
       description: 'Access payroll and earnings reports',
       icon: 'stats-chart-outline',
+      category: 'supervisor',
     },
+    
+    // Admin Permissions
     manage_users: {
-      title: 'Manage Users',
+      title: '👥 Manage Users',
       description: 'Create, edit, and delete employee accounts',
       icon: 'people-outline',
+      category: 'admin',
     },
     manage_sites: {
-      title: 'Manage Sites',
+      title: '🏢 Manage Sites',
       description: 'Create and edit work sites/locations',
       icon: 'business-outline',
+      category: 'admin',
     },
     export_payroll: {
-      title: 'Export Payroll',
+      title: '📤 Export Payroll',
       description: 'Generate and export payroll reports',
       icon: 'download-outline',
+      category: 'admin',
     },
+    manage_permissions: {
+      title: '🔐 Manage Permissions',
+      description: 'Control user access and permissions',
+      icon: 'shield-outline',
+      category: 'admin',
+    },
+  };
+
+  const categories = {
+    basic: 'Basic Access',
+    employee: 'Employee Features',
+    supervisor: 'Supervisor Access',
+    admin: 'Admin Access',
   };
 
   const togglePermission = (key: string) => {
