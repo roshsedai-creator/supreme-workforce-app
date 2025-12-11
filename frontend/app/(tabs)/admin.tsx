@@ -892,7 +892,7 @@ export default function AdminScreen() {
                 
                 <TouchableOpacity 
                   style={styles.editButton}
-                  onPress={() => handleEditPermissions(user)}
+                  onPress={() => handleOpenPermissionsModal(user)}
                 >
                   <Ionicons name="shield-checkmark" size={18} color={colors.gold} />
                 </TouchableOpacity>
