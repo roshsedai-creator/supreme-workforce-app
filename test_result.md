@@ -321,6 +321,30 @@ backend:
         agent: "testing"
         comment: "P0 Bank Details Management fully functional. Successfully saves all bank detail fields (bank_name, account_name, bsb, account_number) via PUT request, updates existing bank details correctly, retrieves bank details via GET /api/users/{user_id} (single user), includes bank details in GET /api/users (all users list). All CRUD operations working with proper field validation and data persistence."
 
+  - task: "Admin site management - DELETE site endpoint"
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented DELETE /api/sites/{site_id} endpoint. Prevents deletion if employees or roster shifts are assigned. Backend endpoint at lines 688-725. Frontend handler at lines 397-423 in admin.tsx. User reported delete buttons not working."
+
+  - task: "Supervisor timesheet management - DELETE timesheet endpoint"
+    implemented: true
+    working: "unknown"
+    file: "server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented DELETE /api/timesheets/{timesheet_id} endpoint at lines 1728-1749 in server.py. Frontend handler at lines 136-162 in supervisor.tsx. User reported delete buttons not working."
+
 frontend:
   - task: "Login screen with mock PIN authentication"
     implemented: true
