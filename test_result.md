@@ -345,6 +345,21 @@ backend:
         agent: "main"
         comment: "Implemented DELETE /api/timesheets/{timesheet_id} endpoint at lines 1728-1749 in server.py. Frontend handler at lines 136-162 in supervisor.tsx. User reported delete buttons not working."
 
+  - task: "RBAC - Granular permissions system"
+    implemented: true
+    working: "unknown"
+    file: "app/(tabs)/_layout.tsx, server.py"
+    stuck_count: 2
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "User reported recurring bug: New employees gaining admin access. Previous agent made multiple attempts to fix with role fallbacks."
+      - working: "unknown"
+        agent: "main"
+        comment: "Previous agent removed role-based fallbacks in _layout.tsx (lines 16-19). Permissions now checked ONLY via permissions object. Data migration endpoint created at POST /api/admin/migrate-permissions to update all existing users. Need to verify: 1) Create new employee and confirm they only see employee tabs, 2) Verify admin sees all tabs, 3) Test permission changes via admin panel."
+
 frontend:
   - task: "Login screen with mock PIN authentication"
     implemented: true
