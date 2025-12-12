@@ -588,6 +588,10 @@ async def create_user(user: UserCreate):
     user_dict["created_at"] = datetime.utcnow()
     user_dict["status"] = "active"
     
+    # Set default permissions based on role
+    role = user_dict.get("role", "employee")
+    user_dict["permissions"] = get_default_permissions(role)
+    
     result = await db.users.insert_one(user_dict)
     user_dict["id"] = str(result.inserted_id)
     
