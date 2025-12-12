@@ -1745,12 +1745,18 @@ async def approve_timesheet(request: ApprovalRequest):
 async def delete_timesheet(timesheet_id: str):
     """Delete a timesheet (for invalid/erroneous entries)"""
     try:
-        timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
+        # Validate ObjectId format
+        try:
+            object_id = ObjectId(timesheet_id)
+        except:
+            raise HTTPException(status_code=404, detail="Timesheet not found")
+        
+        timesheet = await db.timesheets.find_one({"_id": object_id})
         if not timesheet:
             raise HTTPException(status_code=404, detail="Timesheet not found")
         
         # Delete the timesheet
-        result = await db.timesheets.delete_one({"_id": ObjectId(timesheet_id)})
+        result = await db.timesheets.delete_one({"_id": object_id})
         
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Timesheet not found")
