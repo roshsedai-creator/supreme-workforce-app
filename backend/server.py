@@ -845,7 +845,7 @@ async def create_invitation(invitation: InvitationCreate):
     invitation_dict["id"] = str(result.inserted_id)
     
     # Send invitation email
-    app_url = os.getenv("APP_URL", "https://timekeeper-227.preview.emergentagent.com")
+    app_url = os.getenv("APP_URL", "https://workforce-timesheet.preview.emergentagent.com")
     invitation_link = f"{app_url}/register?token={token}"
     
     email_sent = await send_invitation_email(

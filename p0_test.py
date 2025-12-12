@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://timekeeper-227.preview.emergentagent.com/api"
+BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
 
 # Test accounts
 TEST_ACCOUNTS = {

@@ -184,11 +184,11 @@ index 862cc95..f785677 100644
 +++ b/frontend/.env
 @@ -1,5 +1,5 @@
 -EXPO_TUNNEL_SUBDOMAIN=timewatch-3
--EXPO_PACKAGER_HOSTNAME=https://timekeeper-227.preview.emergentagent.com
--EXPO_PUBLIC_BACKEND_URL=https://timekeeper-227.preview.emergentagent.com
+-EXPO_PACKAGER_HOSTNAME=https://workforce-timesheet.preview.emergentagent.com
+-EXPO_PUBLIC_BACKEND_URL=https://workforce-timesheet.preview.emergentagent.com
 +EXPO_TUNNEL_SUBDOMAIN=timeclock
-+EXPO_PACKAGER_HOSTNAME=https://timekeeper-227.preview.emergentagent.com
-+EXPO_PUBLIC_BACKEND_URL=https://timekeeper-227.preview.emergentagent.com
++EXPO_PACKAGER_HOSTNAME=https://workforce-timesheet.preview.emergentagent.com
++EXPO_PUBLIC_BACKEND_URL=https://workforce-timesheet.preview.emergentagent.com
  EXPO_USE_FAST_RESOLVER="1"
  METRO_CACHE_ROOT=/app/frontend/.metro-cache
 \ No newline at end of file (). This is the most critical pending action.

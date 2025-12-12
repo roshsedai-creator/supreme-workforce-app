@@ -55,14 +55,14 @@ Login as admin and go to admin panel to see site IDs, or I can get them for you.
 
 **Using Curl:**
 ```bash
-curl -X POST https://timekeeper-227.preview.emergentagent.com/api/users/bulk-register \
+curl -X POST https://workforce-timesheet.preview.emergentagent.com/api/users/bulk-register \
   -H "Content-Type: application/json" \
   -d @employees.json
 ```
 
 **Using Postman:**
 - Method: POST
-- URL: `https://timekeeper-227.preview.emergentagent.com/api/users/bulk-register`
+- URL: `https://workforce-timesheet.preview.emergentagent.com/api/users/bulk-register`
 - Headers: `Content-Type: application/json`
 - Body: Paste your JSON
 
@@ -155,7 +155,7 @@ Use the response to create login cards for each employee.
 **NO REGISTRATION NEEDED!**
 
 1. Receive login card
-2. Open: https://timekeeper-227.preview.emergentagent.com
+2. Open: https://workforce-timesheet.preview.emergentagent.com
 3. Enter phone + PIN from card
 4. Click "Sign In"
 5. Start clocking in/out immediately! ✅
