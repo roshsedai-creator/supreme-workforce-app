@@ -489,15 +489,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "RBAC - Granular permissions system"
-    - "Admin user management - DELETE user endpoint"
-    - "Admin site management - DELETE site endpoint"
-    - "Supervisor timesheet management - DELETE timesheet endpoint"
-  stuck_tasks:
-    - "Admin user management - DELETE user endpoint"
-    - "RBAC - Granular permissions system"
+    - "All DELETE endpoints and RBAC testing completed successfully"
+  stuck_tasks: []
   test_all: false
-  test_priority: "stuck_first"
+  test_priority: "completed"
 
 agent_communication:
   - agent: "main"
