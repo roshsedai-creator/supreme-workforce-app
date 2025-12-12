@@ -274,9 +274,9 @@ backend:
     implemented: true
     working: true
     file: "server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "unknown"
         agent: "main"
@@ -284,6 +284,12 @@ backend:
       - working: true
         agent: "testing"
         comment: "P0 Admin User Management DELETE endpoint working correctly. Successfully deletes users with valid IDs (200 response with success flag), properly removes user from database (verified with 404 on subsequent GET), handles invalid user IDs correctly (404 response). Cascade deletion functionality implemented for timesheets and roster shifts."
+      - working: false
+        agent: "user"
+        comment: "User reported 'the del button and few others are not working' - delete buttons in admin panel not functioning. Need to investigate frontend integration."
+      - working: "unknown"
+        agent: "main"
+        comment: "Fixed critical app.json syntax error that was preventing expo from starting. Frontend handlers exist at lines 276-302 (handleDeleteUser) and 397-423 (handleDeleteSite) in admin.tsx. Backend DELETE endpoints verified at lines 633-663 (users) and 688-725 (sites). Both services now running. Testing if buttons work after fixing JSON error."
 
   - task: "Admin user management - PUT user status endpoint"
     implemented: true
