@@ -276,7 +276,7 @@ backend:
     file: "server.py"
     stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
@@ -290,6 +290,9 @@ backend:
       - working: "unknown"
         agent: "main"
         comment: "Fixed critical app.json syntax error that was preventing expo from starting. Frontend handlers exist at lines 276-302 (handleDeleteUser) and 397-423 (handleDeleteSite) in admin.tsx. Backend DELETE endpoints verified at lines 633-663 (users) and 688-725 (sites). Both services now running. Testing if buttons work after fixing JSON error."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE TESTING COMPLETED: DELETE /api/users/{user_id} endpoint is working perfectly. Successfully creates test users, deletes them with proper success response, verifies deletion (404 on subsequent GET), and handles invalid ObjectIds correctly (returns 404 instead of 500). Fixed minor issue: added default permissions to new user creation. Backend DELETE functionality is production-ready."
 
   - task: "Admin user management - PUT user status endpoint"
     implemented: true
