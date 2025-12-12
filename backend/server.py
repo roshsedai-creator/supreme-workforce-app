@@ -1104,8 +1104,8 @@ async def get_roster_shifts(
                 "as": "site"
             }
         },
-        {"$unwind": {"path": "$employee", "preserveNullOrEmptyArray": True}},
-        {"$unwind": {"path": "$site", "preserveNullOrEmptyArray": True}},
+        {"$unwind": {"path": "$employee", "preserveNullOrEmptyArray": true}},
+        {"$unwind": {"path": "$site", "preserveNullOrEmptyArray": true}},
         {
             "$addFields": {
                 "employee_name": {
