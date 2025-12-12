@@ -1079,21 +1079,58 @@ async def get_roster_shifts(
             "$lte": datetime.fromisoformat(end_date.replace('Z', '+00:00'))
         }
     
-    shifts = await db.roster_shifts.find(query).sort("start_time", 1).to_list(1000)
+    # Use aggregation pipeline to avoid N+1 query problem
+    pipeline = [
+        {"$match": query},
+        {
+            "$lookup": {
+                "from": "users",
+                "let": {"employee_id_str": {"$toString": "$employee_id"}},
+                "pipeline": [
+                    {"$addFields": {"user_id_str": {"$toString": "$_id"}}},
+                    {"$match": {"$expr": {"$eq": ["$user_id_str", "$$employee_id_str"]}}}
+                ],
+                "as": "employee"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "sites",
+                "let": {"site_id_str": {"$toString": "$site_id"}},
+                "pipeline": [
+                    {"$addFields": {"site_id_str": {"$toString": "$_id"}}},
+                    {"$match": {"$expr": {"$eq": ["$site_id_str", "$$site_id_str"]}}}
+                ],
+                "as": "site"
+            }
+        },
+        {"$unwind": {"path": "$employee", "preserveNullOrEmptyArray": True}},
+        {"$unwind": {"path": "$site", "preserveNullOrEmptyArray": True}},
+        {
+            "$addFields": {
+                "employee_name": {
+                    "$concat": [
+                        {"$ifNull": ["$employee.first_name", ""]},
+                        " ",
+                        {"$ifNull": ["$employee.last_name", ""]}
+                    ]
+                },
+                "site_name": {"$ifNull": ["$site.name", ""]}
+            }
+        },
+        {"$sort": {"start_time": 1}},
+        {
+            "$project": {
+                "employee": 0,
+                "site": 0
+            }
+        }
+    ]
     
-    # Enrich with employee and site details
-    enriched_shifts = []
-    for shift in shifts:
-        employee = await db.users.find_one({"_id": ObjectId(shift["employee_id"])})
-        site = await db.sites.find_one({"_id": ObjectId(shift["site_id"])})
-        
-        shift_data = serialize_doc(shift)
-        if employee:
-            shift_data["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}"
-        if site:
-            shift_data["site_name"] = site.get("name", "")
-        
-        enriched_shifts.append(shift_data)
+    shifts = await db.roster_shifts.aggregate(pipeline).to_list(1000)
+    
+    # Serialize the results
+    enriched_shifts = [serialize_doc(shift) for shift in shifts]
     
     return enriched_shifts
 
