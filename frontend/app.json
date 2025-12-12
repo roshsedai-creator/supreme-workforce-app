@@ -76,10 +76,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "router": {},
-      "eas": {
-        "projectId": "com.supremehospitality.workforce"
-      }
+      "router": {}
     }
   }
 }
