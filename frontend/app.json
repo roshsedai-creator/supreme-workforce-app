@@ -73,9 +73,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "eas": {
-        "projectId": "supreme-workforce-app"
-      }
+      "eas": {}
     }
   }
 }
