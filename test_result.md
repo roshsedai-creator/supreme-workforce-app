@@ -477,10 +477,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Roster management system (frontend)"
-  stuck_tasks: []
+    - "RBAC - Granular permissions system"
+    - "Admin user management - DELETE user endpoint"
+    - "Admin site management - DELETE site endpoint"
+    - "Supervisor timesheet management - DELETE timesheet endpoint"
+  stuck_tasks:
+    - "Admin user management - DELETE user endpoint"
+    - "RBAC - Granular permissions system"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "stuck_first"
 
 agent_communication:
   - agent: "main"
