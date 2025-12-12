@@ -699,7 +699,13 @@ async def get_site(site_id: str):
 async def delete_site(site_id: str):
     """Delete a site and handle associated data"""
     try:
-        site = await db.sites.find_one({"_id": ObjectId(site_id)})
+        # Validate ObjectId format
+        try:
+            object_id = ObjectId(site_id)
+        except:
+            raise HTTPException(status_code=404, detail="Site not found")
+        
+        site = await db.sites.find_one({"_id": object_id})
         if not site:
             raise HTTPException(status_code=404, detail="Site not found")
         
@@ -720,7 +726,7 @@ async def delete_site(site_id: str):
             )
         
         # Delete the site
-        result = await db.sites.delete_one({"_id": ObjectId(site_id)})
+        result = await db.sites.delete_one({"_id": object_id})
         
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Site not found")
