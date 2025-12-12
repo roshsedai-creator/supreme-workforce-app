@@ -71,7 +71,6 @@
     ],
     "experiments": {
       "typedRoutes": true
-    },
     }
   }
 }
