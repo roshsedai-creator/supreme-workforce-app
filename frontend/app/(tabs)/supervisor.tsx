@@ -899,4 +899,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.white,
   },
+  accessDeniedContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  accessDeniedTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.error,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  accessDeniedText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 24,
+  },
 });
