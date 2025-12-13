@@ -36,6 +36,31 @@ export default function SupervisorScreen() {
   const [editBreakMinutes, setEditBreakMinutes] = useState('');
   const [supervisorNotes, setSupervisorNotes] = useState('');
 
+  // Check permissions - deny access if user doesn't have supervisor permissions
+  const permissions = user?.permissions || {};
+  const canAccessSupervisor = permissions.view_all_timesheets === true || 
+                               permissions.edit_timesheets === true || 
+                               permissions.approve_timesheets === true || 
+                               permissions.manage_roster === true;
+
+  // If no supervisor permissions, show access denied message
+  if (!canAccessSupervisor) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.accessDeniedContainer}>
+          <Ionicons name="lock-closed" size={64} color={colors.error} />
+          <Text style={styles.accessDeniedTitle}>Access Denied</Text>
+          <Text style={styles.accessDeniedText}>
+            You don't have permission to access the Supervisor panel.
+          </Text>
+          <Text style={styles.accessDeniedText}>
+            Please contact your administrator if you need access.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   useEffect(() => {
     fetchDashboard();
   }, []);
