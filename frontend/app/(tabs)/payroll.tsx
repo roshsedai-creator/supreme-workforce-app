@@ -32,6 +32,28 @@ export default function PayrollScreen() {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedSite, setSelectedSite] = useState<string>('all');
 
+  // Check permissions - deny access if user doesn't have payroll permissions
+  const permissions = user?.permissions || {};
+  const canAccessPayroll = permissions.export_payroll === true || permissions.manage_users === true || permissions.manage_sites === true;
+
+  // If no payroll permissions, show access denied message
+  if (!canAccessPayroll) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.accessDeniedContainer}>
+          <Ionicons name="lock-closed" size={64} color={colors.error} />
+          <Text style={styles.accessDeniedTitle}>Access Denied</Text>
+          <Text style={styles.accessDeniedText}>
+            You don't have permission to access Payroll reports.
+          </Text>
+          <Text style={styles.accessDeniedText}>
+            Please contact your administrator if you need access.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   useEffect(() => {
     fetchData();
   }, [periodType, currentPeriod]);
