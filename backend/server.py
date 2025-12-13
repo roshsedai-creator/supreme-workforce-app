@@ -1353,21 +1353,57 @@ async def get_recurring_templates(
     if active is not None:
         query["active"] = active
     
-    templates = await db.recurring_templates.find(query).to_list(100)
+    # Use aggregation pipeline to avoid N+1 query problem
+    pipeline = [
+        {"$match": query},
+        {
+            "$lookup": {
+                "from": "users",
+                "let": {"employee_id_str": {"$toString": "$employee_id"}},
+                "pipeline": [
+                    {"$addFields": {"user_id_str": {"$toString": "$_id"}}},
+                    {"$match": {"$expr": {"$eq": ["$user_id_str", "$$employee_id_str"]}}}
+                ],
+                "as": "employee"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "sites",
+                "let": {"site_id_str": {"$toString": "$site_id"}},
+                "pipeline": [
+                    {"$addFields": {"site_id_str": {"$toString": "$_id"}}},
+                    {"$match": {"$expr": {"$eq": ["$site_id_str", "$$site_id_str"]}}}
+                ],
+                "as": "site"
+            }
+        },
+        {"$unwind": {"path": "$employee", "preserveNullOrEmptyArray": true}},
+        {"$unwind": {"path": "$site", "preserveNullOrEmptyArray": true}},
+        {
+            "$addFields": {
+                "employee_name": {
+                    "$concat": [
+                        {"$ifNull": ["$employee.first_name", ""]},
+                        " ",
+                        {"$ifNull": ["$employee.last_name", ""]}
+                    ]
+                },
+                "site_name": {"$ifNull": ["$site.name", ""]}
+            }
+        },
+        {
+            "$project": {
+                "employee": 0,
+                "site": 0
+            }
+        }
+    ]
     
-    # Enrich with employee and site details
-    enriched_templates = []
-    for template in templates:
-        employee = await db.users.find_one({"_id": ObjectId(template["employee_id"])})
-        site = await db.sites.find_one({"_id": ObjectId(template["site_id"])})
-        
-        template_data = serialize_doc(template)
-        if employee:
-            template_data["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}"
-        if site:
-            template_data["site_name"] = site.get("name", "")
-        
-        enriched_templates.append(template_data)
+    templates = await db.recurring_templates.aggregate(pipeline).to_list(100)
+    
+    # Serialize the results
+    enriched_templates = [serialize_doc(template) for template in templates]
     
     return enriched_templates
 
