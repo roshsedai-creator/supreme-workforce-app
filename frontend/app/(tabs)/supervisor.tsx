@@ -174,7 +174,7 @@ export default function SupervisorScreen() {
                 `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheet.id}`
               );
               Alert.alert('Success', 'Timesheet deleted successfully');
-              fetchData();
+              fetchDashboard();
             } catch (error: any) {
               Alert.alert('Error', error.response?.data?.detail || 'Failed to delete timesheet');
             } finally {
