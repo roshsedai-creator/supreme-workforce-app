@@ -306,6 +306,7 @@ class ApprovalRequest(BaseModel):
     supervisor_id: str
     status: str  # approved or rejected
     notes: Optional[str] = None
+    signature: Optional[str] = None  # Base64 encoded signature image
 
 class LeaveRequest(BaseModel):
     id: Optional[str] = None
