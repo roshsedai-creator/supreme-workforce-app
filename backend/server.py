@@ -1801,13 +1801,20 @@ async def approve_timesheet(request: ApprovalRequest):
                 
                 total_pay = timesheet.get("total_hours", 0) * rate
     
+    update_data = {
+        "approval_status": request.status,
+        "supervisor_id": request.supervisor_id,
+        "notes": request.notes,
+        "total_pay": round(total_pay, 2)
+    }
+    
+    # Add signature if provided
+    if hasattr(request, 'signature') and request.signature:
+        update_data["supervisor_signature"] = request.signature
+    
     await db.timesheets.update_one(
         {"_id": ObjectId(request.timesheet_id)},
-        {"$set": {
-            "approval_status": request.status,
-            "supervisor_id": request.supervisor_id,
-            "notes": request.notes,
-            "total_pay": round(total_pay, 2)
+        {"$set": update_data
         }}
     )
     
