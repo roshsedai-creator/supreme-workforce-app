@@ -1104,8 +1104,8 @@ async def get_roster_shifts(
                 "as": "site"
             }
         },
-        {"$unwind": {"path": "$employee", "preserveNullOrEmptyArray": True}},
-        {"$unwind": {"path": "$site", "preserveNullOrEmptyArray": True}},
+        {"$unwind": {"path": "$employee"}},
+        {"$unwind": {"path": "$site"}},
         {
             "$addFields": {
                 "employee_name": {
@@ -1378,8 +1378,8 @@ async def get_recurring_templates(
                 "as": "site"
             }
         },
-        {"$unwind": {"path": "$employee", "preserveNullOrEmptyArray": True}},
-        {"$unwind": {"path": "$site", "preserveNullOrEmptyArray": True}},
+        {"$unwind": {"path": "$employee"}},
+        {"$unwind": {"path": "$site"}},
         {
             "$addFields": {
                 "employee_name": {
