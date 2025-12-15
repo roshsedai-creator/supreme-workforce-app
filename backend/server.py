@@ -1815,8 +1815,7 @@ async def approve_timesheet(request: ApprovalRequest):
     
     await db.timesheets.update_one(
         {"_id": ObjectId(request.timesheet_id)},
-        {"$set": update_data
-        }}
+        {"$set": update_data}
     )
     
     updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
