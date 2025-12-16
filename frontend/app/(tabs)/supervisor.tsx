@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import { getSupervisorDashboard, approveTimesheet, updateTimesheet } from '../../utils/api';
+import axios from 'axios';
+import { getSupervisorDashboard, approveTimesheet, updateTimesheet, deleteTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import { format } from 'date-fns';
 
