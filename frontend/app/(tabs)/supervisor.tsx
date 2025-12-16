@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
@@ -18,6 +19,7 @@ import axios from 'axios';
 import { getSupervisorDashboard, approveTimesheet, updateTimesheet, deleteTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import { format } from 'date-fns';
+import SignatureScreen from 'react-native-signature-canvas';
 
 export default function SupervisorScreen() {
   const { user } = useAuthStore();
