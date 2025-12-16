@@ -124,3 +124,8 @@ export const updateTimesheet = async (
   const response = await api.post(`/timesheets/${timesheet_id}/update`, data);
   return response.data;
 };
+
+export const deleteTimesheet = async (timesheet_id: string) => {
+  const response = await api.delete(`/timesheets/${timesheet_id}`);
+  return response.data;
+};
