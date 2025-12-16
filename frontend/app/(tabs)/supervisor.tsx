@@ -171,9 +171,7 @@ export default function SupervisorScreen() {
           onPress: async () => {
             try {
               setActionLoading(true);
-              await axios.delete(
-                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheet.id}`
-              );
+              await deleteTimesheet(timesheet.id);
               Alert.alert('Success', 'Timesheet deleted successfully');
               fetchDashboard();
             } catch (error: any) {
