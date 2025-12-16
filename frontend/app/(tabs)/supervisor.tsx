@@ -171,11 +171,12 @@ export default function SupervisorScreen() {
           onPress: async () => {
             try {
               setActionLoading(true);
-              await deleteTimesheet(timesheet.id);
+              const result = await deleteTimesheet(timesheet.id);
               Alert.alert('Success', 'Timesheet deleted successfully');
-              fetchDashboard();
+              await fetchDashboard();
             } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete timesheet');
+              console.error('Delete timesheet error:', error);
+              Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to delete timesheet');
             } finally {
               setActionLoading(false);
             }
