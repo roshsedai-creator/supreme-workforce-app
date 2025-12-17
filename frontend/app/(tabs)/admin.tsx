@@ -110,18 +110,20 @@ export default function AdminScreen() {
   }, [user]);
 
   // Define fetchData BEFORE using it in useEffect
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
+      console.log('Fetching admin data...');
       const [sitesData, usersData, payRatesData] = await Promise.all([
         getSites(),
         getUsers(),
         axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pay-rates`),
       ]);
-      setSites(sitesData);
-      setUsers(usersData);
+      console.log(`Loaded: ${sitesData?.length || 0} sites, ${usersData?.length || 0} users`);
+      setSites(sitesData || []);
+      setUsers(usersData || []);
       
       // Deduplicate pay rates by award_level (keep the first occurrence of each level)
-      const uniquePayRates = payRatesData.data.reduce((acc, rate) => {
+      const uniquePayRates = (payRatesData.data || []).reduce((acc: any[], rate: any) => {
         if (!acc.find((r) => r.award_level === rate.award_level)) {
           acc.push(rate);
         }
@@ -133,8 +135,15 @@ export default function AdminScreen() {
       fetchEarnings();
     } catch (error) {
       console.error('Failed to fetch data:', error);
+      Alert.alert('Error', 'Failed to load data. Pull down to refresh.');
     }
-  };
+  }, []);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const fetchEarnings = async () => {
     try {
