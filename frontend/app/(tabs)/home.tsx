@@ -38,11 +38,38 @@ export default function HomeScreen() {
 
   const getLocation = async () => {
     try {
-      const loc = await Location.getCurrentPositionAsync({});
+      // Add timeout to prevent infinite waiting for GPS
+      const locationPromise = Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+        timeout: 10000, // 10 second timeout
+      });
+      
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Location timeout')), 15000);
+      });
+      
+      // Race between location and timeout
+      const loc = await Promise.race([locationPromise, timeoutPromise]) as any;
       setLocation(loc);
       return loc;
-    } catch (error) {
-      Alert.alert('Error', 'Failed to get location. Please enable location services.');
+    } catch (error: any) {
+      console.error('Location error:', error);
+      
+      // Provide helpful error message
+      if (error.message === 'Location timeout') {
+        Alert.alert(
+          'Location Timeout', 
+          'Could not get your location. Please ensure GPS is enabled and try again.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Location Error', 
+          'Failed to get location. Please enable location services in your device settings.',
+          [{ text: 'OK' }]
+        );
+      }
       return null;
     }
   };
