@@ -1045,4 +1045,66 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 24,
   },
+  // Signature styles
+  signatureContainer: {
+    padding: 20,
+  },
+  signatureInstructions: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  signaturePadWrapper: {
+    height: 250,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.white,
+  },
+  signaturePreviewContainer: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  signatureLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 8,
+  },
+  signaturePreview: {
+    width: '100%',
+    height: 80,
+    backgroundColor: colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
+  },
+  changeSignatureBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    padding: 8,
+    gap: 4,
+  },
+  changeSignatureText: {
+    fontSize: 14,
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  backToReviewBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 16,
+    padding: 12,
+    gap: 8,
+  },
+  backToReviewText: {
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: '500',
+  },
 });
