@@ -41,6 +41,7 @@ export default function AdminScreen() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteLink, setInviteLink] = useState('');
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   // Invitation form
   const [inviteFirstName, setInviteFirstName] = useState('');
