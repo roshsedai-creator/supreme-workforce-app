@@ -1,189 +1,137 @@
-import React, { useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Alert,
-  Dimensions,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import SignatureCanvas from 'react-native-signature-canvas';
+import React, { useRef, useImperativeHandle, forwardRef } from 'react';
+import { View, StyleSheet, Platform, Text } from 'react-native';
 import { colors } from '../constants/colors';
 
-interface SignaturePadProps {
-  visible: boolean;
-  onClose: () => void;
-  onSave: (signature: string) => void;
-  title?: string;
+// Platform-specific imports
+let SignatureCanvas: any = null;
+let SignatureScreen: any = null;
+
+if (Platform.OS === 'web') {
+  // Use react-signature-canvas for web
+  SignatureCanvas = require('react-signature-canvas').default;
+} else {
+  // Use react-native-signature-canvas for mobile
+  SignatureScreen = require('react-native-signature-canvas').default;
 }
 
-export default function SignaturePad({ visible, onClose, onSave, title = "Sign Here" }: SignaturePadProps) {
-  const signatureRef = useRef<any>();
-  const [hasSignature, setHasSignature] = useState(false);
+interface SignaturePadProps {
+  onOK: (signature: string) => void;
+  onClear?: () => void;
+}
 
-  const handleOK = (signature: string) => {
-    setHasSignature(true);
-    onSave(signature);
-    onClose();
-  };
+export interface SignaturePadRef {
+  clearSignature: () => void;
+  readSignature: () => void;
+}
 
-  const handleClear = () => {
-    signatureRef.current?.clearSignature();
-    setHasSignature(false);
-  };
+const SignaturePad = forwardRef<SignaturePadRef, SignaturePadProps>(({ onOK, onClear }, ref) => {
+  const webSignatureRef = useRef<any>(null);
+  const mobileSignatureRef = useRef<any>(null);
 
-  const handleConfirm = () => {
-    if (!hasSignature) {
-      Alert.alert('Please sign', 'Please provide your signature before saving');
-      return;
-    }
-    signatureRef.current?.readSignature();
-  };
+  useImperativeHandle(ref, () => ({
+    clearSignature: () => {
+      if (Platform.OS === 'web' && webSignatureRef.current) {
+        webSignatureRef.current.clear();
+      } else if (mobileSignatureRef.current) {
+        mobileSignatureRef.current.clearSignature();
+      }
+      onClear?.();
+    },
+    readSignature: () => {
+      if (Platform.OS === 'web' && webSignatureRef.current) {
+        if (webSignatureRef.current.isEmpty()) {
+          alert('Please provide a signature');
+          return;
+        }
+        const dataURL = webSignatureRef.current.toDataURL('image/png');
+        onOK(dataURL);
+      } else if (mobileSignatureRef.current) {
+        mobileSignatureRef.current.readSignature();
+      }
+    },
+  }));
 
-  const style = `.m-signature-pad {box-shadow: none; border: none; } 
-                .m-signature-pad--body {border: none;}
-                .m-signature-pad--footer {display: none; margin: 0px;}
-                body,html {width: 100%; height: 100%;}`;
-
-  return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={false}
-      onRequestClose={onClose}
-    >
+  if (Platform.OS === 'web') {
+    return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Ionicons name="close" size={28} color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.instructions}>
-          <Ionicons name="create-outline" size={24} color={colors.primary} />
-          <Text style={styles.instructionText}>
-            Please sign using your finger or stylus
-          </Text>
-        </View>
-
-        <View style={styles.signatureContainer}>
+        <View style={styles.signatureBox}>
           <SignatureCanvas
-            ref={signatureRef}
-            onOK={handleOK}
-            onBegin={() => setHasSignature(true)}
-            descriptionText=""
-            clearText="Clear"
-            confirmText="Save"
-            webStyle={style}
-            backgroundColor={colors.white}
-            penColor={colors.text.primary}
+            ref={webSignatureRef}
+            canvasProps={{
+              style: {
+                width: '100%',
+                height: '100%',
+                border: '2px dashed #ccc',
+                borderRadius: 12,
+                backgroundColor: 'white',
+              },
+            }}
+            penColor="black"
+            minWidth={1}
+            maxWidth={3}
           />
         </View>
-
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
-            <Ionicons name="refresh" size={20} color={colors.error} />
-            <Text style={styles.clearButtonText}>Clear</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.saveButton} onPress={handleConfirm}>
-            <Ionicons name="checkmark" size={20} color={colors.white} />
-            <Text style={styles.saveButtonText}>Save Signature</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.hint}>Draw your signature above</Text>
       </View>
-    </Modal>
+    );
+  }
+
+  // Mobile version
+  return (
+    <View style={styles.container}>
+      <View style={styles.signatureBox}>
+        <SignatureScreen
+          ref={mobileSignatureRef}
+          onOK={onOK}
+          onEmpty={() => alert('Please provide a signature')}
+          autoClear={false}
+          descriptionText=""
+          webStyle={`
+            .m-signature-pad {
+              box-shadow: none;
+              border: 2px dashed #ccc;
+              border-radius: 12px;
+              height: 100%;
+            }
+            .m-signature-pad--body {
+              border: none;
+            }
+            .m-signature-pad--footer {
+              display: none;
+            }
+          `}
+          backgroundColor="white"
+          penColor="black"
+          dotSize={2}
+          minWidth={1}
+          maxWidth={3}
+        />
+      </View>
+    </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: colors.background,
+    width: '100%',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    backgroundColor: colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
-  closeButton: {
-    padding: 4,
-  },
-  instructions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: colors.primary + '15',
-    marginHorizontal: 16,
-    marginTop: 16,
+  signatureBox: {
+    height: 200,
     borderRadius: 12,
-    gap: 12,
-  },
-  instructionText: {
-    flex: 1,
-    fontSize: 14,
-    color: colors.text.secondary,
-    lineHeight: 20,
-  },
-  signatureContainer: {
-    flex: 1,
-    margin: 16,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 2,
-    borderColor: colors.primary,
-    borderStyle: 'dashed',
     overflow: 'hidden',
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
     backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
+    borderWidth: 2,
+    borderColor: colors.gray[300],
+    borderStyle: 'dashed',
   },
-  clearButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: colors.error + '15',
-    borderRadius: 12,
-    gap: 8,
-  },
-  clearButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.error,
-  },
-  saveButton: {
-    flex: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    gap: 8,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.white,
+  hint: {
+    textAlign: 'center',
+    marginTop: 8,
+    fontSize: 12,
+    color: colors.text.secondary,
   },
 });
+
+SignaturePad.displayName = 'SignaturePad';
+
+export default SignaturePad;
