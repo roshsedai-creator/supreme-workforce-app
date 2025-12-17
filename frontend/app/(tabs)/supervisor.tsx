@@ -19,7 +19,7 @@ import axios from 'axios';
 import { getSupervisorDashboard, approveTimesheet, updateTimesheet, deleteTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import { format } from 'date-fns';
-import SignatureScreen from 'react-native-signature-canvas';
+import SignaturePad, { SignaturePadRef } from '../../components/SignaturePad';
 
 export default function SupervisorScreen() {
   const { user } = useAuthStore();
