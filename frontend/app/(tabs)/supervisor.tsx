@@ -91,18 +91,47 @@ export default function SupervisorScreen() {
   const handleApproval = async (status: 'approved' | 'rejected') => {
     if (!selectedTimesheet) return;
 
+    // Require signature for approvals
+    if (status === 'approved' && !signatureData) {
+      Alert.alert('Signature Required', 'Please provide your signature to approve this timesheet.');
+      setShowSignature(true);
+      return;
+    }
+
     setActionLoading(true);
     try {
-      await approveTimesheet(selectedTimesheet.id, user?.id || '', status, notes);
+      await approveTimesheet(
+        selectedTimesheet.id, 
+        user?.id || '', 
+        status, 
+        notes,
+        status === 'approved' ? signatureData || undefined : undefined
+      );
       Alert.alert('Success', `Timesheet ${status}!`);
       setShowModal(false);
       setNotes('');
+      setSignatureData(null);
+      setShowSignature(false);
       fetchDashboard();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || `Failed to ${status} timesheet`);
     } finally {
       setActionLoading(false);
     }
+  };
+
+  // Signature handlers
+  const handleSignatureOK = (signature: string) => {
+    setSignatureData(signature);
+    setShowSignature(false);
+  };
+
+  const handleSignatureClear = () => {
+    signatureRef.current?.clearSignature();
+  };
+
+  const handleSignatureEmpty = () => {
+    Alert.alert('Error', 'Please provide a signature');
   };
 
   const handleEdit = (timesheet: any) => {
