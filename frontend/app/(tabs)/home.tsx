@@ -38,38 +38,29 @@ export default function HomeScreen() {
 
   const getLocation = async () => {
     try {
-      // Add timeout to prevent infinite waiting for GPS
-      const locationPromise = Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeout: 10000, // 10 second timeout
-      });
+      // Try to get last known location first (instant)
+      let loc = await Location.getLastKnownPositionAsync({});
       
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Location timeout')), 15000);
-      });
+      // If no last known location, get current with low accuracy (faster)
+      if (!loc) {
+        loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Low, // Faster than Balanced
+        });
+      }
       
-      // Race between location and timeout
-      const loc = await Promise.race([locationPromise, timeoutPromise]) as any;
-      setLocation(loc);
-      return loc;
+      if (loc) {
+        setLocation(loc);
+        return loc;
+      }
+      
+      throw new Error('Could not get location');
     } catch (error: any) {
       console.error('Location error:', error);
-      
-      // Provide helpful error message
-      if (error.message === 'Location timeout') {
-        Alert.alert(
-          'Location Timeout', 
-          'Could not get your location. Please ensure GPS is enabled and try again.',
-          [{ text: 'OK' }]
-        );
-      } else {
-        Alert.alert(
-          'Location Error', 
-          'Failed to get location. Please enable location services in your device settings.',
-          [{ text: 'OK' }]
-        );
-      }
+      Alert.alert(
+        'Location Error', 
+        'Could not get your location. Please enable GPS and try again.',
+        [{ text: 'OK' }]
+      );
       return null;
     }
   };
