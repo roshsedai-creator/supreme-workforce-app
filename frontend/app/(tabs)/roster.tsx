@@ -795,31 +795,20 @@ export default function RosterScreen() {
   };
 
   const handleDeleteShift = async (shiftId: string) => {
-    Alert.alert(
-      'Delete Shift',
-      'Are you sure you want to delete this shift?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setLoading(true);
-              await axios.delete(
-                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${shiftId}`
-              );
-              Alert.alert('Success', 'Shift deleted');
-              loadData();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete shift');
-            } finally {
-              setLoading(false);
-            }
-          }
-        }
-      ]
-    );
+    // Direct delete without confirmation for faster UX
+    try {
+      setLoading(true);
+      await axios.delete(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${shiftId}`
+      );
+      Alert.alert('Success', 'Shift deleted');
+      await loadData();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to delete shift');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopyShift = async (shift: RosterShift) => {
