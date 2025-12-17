@@ -722,12 +722,34 @@ export default function RosterScreen() {
     
     Alert.alert(
       'Shift Actions',
-      `${shiftStyle.icon} ${shift.employee_name} • ${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`,
+      `${shiftStyle.icon} ${shift.employee_name}\n${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}`,
       [
         {
           text: 'Edit',
           onPress: () => handleEditShift(shift)
         },
+        {
+          text: 'More Options',
+          onPress: () => showMoreShiftOptions(shift)
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => handleDeleteShift(shift.id)
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ]
+    );
+  };
+
+  const showMoreShiftOptions = (shift: RosterShift) => {
+    Alert.alert(
+      'More Options',
+      `${shift.employee_name}`,
+      [
         {
           text: 'Change to Sick Leave',
           onPress: () => handleQuickChangeType(shift, 'sick')
@@ -745,12 +767,7 @@ export default function RosterScreen() {
           onPress: () => handleCopyShift(shift)
         },
         {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => handleDeleteShift(shift.id)
-        },
-        {
-          text: 'Cancel',
+          text: 'Back',
           style: 'cancel'
         }
       ]
