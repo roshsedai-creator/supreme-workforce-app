@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import uuid
 
 # Configuration
-BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
+BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
 
 # Test credentials from test_result.md
 ADMIN_CREDENTIALS = {"identifier": "0457802302", "pin": "1234"}

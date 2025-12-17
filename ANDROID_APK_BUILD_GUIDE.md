@@ -282,7 +282,7 @@ If Expo website doesn't work or you prefer command line:
 
 ### **Issue 4: App crashes on open**
 **Solution:**
-- Make sure backend URL is accessible: https://workforce-timesheet.preview.emergentagent.com
+- Make sure backend URL is accessible: https://fieldforce-24.preview.emergentagent.com
 - Check phone has internet connection
 - Try clearing app data and reopening
 
@@ -301,7 +301,7 @@ If Expo website doesn't work or you prefer command line:
 - **App Name:** Supreme Workforce
 - **Package:** com.supremehospitality.workforce
 - **Version:** 1.0.0
-- **Backend URL:** https://workforce-timesheet.preview.emergentagent.com
+- **Backend URL:** https://fieldforce-24.preview.emergentagent.com
 
 ### **Login Credentials for Testing:**
 - **Admin:** Phone: `0457802302`, PIN: `1234`

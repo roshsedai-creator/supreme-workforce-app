@@ -240,7 +240,7 @@ Once deployed:
 
 **Web Version (Browser):**
 ```
-https://workforce-timesheet.preview.emergentagent.com
+https://fieldforce-24.preview.emergentagent.com
 ```
 
 **iOS App Store:**

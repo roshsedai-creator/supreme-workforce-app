@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
+BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
 
 def test_delete_user_issue():
     """Test the DELETE user endpoint issue"""

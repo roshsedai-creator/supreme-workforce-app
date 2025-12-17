@@ -168,7 +168,7 @@ index f215d4c..e69de29 100644
 ---------+import uuid
 ---------+import time
 ---------+
----------+BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
+---------+BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
 ---------+ADMIN_CREDENTIALS = {"identifier": "0457802302", "pin": "1234"}
 ---------+
 ---------+def make_request(method, endpoint, data=None, timeout=15):
@@ -442,7 +442,7 @@ index f215d4c..e69de29 100644
 ---------+import json
 ---------+import uuid
 ---------+
----------+BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
+---------+BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
 ---------+
 ---------+def test_delete_user_issue():
 ---------+    """Test the DELETE user endpoint issue"""
@@ -2752,7 +2752,7 @@ index f215d4c..e69de29 100644
 ------------------------+import json
 ------------------------+from datetime import datetime, timedelta
 ------------------------+
-------------------------+BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
+------------------------+BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
 ------------------------+
 ------------------------+# Test accounts
 ------------------------+ADMIN_ACCOUNT = {"phone": "0457802302", "pin": "1234"}
@@ -3124,7 +3124,7 @@ index f215d4c..e69de29 100644
 --------------+from datetime import datetime
 --------------+
 --------------+# Configuration
---------------+BASE_URL = "https://workforce-timesheet.preview.emergentagent.com/api"
+--------------+BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
 --------------+
 --------------+# Test accounts
 --------------+TEST_ACCOUNTS = {
