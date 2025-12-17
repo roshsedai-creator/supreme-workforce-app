@@ -77,12 +77,13 @@ export const getTimesheets = async (employee_id?: string, site_id?: string, appr
   return response.data;
 };
 
-export const approveTimesheet = async (timesheet_id: string, supervisor_id: string, status: string, notes?: string) => {
+export const approveTimesheet = async (timesheet_id: string, supervisor_id: string, status: string, notes?: string, signature?: string) => {
   const response = await api.post('/timesheets/approve', {
     timesheet_id,
     supervisor_id,
     status,
     notes,
+    signature,
   });
   return response.data;
 };
