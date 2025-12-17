@@ -101,7 +101,11 @@ export default function HomeScreen() {
 
   const handleClockIn = async () => {
     if (!user?.site_id) {
-      Alert.alert('Error', 'No site assigned. Please contact your supervisor.');
+      Alert.alert(
+        'No Site Assigned', 
+        'You are not assigned to a work site yet. Please contact your supervisor or admin to assign you to a site before clocking in.',
+        [{ text: 'OK' }]
+      );
       return;
     }
 
