@@ -552,6 +552,19 @@ async def employee_self_register(registration: dict):
     
     # Create user account
     role = invitation_data.get("role", "employee") if invitation_data else "employee"
+    
+    # Get site_id from invitation or registration, or default to first available site
+    site_id = None
+    if invitation_data:
+        site_id = invitation_data.get("site_id")
+    elif registration.get("site_id"):
+        site_id = registration.get("site_id")
+    else:
+        # Assign to first available site for self-registering employees
+        default_site = await db.sites.find_one()
+        if default_site:
+            site_id = str(default_site["_id"])
+    
     user_dict = {
         "first_name": registration["first_name"],
         "last_name": registration["last_name"],
@@ -559,8 +572,8 @@ async def employee_self_register(registration: dict):
         "email": registration["email"],
         "pin": registration["pin"],
         "role": role,
-        "job_title": invitation_data.get("job_title", registration.get("job_title", "")) if invitation_data else registration.get("job_title", ""),
-        "site_id": invitation_data.get("site_id") if invitation_data else None,
+        "job_title": invitation_data.get("job_title", registration.get("job_title", "")) if invitation_data else registration.get("job_title", "Employee"),
+        "site_id": site_id,
         "award_level": registration.get("award_level", 1),
         "bank_details": None,
         "is_contractor": False,
