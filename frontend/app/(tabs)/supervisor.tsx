@@ -389,18 +389,28 @@ export default function SupervisorScreen() {
         visible={showModal}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => {
+          setShowModal(false);
+          setShowSignature(false);
+          setSignatureData(null);
+        }}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Review Timesheet</Text>
-              <TouchableOpacity onPress={() => setShowModal(false)}>
+              <Text style={styles.modalTitle}>
+                {showSignature ? 'Sign to Approve' : 'Review Timesheet'}
+              </Text>
+              <TouchableOpacity onPress={() => {
+                setShowModal(false);
+                setShowSignature(false);
+                setSignatureData(null);
+              }}>
                 <Ionicons name="close" size={28} color={colors.gray[600]} />
               </TouchableOpacity>
             </View>
 
-            {selectedTimesheet && (
+            {selectedTimesheet && !showSignature && (
               <View style={styles.modalBody}>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Employee ID:</Text>
@@ -428,9 +438,31 @@ export default function SupervisorScreen() {
                   value={notes}
                   onChangeText={setNotes}
                   multiline
-                  numberOfLines={4}
+                  numberOfLines={3}
                   textAlignVertical="top"
                 />
+
+                {/* Signature Preview */}
+                {signatureData && (
+                  <View style={styles.signaturePreviewContainer}>
+                    <Text style={styles.signatureLabel}>Your Signature:</Text>
+                    <Image 
+                      source={{ uri: signatureData }} 
+                      style={styles.signaturePreview}
+                      resizeMode="contain"
+                    />
+                    <TouchableOpacity 
+                      style={styles.changeSignatureBtn}
+                      onPress={() => {
+                        setSignatureData(null);
+                        setShowSignature(true);
+                      }}
+                    >
+                      <Ionicons name="create-outline" size={16} color={colors.primary} />
+                      <Text style={styles.changeSignatureText}>Change Signature</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
 
                 <View style={styles.modalActions}>
                   <TouchableOpacity
@@ -457,11 +489,71 @@ export default function SupervisorScreen() {
                     ) : (
                       <>
                         <Ionicons name="checkmark-circle" size={20} color={colors.white} />
-                        <Text style={styles.actionButtonText}>Approve</Text>
+                        <Text style={styles.actionButtonText}>
+                          {signatureData ? 'Approve' : 'Sign & Approve'}
+                        </Text>
                       </>
                     )}
                   </TouchableOpacity>
                 </View>
+              </View>
+            )}
+
+            {/* Signature Capture Screen */}
+            {showSignature && (
+              <View style={styles.signatureContainer}>
+                <Text style={styles.signatureInstructions}>
+                  Please sign below to approve this timesheet
+                </Text>
+                <View style={styles.signaturePadWrapper}>
+                  <SignatureScreen
+                    ref={signatureRef}
+                    onOK={handleSignatureOK}
+                    onEmpty={handleSignatureEmpty}
+                    descriptionText=""
+                    clearText="Clear"
+                    confirmText="Confirm"
+                    webStyle={`
+                      .m-signature-pad {
+                        box-shadow: none;
+                        border: 2px dashed #ccc;
+                        border-radius: 12px;
+                      }
+                      .m-signature-pad--body {
+                        border: none;
+                      }
+                      .m-signature-pad--footer {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 10px;
+                      }
+                      .m-signature-pad--footer .button {
+                        background-color: ${colors.primary};
+                        color: white;
+                        border: none;
+                        padding: 10px 20px;
+                        border-radius: 8px;
+                        font-weight: bold;
+                      }
+                      .m-signature-pad--footer .button.clear {
+                        background-color: #e0e0e0;
+                        color: #333;
+                      }
+                    `}
+                    backgroundColor="white"
+                    penColor="black"
+                    dotSize={2}
+                    minWidth={1}
+                    maxWidth={3}
+                  />
+                </View>
+                <TouchableOpacity 
+                  style={styles.backToReviewBtn}
+                  onPress={() => setShowSignature(false)}
+                >
+                  <Ionicons name="arrow-back" size={20} color={colors.primary} />
+                  <Text style={styles.backToReviewText}>Back to Review</Text>
+                </TouchableOpacity>
               </View>
             )}
           </View>
