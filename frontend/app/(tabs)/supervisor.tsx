@@ -510,34 +510,20 @@ export default function SupervisorScreen() {
                     ref={signatureRef}
                     onOK={handleSignatureOK}
                     onEmpty={handleSignatureEmpty}
+                    autoClear={false}
                     descriptionText=""
-                    clearText="Clear"
-                    confirmText="Confirm"
                     webStyle={`
                       .m-signature-pad {
                         box-shadow: none;
                         border: 2px dashed #ccc;
                         border-radius: 12px;
+                        height: 100%;
                       }
                       .m-signature-pad--body {
                         border: none;
                       }
                       .m-signature-pad--footer {
-                        display: flex;
-                        justify-content: space-between;
-                        padding: 10px;
-                      }
-                      .m-signature-pad--footer .button {
-                        background-color: ${colors.primary};
-                        color: white;
-                        border: none;
-                        padding: 10px 20px;
-                        border-radius: 8px;
-                        font-weight: bold;
-                      }
-                      .m-signature-pad--footer .button.clear {
-                        background-color: #e0e0e0;
-                        color: #333;
+                        display: none;
                       }
                     `}
                     backgroundColor="white"
@@ -547,6 +533,26 @@ export default function SupervisorScreen() {
                     maxWidth={3}
                   />
                 </View>
+                
+                {/* Custom buttons for signature */}
+                <View style={styles.signatureButtons}>
+                  <TouchableOpacity 
+                    style={styles.clearSignatureBtn}
+                    onPress={() => signatureRef.current?.clearSignature()}
+                  >
+                    <Ionicons name="refresh" size={20} color={colors.text.primary} />
+                    <Text style={styles.clearSignatureText}>Clear</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.confirmSignatureBtn}
+                    onPress={() => signatureRef.current?.readSignature()}
+                  >
+                    <Ionicons name="checkmark" size={20} color={colors.white} />
+                    <Text style={styles.confirmSignatureText}>Confirm Signature</Text>
+                  </TouchableOpacity>
+                </View>
+                
                 <TouchableOpacity 
                   style={styles.backToReviewBtn}
                   onPress={() => setShowSignature(false)}
