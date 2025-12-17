@@ -505,34 +505,12 @@ export default function SupervisorScreen() {
                 <Text style={styles.signatureInstructions}>
                   Please sign below to approve this timesheet
                 </Text>
-                <View style={styles.signaturePadWrapper}>
-                  <SignatureScreen
-                    ref={signatureRef}
-                    onOK={handleSignatureOK}
-                    onEmpty={handleSignatureEmpty}
-                    autoClear={false}
-                    descriptionText=""
-                    webStyle={`
-                      .m-signature-pad {
-                        box-shadow: none;
-                        border: 2px dashed #ccc;
-                        border-radius: 12px;
-                        height: 100%;
-                      }
-                      .m-signature-pad--body {
-                        border: none;
-                      }
-                      .m-signature-pad--footer {
-                        display: none;
-                      }
-                    `}
-                    backgroundColor="white"
-                    penColor="black"
-                    dotSize={2}
-                    minWidth={1}
-                    maxWidth={3}
-                  />
-                </View>
+                
+                <SignaturePad
+                  ref={signatureRef}
+                  onOK={handleSignatureOK}
+                  onClear={() => {}}
+                />
                 
                 {/* Custom buttons for signature */}
                 <View style={styles.signatureButtons}>
