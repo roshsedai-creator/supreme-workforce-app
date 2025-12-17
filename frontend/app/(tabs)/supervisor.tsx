@@ -32,7 +32,7 @@ export default function SupervisorScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showSignature, setShowSignature] = useState(false);
   const [signatureData, setSignatureData] = useState<string | null>(null);
-  const signatureRef = useRef<any>(null);
+  const signatureRef = useRef<SignaturePadRef>(null);
   
   // Edit modal states
   const [showEditModal, setShowEditModal] = useState(false);
