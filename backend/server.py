@@ -308,6 +308,13 @@ class ApprovalRequest(BaseModel):
     notes: Optional[str] = None
     signature: Optional[str] = None  # Base64 encoded signature image
 
+class TimesheetUpdateRequest(BaseModel):
+    employee_notes: Optional[str] = None
+    photo_base64: Optional[str] = None
+    manual_clock_in: Optional[str] = None  # ISO datetime string
+    manual_clock_out: Optional[str] = None  # ISO datetime string
+    manual_break_minutes: Optional[int] = None
+
 class LeaveRequest(BaseModel):
     id: Optional[str] = None
     employee_id: str
