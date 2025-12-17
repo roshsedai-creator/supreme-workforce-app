@@ -846,24 +846,58 @@ export default function RosterScreen() {
 
   const handleStartDrag = (shift: RosterShift) => {
     if (!isSupervisor) return;
-    setDraggedShift(shift);
-    setIsDragging(true);
     
-    // Show instructions with auto-dismiss
+    // Show action menu instead of drag mode
     Alert.alert(
-      '🚚 Drag Mode Active',
-      `Moving:\n${shift.employee_name}\n${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}\n\n✅ TAP any GREEN DAY to drop\n❌ TAP CANCEL to abort`,
+      `Move ${shift.employee_name}'s Shift`,
+      `${formatTime(shift.start_time)} - ${formatTime(shift.end_time)}\n\nWhere do you want to move this shift?`,
       [
         {
-          text: 'Cancel Move',
-          onPress: () => {
-            setDraggedShift(null);
-            setIsDragging(false);
-          },
+          text: 'Next Day',
+          onPress: () => moveShiftByDays(shift, 1)
+        },
+        {
+          text: 'Previous Day',
+          onPress: () => moveShiftByDays(shift, -1)
+        },
+        {
+          text: 'Next Week',
+          onPress: () => moveShiftByDays(shift, 7)
+        },
+        {
+          text: 'Cancel',
           style: 'cancel'
         }
       ]
     );
+  };
+
+  const moveShiftByDays = async (shift: RosterShift, days: number) => {
+    try {
+      setLoading(true);
+      
+      const newStartTime = new Date(shift.start_time);
+      newStartTime.setDate(newStartTime.getDate() + days);
+      
+      const newEndTime = new Date(shift.end_time);
+      newEndTime.setDate(newEndTime.getDate() + days);
+      
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts/${shift.id}`,
+        {
+          start_time: newStartTime.toISOString(),
+          end_time: newEndTime.toISOString(),
+        }
+      );
+      
+      const direction = days > 0 ? 'forward' : 'back';
+      Alert.alert('Success', `Shift moved ${Math.abs(days)} day(s) ${direction}!`);
+      loadData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to move shift');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDropShift = async (targetDate: Date) => {
