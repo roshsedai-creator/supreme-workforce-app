@@ -1727,14 +1727,7 @@ async def get_timesheet(timesheet_id: str):
     return serialize_doc(timesheet)
 
 @api_router.post("/timesheets/{timesheet_id}/update")
-async def update_timesheet(
-    timesheet_id: str, 
-    employee_notes: Optional[str] = None, 
-    photo_base64: Optional[str] = None,
-    manual_clock_in: Optional[datetime] = None,
-    manual_clock_out: Optional[datetime] = None,
-    manual_break_minutes: Optional[int] = None
-):
+async def update_timesheet(timesheet_id: str, request: TimesheetUpdateRequest):
     """Update timesheet with employee notes, photo, or manual edits"""
     timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
     
@@ -1742,31 +1735,48 @@ async def update_timesheet(
         raise HTTPException(status_code=404, detail="Timesheet not found")
     
     update_data = {}
-    if employee_notes is not None:
-        update_data["employee_notes"] = employee_notes
-    if photo_base64 is not None:
-        update_data["photo_base64"] = photo_base64
+    if request.employee_notes is not None:
+        update_data["employee_notes"] = request.employee_notes
+    if request.photo_base64 is not None:
+        update_data["photo_base64"] = request.photo_base64
     
-    # Manual time edits
-    if manual_clock_in is not None:
-        update_data["clock_in"] = manual_clock_in
-        update_data["manually_edited"] = True
+    # Manual time edits - parse ISO datetime strings
+    manual_clock_in = None
+    manual_clock_out = None
+    
+    if request.manual_clock_in is not None:
+        try:
+            manual_clock_in = datetime.fromisoformat(request.manual_clock_in.replace('Z', '+00:00'))
+            update_data["clock_in"] = manual_clock_in
+            update_data["manually_edited"] = True
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid clock_in format: {str(e)}")
         
-    if manual_clock_out is not None:
-        update_data["clock_out"] = manual_clock_out
-        update_data["manually_edited"] = True
+    if request.manual_clock_out is not None:
+        try:
+            manual_clock_out = datetime.fromisoformat(request.manual_clock_out.replace('Z', '+00:00'))
+            update_data["clock_out"] = manual_clock_out
+            update_data["manually_edited"] = True
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid clock_out format: {str(e)}")
         
-    if manual_break_minutes is not None:
-        update_data["break_minutes"] = manual_break_minutes
+    if request.manual_break_minutes is not None:
+        update_data["break_minutes"] = request.manual_break_minutes
         update_data["manually_edited"] = True
     
     # Recalculate total hours if times changed
-    if manual_clock_in or manual_clock_out or manual_break_minutes is not None:
+    if manual_clock_in or manual_clock_out or request.manual_break_minutes is not None:
         clock_in = manual_clock_in or timesheet.get("clock_in")
         clock_out = manual_clock_out or timesheet.get("clock_out")
-        break_mins = manual_break_minutes if manual_break_minutes is not None else timesheet.get("break_minutes", 0)
+        break_mins = request.manual_break_minutes if request.manual_break_minutes is not None else timesheet.get("break_minutes", 0)
         
         if clock_in and clock_out:
+            # Handle timezone-aware vs naive datetime comparison
+            if hasattr(clock_in, 'tzinfo') and clock_in.tzinfo is not None:
+                clock_in = clock_in.replace(tzinfo=None)
+            if hasattr(clock_out, 'tzinfo') and clock_out.tzinfo is not None:
+                clock_out = clock_out.replace(tzinfo=None)
+            
             total_seconds = (clock_out - clock_in).total_seconds()
             total_hours = (total_seconds - (break_mins * 60)) / 3600
             update_data["total_hours"] = round(max(total_hours, 0), 2)
