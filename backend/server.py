@@ -1942,6 +1942,28 @@ async def get_pay_rates(award_level: Optional[int] = None):
     rates = await db.pay_rates.find(query).to_list(1000)
     return [serialize_doc(rate) for rate in rates]
 
+@api_router.put("/pay-rates/{award_level}")
+async def update_pay_rate(award_level: int, rate: PayRateCreate):
+    """Update pay rate for a specific award level - upsert if doesn't exist"""
+    rate_dict = rate.model_dump()
+    
+    # Find existing rate by award_level
+    existing = await db.pay_rates.find_one({"award_level": award_level})
+    
+    if existing:
+        # Update existing rate
+        await db.pay_rates.update_one(
+            {"award_level": award_level},
+            {"$set": rate_dict}
+        )
+        updated = await db.pay_rates.find_one({"award_level": award_level})
+        return {"success": True, "message": f"Pay rate for Level {award_level} updated", "rate": serialize_doc(updated)}
+    else:
+        # Create new rate
+        result = await db.pay_rates.insert_one(rate_dict)
+        rate_dict["id"] = str(result.inserted_id)
+        return {"success": True, "message": f"Pay rate for Level {award_level} created", "rate": rate_dict}
+
 # =====================
 # PAYROLL EXPORT ENDPOINT
 # =====================
