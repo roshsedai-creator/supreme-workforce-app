@@ -544,7 +544,8 @@ export default function AdminScreen() {
 
     setLoading(true);
     try {
-      await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pay-rates`, {
+      // Use PUT endpoint to update/upsert pay rate for the selected level
+      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pay-rates/${selectedLevel}`, {
         award_level: selectedLevel,
         weekday_rate: parseFloat(weekdayRate),
         saturday_rate: parseFloat(saturdayRate),
