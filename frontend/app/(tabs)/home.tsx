@@ -26,6 +26,14 @@ export default function HomeScreen() {
   const [onBreak, setOnBreak] = useState(false);
   const [location, setLocation] = useState<any>(null);
   const [siteData, setSiteData] = useState<any>(null);
+  
+  // Manual timesheet modal state
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualDate, setManualDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [manualClockIn, setManualClockIn] = useState('09:00');
+  const [manualClockOut, setManualClockOut] = useState('17:00');
+  const [manualBreak, setManualBreak] = useState('30');
+  const [manualNotes, setManualNotes] = useState('');
 
   useEffect(() => {
     requestLocationPermission();
