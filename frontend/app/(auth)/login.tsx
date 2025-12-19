@@ -30,21 +30,47 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!identifier || !pin) {
+    // Trim whitespace from inputs
+    const cleanIdentifier = identifier.trim();
+    const cleanPin = pin.trim();
+    
+    if (!cleanIdentifier || !cleanPin) {
       Alert.alert('Error', 'Please enter your phone/email and PIN');
+      return;
+    }
+
+    // Validate PIN is numeric
+    if (!/^\d{4,6}$/.test(cleanPin)) {
+      Alert.alert('Error', 'PIN must be 4-6 digits');
       return;
     }
 
     setLoading(true);
     try {
-      const response = await login(identifier, pin);
-      setUser(response.user, response.token);
-      router.replace('/(tabs)/home');
+      const response = await login(cleanIdentifier, cleanPin);
+      
+      if (response?.user && response?.token) {
+        setUser(response.user, response.token);
+        router.replace('/(tabs)/home');
+      } else {
+        Alert.alert('Login Failed', 'Invalid server response. Please try again.');
+      }
     } catch (error: any) {
-      Alert.alert(
-        'Login Failed',
-        error.response?.data?.detail || 'Invalid credentials. Please try again.'
-      );
+      console.error('Login error:', error);
+      
+      let errorMessage = 'Invalid credentials. Please check your phone number and PIN.';
+      
+      if (error.response?.data?.detail) {
+        if (typeof error.response.data.detail === 'string') {
+          errorMessage = error.response.data.detail;
+        } else if (Array.isArray(error.response.data.detail)) {
+          errorMessage = 'Please check your input and try again.';
+        }
+      } else if (error.message === 'Network Error') {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+      
+      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }
