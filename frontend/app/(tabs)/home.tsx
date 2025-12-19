@@ -364,6 +364,109 @@ export default function HomeScreen() {
           Your location is verified when clocking in/out to ensure you&apos;re within 100m of the assigned site.
         </Text>
       </View>
+
+      {/* Manual Timesheet Button */}
+      <TouchableOpacity
+        style={styles.manualButton}
+        onPress={() => setShowManualModal(true)}
+      >
+        <Ionicons name="create-outline" size={24} color={colors.primary} />
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <Text style={styles.manualButtonTitle}>Add Manual Timesheet</Text>
+          <Text style={styles.manualButtonSubtitle}>Forgot to clock in? Submit manually</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={24} color={colors.gray[400]} />
+      </TouchableOpacity>
+
+      {/* Manual Timesheet Modal */}
+      <Modal
+        visible={showManualModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowManualModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Manual Timesheet Entry</Text>
+              <TouchableOpacity onPress={() => setShowManualModal(false)}>
+                <Ionicons name="close" size={28} color={colors.gray[600]} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Date</Text>
+              <TextInput
+                style={styles.input}
+                value={manualDate}
+                onChangeText={setManualDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>Clock In Time</Text>
+              <TextInput
+                style={styles.input}
+                value={manualClockIn}
+                onChangeText={setManualClockIn}
+                placeholder="HH:MM (e.g., 09:00)"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>Clock Out Time</Text>
+              <TextInput
+                style={styles.input}
+                value={manualClockOut}
+                onChangeText={setManualClockOut}
+                placeholder="HH:MM (e.g., 17:00)"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>Break (minutes)</Text>
+              <TextInput
+                style={styles.input}
+                value={manualBreak}
+                onChangeText={setManualBreak}
+                placeholder="30"
+                keyboardType="numeric"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>Reason/Notes</Text>
+              <TextInput
+                style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+                value={manualNotes}
+                onChangeText={setManualNotes}
+                placeholder="Why are you submitting manually?"
+                placeholderTextColor={colors.gray[400]}
+                multiline
+              />
+
+              <View style={styles.infoBox}>
+                <Ionicons name="information-circle" size={20} color={colors.warning} />
+                <Text style={styles.infoBoxText}>
+                  Manual entries require supervisor approval before they count towards your hours.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.buttonDisabled]}
+                onPress={handleSubmitManualTimesheet}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="send" size={20} color={colors.white} />
+                    <Text style={styles.submitButtonText}>Submit for Approval</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
