@@ -7,6 +7,9 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -14,6 +17,7 @@ import { useAuthStore } from '../../store/authStore';
 import { clockIn, clockOut, manageBreak, getTimesheets } from '../../utils/api';
 import { colors } from '../../constants/colors';
 import { format } from 'date-fns';
+import axios from 'axios';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
