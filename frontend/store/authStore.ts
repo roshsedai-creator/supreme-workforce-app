@@ -1,5 +1,23 @@
 import { create } from 'zustand';
 
+interface Permissions {
+  view_home: boolean;
+  view_own_timesheets: boolean;
+  clock_in_out: boolean;
+  view_roster: boolean;
+  request_time_off: boolean;
+  view_own_pay: boolean;
+  view_all_timesheets: boolean;
+  edit_timesheets: boolean;
+  approve_timesheets: boolean;
+  manage_roster: boolean;
+  view_reports: boolean;
+  manage_users: boolean;
+  manage_sites: boolean;
+  export_payroll: boolean;
+  manage_permissions: boolean;
+}
+
 interface User {
   id: string;
   first_name: string;
@@ -10,6 +28,7 @@ interface User {
   job_title: string;
   site_id?: string;
   award_level: number;
+  permissions?: Permissions;
 }
 
 interface AuthState {
