@@ -1757,9 +1757,11 @@ async def create_manual_timesheet(request: ManualTimesheetRequest):
     }
     
     result = await db.timesheets.insert_one(timesheet)
-    timesheet["id"] = str(result.inserted_id)
     
-    return {"success": True, "message": "Manual timesheet submitted for approval", "timesheet": timesheet}
+    # Fetch the created timesheet and serialize it
+    created_timesheet = await db.timesheets.find_one({"_id": result.inserted_id})
+    
+    return {"success": True, "message": "Manual timesheet submitted for approval", "timesheet": serialize_doc(created_timesheet)}
 
 @api_router.delete("/timesheets/bulk-delete")
 async def bulk_delete_timesheets(status: str = "rejected"):
