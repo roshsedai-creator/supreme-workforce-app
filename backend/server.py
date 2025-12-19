@@ -1715,6 +1715,62 @@ async def manage_break(request: BreakRequest):
     updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
     return {"success": True, "timesheet": serialize_doc(updated)}
 
+class ManualTimesheetRequest(BaseModel):
+    employee_id: str
+    site_id: str
+    clock_in: str  # ISO datetime string
+    clock_out: str  # ISO datetime string
+    break_minutes: int = 0
+    notes: Optional[str] = None
+
+@api_router.post("/timesheets/manual")
+async def create_manual_timesheet(request: ManualTimesheetRequest):
+    """Create a manual timesheet entry (requires approval)"""
+    try:
+        clock_in = datetime.fromisoformat(request.clock_in.replace('Z', '+00:00'))
+        clock_out = datetime.fromisoformat(request.clock_out.replace('Z', '+00:00'))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid datetime format: {str(e)}")
+    
+    if clock_out <= clock_in:
+        raise HTTPException(status_code=400, detail="Clock out must be after clock in")
+    
+    # Calculate total hours
+    total_seconds = (clock_out - clock_in).total_seconds()
+    total_hours = (total_seconds - (request.break_minutes * 60)) / 3600
+    total_hours = round(max(total_hours, 0), 2)
+    
+    timesheet = {
+        "employee_id": request.employee_id,
+        "site_id": request.site_id,
+        "clock_in": clock_in,
+        "clock_out": clock_out,
+        "break_minutes": request.break_minutes,
+        "total_hours": total_hours,
+        "approval_status": "pending",
+        "employee_notes": request.notes or "Manual entry",
+        "manually_edited": True,
+        "is_manual_entry": True,
+        "gps_clock_in": None,
+        "gps_clock_out": None,
+        "created_at": datetime.utcnow()
+    }
+    
+    result = await db.timesheets.insert_one(timesheet)
+    timesheet["id"] = str(result.inserted_id)
+    
+    return {"success": True, "message": "Manual timesheet submitted for approval", "timesheet": timesheet}
+
+@api_router.delete("/timesheets/bulk-delete")
+async def bulk_delete_timesheets(status: str = "rejected"):
+    """Delete all timesheets with a specific status (admin only)"""
+    valid_statuses = ["rejected", "pending"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Status must be one of: {valid_statuses}")
+    
+    result = await db.timesheets.delete_many({"approval_status": status})
+    return {"success": True, "message": f"Deleted {result.deleted_count} {status} timesheets", "deleted_count": result.deleted_count}
+
 @api_router.get("/timesheets")
 async def get_timesheets(
     employee_id: Optional[str] = None,
