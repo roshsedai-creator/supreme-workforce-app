@@ -186,6 +186,44 @@ export default function HomeScreen() {
     }
   };
 
+  const handleSubmitManualTimesheet = async () => {
+    if (!manualDate || !manualClockIn || !manualClockOut) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Construct datetime strings
+      const clockInTime = new Date(`${manualDate}T${manualClockIn}:00`);
+      const clockOutTime = new Date(`${manualDate}T${manualClockOut}:00`);
+
+      if (clockOutTime <= clockInTime) {
+        Alert.alert('Error', 'Clock out time must be after clock in time');
+        setLoading(false);
+        return;
+      }
+
+      await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
+        employee_id: user?.id,
+        site_id: user?.site_id,
+        clock_in: clockInTime.toISOString(),
+        clock_out: clockOutTime.toISOString(),
+        break_minutes: parseInt(manualBreak) || 0,
+        notes: manualNotes || 'Manual entry - forgot to clock in/out',
+      });
+
+      Alert.alert('Success', 'Manual timesheet submitted for approval!');
+      setShowManualModal(false);
+      setManualNotes('');
+      fetchCurrentTimesheet();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to submit timesheet');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
