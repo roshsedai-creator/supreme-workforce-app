@@ -206,6 +206,48 @@ export default function AdminScreen() {
     );
   }
 
+  // Auto-lookup address to get GPS coordinates
+  const lookupAddressCoordinates = async () => {
+    if (!siteAddress || siteAddress.trim().length < 5) {
+      Alert.alert('Error', 'Please enter a valid address first');
+      return;
+    }
+
+    setLookingUpAddress(true);
+    try {
+      // Use OpenStreetMap Nominatim API (free, no API key needed)
+      const encodedAddress = encodeURIComponent(siteAddress.trim());
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodedAddress}&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'SupremeWorkforceApp/1.0'
+          }
+        }
+      );
+
+      if (response.data && response.data.length > 0) {
+        const location = response.data[0];
+        setSiteGpsLat(parseFloat(location.lat).toFixed(6));
+        setSiteGpsLong(parseFloat(location.lon).toFixed(6));
+        Alert.alert(
+          '✅ Location Found', 
+          `Address: ${location.display_name}\n\nLatitude: ${location.lat}\nLongitude: ${location.lon}`
+        );
+      } else {
+        Alert.alert(
+          'Location Not Found', 
+          'Could not find coordinates for this address. Please try a more specific address or enter coordinates manually.'
+        );
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      Alert.alert('Error', 'Failed to lookup address. Please try again or enter coordinates manually.');
+    } finally {
+      setLookingUpAddress(false);
+    }
+  };
+
   const handleCreateSite = async () => {
     if (!siteName || !siteAddress || !siteGpsLat || !siteGpsLong) {
       Alert.alert('Error', 'Please fill in all fields');
