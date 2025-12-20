@@ -1649,9 +1649,20 @@ async def clock_out(request: ClockOutRequest):
         distance = 0
         out_of_bounds = False
     
-    # Calculate total hours using local time (consistent with clock_in)
+    # Calculate total hours using client timestamp if available
     clock_in = timesheet["clock_in"]
-    clock_out_time = datetime.now()  # Use local time to match clock_in
+    
+    # Use client-provided local timestamp if available
+    if request.local_timestamp:
+        try:
+            clock_out_time = datetime.fromisoformat(request.local_timestamp.replace('Z', ''))
+            logging.info(f"Using client timestamp for clock-out: {clock_out_time}")
+        except Exception as e:
+            logging.error(f"Failed to parse client timestamp: {e}")
+            clock_out_time = datetime.now()
+    else:
+        clock_out_time = datetime.now()  # Fallback to server time
+    
     total_seconds = (clock_out_time - clock_in).total_seconds()
     total_hours = (total_seconds - (timesheet.get("break_minutes", 0) * 60)) / 3600
     
