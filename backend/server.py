@@ -1773,6 +1773,12 @@ async def bulk_delete_timesheets(status: str = "rejected"):
     result = await db.timesheets.delete_many({"approval_status": status})
     return {"success": True, "message": f"Deleted {result.deleted_count} {status} timesheets", "deleted_count": result.deleted_count}
 
+@api_router.delete("/timesheets/bulk-delete-out-of-bounds")
+async def bulk_delete_out_of_bounds_timesheets():
+    """Delete all out-of-bounds timesheets (admin only)"""
+    result = await db.timesheets.delete_many({"gps_in_out_of_bounds": True})
+    return {"success": True, "message": f"Deleted {result.deleted_count} out-of-bounds timesheets", "deleted_count": result.deleted_count}
+
 @api_router.get("/timesheets")
 async def get_timesheets(
     employee_id: Optional[str] = None,
