@@ -73,7 +73,8 @@ export default function SupervisorScreen() {
 
   const fetchDashboard = async () => {
     try {
-      const data = await getSupervisorDashboard(user?.site_id);
+      // Don't filter by site - show all pending timesheets for supervisors/admins
+      const data = await getSupervisorDashboard();
       setDashboard(data);
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
