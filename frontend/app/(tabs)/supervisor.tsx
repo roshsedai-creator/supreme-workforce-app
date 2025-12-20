@@ -255,7 +255,13 @@ export default function SupervisorScreen() {
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.dateText}>{format(clockIn, 'MMM dd, yyyy')}</Text>
-            <Text style={styles.employeeId}>ID: {item.employee_id.slice(-6)}</Text>
+            <Text style={styles.employeeName}>{item.employee_name || `ID: ${item.employee_id.slice(-6)}`}</Text>
+            {item.is_manual_entry && (
+              <View style={styles.manualBadge}>
+                <Ionicons name="create-outline" size={12} color={colors.warning} />
+                <Text style={styles.manualBadgeText}>Manual Entry</Text>
+              </View>
+            )}
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
         </View>
