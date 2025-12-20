@@ -1639,10 +1639,10 @@ async def clock_out(request: ClockOutRequest):
         distance = 0
         out_of_bounds = False
     
-    # Calculate total hours
+    # Calculate total hours using local time (consistent with clock_in)
     clock_in = timesheet["clock_in"]
-    clock_out = datetime.utcnow()
-    total_seconds = (clock_out - clock_in).total_seconds()
+    clock_out_time = datetime.now()  # Use local time to match clock_in
+    total_seconds = (clock_out_time - clock_in).total_seconds()
     total_hours = (total_seconds - (timesheet.get("break_minutes", 0) * 60)) / 3600
     
     # Check if this is a public holiday
@@ -1664,7 +1664,7 @@ async def clock_out(request: ClockOutRequest):
     await db.timesheets.update_one(
         {"_id": ObjectId(request.timesheet_id)},
         {"$set": {
-            "clock_out": clock_out,
+            "clock_out": clock_out_time,
             "gps_out_lat": request.gps_lat,
             "gps_out_long": request.gps_long,
             "gps_out_distance": round(distance, 2),
