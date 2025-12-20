@@ -64,6 +64,7 @@ export default function AdminScreen() {
   const [siteAddress, setSiteAddress] = useState('');
   const [siteGpsLat, setSiteGpsLat] = useState('');
   const [siteGpsLong, setSiteGpsLong] = useState('');
+  const [lookingUpAddress, setLookingUpAddress] = useState(false);
 
   // User form
   const [firstName, setFirstName] = useState('');
