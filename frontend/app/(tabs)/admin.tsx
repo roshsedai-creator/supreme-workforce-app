@@ -699,6 +699,27 @@ export default function AdminScreen() {
           </View>
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
+
+        {/* Timesheet Cleanup Section */}
+        <View style={styles.cleanupSection}>
+          <Text style={styles.cleanupTitle}>Timesheet Cleanup</Text>
+          <View style={styles.cleanupButtons}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleBulkDeleteTimesheets('rejected')}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.white} />
+              <Text style={styles.deleteButtonText}>Delete Rejected</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.deleteButton, { backgroundColor: colors.warning }]}
+              onPress={() => handleBulkDeleteTimesheets('out_of_bounds')}
+            >
+              <Ionicons name="location-outline" size={20} color={colors.white} />
+              <Text style={styles.deleteButtonText}>Delete Out of Bounds</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
 
       <View style={styles.section}>
