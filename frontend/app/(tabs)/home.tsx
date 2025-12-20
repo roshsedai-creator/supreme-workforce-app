@@ -29,11 +29,17 @@ export default function HomeScreen() {
   
   // Manual timesheet modal state
   const [showManualModal, setShowManualModal] = useState(false);
-  const [manualDate, setManualDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [manualDate, setManualDate] = useState('');
   const [manualClockIn, setManualClockIn] = useState('09:00');
   const [manualClockOut, setManualClockOut] = useState('17:00');
   const [manualBreak, setManualBreak] = useState('30');
   const [manualNotes, setManualNotes] = useState('');
+
+  // Update date when modal opens
+  const openManualModal = () => {
+    setManualDate(format(new Date(), 'yyyy-MM-dd'));
+    setShowManualModal(true);
+  };
 
   useEffect(() => {
     requestLocationPermission();
