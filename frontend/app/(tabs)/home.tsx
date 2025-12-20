@@ -374,7 +374,7 @@ export default function HomeScreen() {
       {/* Manual Timesheet Button */}
       <TouchableOpacity
         style={styles.manualButton}
-        onPress={() => setShowManualModal(true)}
+        onPress={openManualModal}
       >
         <Ionicons name="create-outline" size={24} color={colors.primary} />
         <View style={{ flex: 1, marginLeft: 12 }}>
