@@ -231,7 +231,7 @@ export default function SupervisorScreen() {
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
             <Ionicons name="person" size={20} color={colors.primary} />
-            <Text style={styles.employeeId}>Employee ID: {item.employee_id.slice(-6)}</Text>
+            <Text style={styles.employeeName}>{item.employee_name || `ID: ${item.employee_id.slice(-6)}`}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Clocked in at:</Text>
