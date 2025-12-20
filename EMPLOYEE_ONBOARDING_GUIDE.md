@@ -240,7 +240,7 @@ Once deployed:
 
 **Web Version (Browser):**
 ```
-https://fieldforce-24.preview.emergentagent.com
+https://workforce-doctor.preview.emergentagent.com
 ```
 
 **iOS App Store:**

@@ -37,7 +37,7 @@ SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=your-app-password-here
 SMTP_FROM_EMAIL=your-email@gmail.com
 COMPANY_NAME=Supreme Hospitality
-APP_URL=https://fieldforce-24.preview.emergentagent.com
+APP_URL=https://workforce-doctor.preview.emergentagent.com
 ```
 
 ### Option 2: Outlook/Office 365
@@ -50,7 +50,7 @@ SMTP_USERNAME=your-email@outlook.com
 SMTP_PASSWORD=your-password
 SMTP_FROM_EMAIL=your-email@outlook.com
 COMPANY_NAME=Supreme Hospitality
-APP_URL=https://fieldforce-24.preview.emergentagent.com
+APP_URL=https://workforce-doctor.preview.emergentagent.com
 ```
 
 ### Option 3: Custom SMTP Server
@@ -80,7 +80,7 @@ SMTP_USERNAME=apikey
 SMTP_PASSWORD=your-sendgrid-api-key
 SMTP_FROM_EMAIL=verified-sender@yourdomain.com
 COMPANY_NAME=Supreme Hospitality
-APP_URL=https://fieldforce-24.preview.emergentagent.com
+APP_URL=https://workforce-doctor.preview.emergentagent.com
 ```
 
 ---

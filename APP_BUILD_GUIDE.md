@@ -335,7 +335,7 @@ eas build --platform ios --profile preview
 ### **Today: Use Web App**
 Your app works perfectly at:
 ```
-https://fieldforce-24.preview.emergentagent.com
+https://workforce-doctor.preview.emergentagent.com
 ```
 Employees can "Add to Home Screen" - works like native app.
 

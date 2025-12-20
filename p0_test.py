@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://fieldforce-24.preview.emergentagent.com/api"
+BASE_URL = "https://workforce-doctor.preview.emergentagent.com/api"
 
 # Test accounts
 TEST_ACCOUNTS = {
