@@ -210,9 +210,14 @@ export default function HomeScreen() {
       return;
     }
 
+    if (!user?.id || !user?.site_id) {
+      Alert.alert('Error', 'User data missing. Please logout and login again.');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Construct datetime strings
+      // Construct datetime strings in local timezone
       const clockInTime = new Date(`${manualDate}T${manualClockIn}:00`);
       const clockOutTime = new Date(`${manualDate}T${manualClockOut}:00`);
 
@@ -222,20 +227,31 @@ export default function HomeScreen() {
         return;
       }
 
-      await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
-        employee_id: user?.id,
-        site_id: user?.site_id,
+      console.log('Submitting manual timesheet:', {
+        employee_id: user.id,
+        site_id: user.site_id,
+        clock_in: clockInTime.toISOString(),
+        clock_out: clockOutTime.toISOString(),
+        break_minutes: parseInt(manualBreak) || 0,
+      });
+
+      const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
+        employee_id: user.id,
+        site_id: user.site_id,
         clock_in: clockInTime.toISOString(),
         clock_out: clockOutTime.toISOString(),
         break_minutes: parseInt(manualBreak) || 0,
         notes: manualNotes || 'Manual entry - forgot to clock in/out',
       });
 
-      Alert.alert('Success', 'Manual timesheet submitted for approval!');
+      console.log('Manual timesheet response:', response.data);
+      
       setShowManualModal(false);
       setManualNotes('');
+      Alert.alert('Success', 'Manual timesheet submitted for approval!');
       fetchCurrentTimesheet();
     } catch (error: any) {
+      console.error('Manual timesheet error:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to submit timesheet');
     } finally {
       setLoading(false);
