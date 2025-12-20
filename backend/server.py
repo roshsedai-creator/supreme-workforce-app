@@ -1979,11 +1979,27 @@ async def supervisor_dashboard(site_id: Optional[str] = None):
     pending_query = {**query, "approval_status": "pending", "clock_out": {"$ne": None}}
     pending_timesheets = await db.timesheets.find(pending_query).to_list(1000)
     
+    # Enrich with employee names
+    async def enrich_timesheet(ts):
+        ts_dict = serialize_doc(ts)
+        try:
+            employee = await db.users.find_one({"_id": ObjectId(ts.get("employee_id"))})
+            if employee:
+                ts_dict["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}".strip()
+            else:
+                ts_dict["employee_name"] = "Unknown Employee"
+        except:
+            ts_dict["employee_name"] = "Unknown Employee"
+        return ts_dict
+    
+    enriched_active = [await enrich_timesheet(ts) for ts in active_timesheets]
+    enriched_pending = [await enrich_timesheet(ts) for ts in pending_timesheets]
+    
     return {
         "active_employees": len(active_timesheets),
         "pending_approvals": len(pending_timesheets),
-        "active_timesheets": [serialize_doc(ts) for ts in active_timesheets],
-        "pending_timesheets": [serialize_doc(ts) for ts in pending_timesheets]
+        "active_timesheets": enriched_active,
+        "pending_timesheets": enriched_pending
     }
 
 # =====================
