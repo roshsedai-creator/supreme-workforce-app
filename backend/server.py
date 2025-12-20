@@ -1788,7 +1788,23 @@ async def get_timesheets(
         query["approval_status"] = approval_status
     
     timesheets = await db.timesheets.find(query).sort("created_at", -1).to_list(1000)
-    return [serialize_doc(ts) for ts in timesheets]
+    
+    # Enrich timesheets with employee names
+    result = []
+    for ts in timesheets:
+        ts_dict = serialize_doc(ts)
+        # Look up employee name
+        try:
+            employee = await db.users.find_one({"_id": ObjectId(ts.get("employee_id"))})
+            if employee:
+                ts_dict["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}".strip()
+            else:
+                ts_dict["employee_name"] = "Unknown Employee"
+        except:
+            ts_dict["employee_name"] = "Unknown Employee"
+        result.append(ts_dict)
+    
+    return result
 
 @api_router.get("/timesheets/{timesheet_id}")
 async def get_timesheet(timesheet_id: str):
