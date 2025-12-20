@@ -1582,12 +1582,16 @@ async def clock_in(request: ClockInRequest):
     radius = site.get("radius_meters", 100)
     out_of_bounds = distance > radius
     
+    # Use current time - stored as-is (will be interpreted as local time by frontend)
+    # The frontend JavaScript Date will handle timezone conversion automatically
+    now = datetime.now()  # Local server time
+    
     # Create timesheet linked to roster shift (if available)
     timesheet = {
         "employee_id": request.employee_id,
         "site_id": request.site_id,
         "roster_shift_id": str(rostered_shift["_id"]) if rostered_shift else None,
-        "clock_in": datetime.utcnow(),
+        "clock_in": now,
         "gps_in_lat": request.gps_lat,
         "gps_in_long": request.gps_long,
         "gps_in_distance": round(distance, 2),
@@ -1595,7 +1599,7 @@ async def clock_in(request: ClockInRequest):
         "break_minutes": 0,
         "total_hours": 0.0,
         "approval_status": "pending",
-        "created_at": datetime.utcnow()
+        "created_at": now
     }
     
     result = await db.timesheets.insert_one(timesheet)
