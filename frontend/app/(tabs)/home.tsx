@@ -205,6 +205,11 @@ export default function HomeScreen() {
   };
 
   const handleSubmitManualTimesheet = async () => {
+    console.log('=== SUBMIT BUTTON PRESSED ===');
+    console.log('Manual Date:', manualDate);
+    console.log('Clock In:', manualClockIn);
+    console.log('Clock Out:', manualClockOut);
+    
     if (!manualDate || !manualClockIn || !manualClockOut) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
@@ -215,40 +220,62 @@ export default function HomeScreen() {
       return;
     }
 
+    // Validate time format
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!timeRegex.test(manualClockIn) || !timeRegex.test(manualClockOut)) {
+      Alert.alert('Error', 'Please use HH:MM format for times (e.g., 09:00, 17:30)');
+      return;
+    }
+
     setLoading(true);
     try {
-      // Construct datetime strings in local timezone
-      const clockInTime = new Date(`${manualDate}T${manualClockIn}:00`);
-      const clockOutTime = new Date(`${manualDate}T${manualClockOut}:00`);
+      // FIXED: Send the date and time as local time strings directly
+      // The backend will interpret these as the user's local time
+      // Format: YYYY-MM-DDTHH:MM:SS (no timezone - treated as local)
+      const clockInStr = `${manualDate}T${manualClockIn}:00`;
+      const clockOutStr = `${manualDate}T${manualClockOut}:00`;
 
-      if (clockOutTime <= clockInTime) {
+      // Simple validation
+      const [inHour, inMin] = manualClockIn.split(':').map(Number);
+      const [outHour, outMin] = manualClockOut.split(':').map(Number);
+      const inMinutes = inHour * 60 + inMin;
+      const outMinutes = outHour * 60 + outMin;
+
+      if (outMinutes <= inMinutes) {
         Alert.alert('Error', 'Clock out time must be after clock in time');
         setLoading(false);
         return;
       }
 
-      console.log('Submitting manual timesheet:', {
+      console.log('Submitting manual timesheet with LOCAL times:', {
         employee_id: user.id,
         site_id: user.site_id,
-        clock_in: clockInTime.toISOString(),
-        clock_out: clockOutTime.toISOString(),
+        clock_in: clockInStr,
+        clock_out: clockOutStr,
         break_minutes: parseInt(manualBreak) || 0,
       });
 
       const response = await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
         employee_id: user.id,
         site_id: user.site_id,
-        clock_in: clockInTime.toISOString(),
-        clock_out: clockOutTime.toISOString(),
+        clock_in: clockInStr,
+        clock_out: clockOutStr,
         break_minutes: parseInt(manualBreak) || 0,
         notes: manualNotes || 'Manual entry - forgot to clock in/out',
       });
 
       console.log('Manual timesheet response:', response.data);
       
+      // Close modal and reset
       setShowManualModal(false);
       setManualNotes('');
-      Alert.alert('Success', 'Manual timesheet submitted for approval!');
+      
+      // Show success with details
+      Alert.alert(
+        '✅ Success!', 
+        `Manual timesheet submitted!\n\nDate: ${manualDate}\nTime: ${manualClockIn} - ${manualClockOut}\n\nAwaiting supervisor approval.`
+      );
+      
       fetchCurrentTimesheet();
     } catch (error: any) {
       console.error('Manual timesheet error:', error);
