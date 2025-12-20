@@ -194,31 +194,20 @@ export default function SupervisorScreen() {
     }
   };
 
-  const handleDeleteTimesheet = (timesheet: any) => {
-    Alert.alert(
-      'Delete Timesheet',
-      'Are you sure you want to delete this timesheet? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setActionLoading(true);
-              const result = await deleteTimesheet(timesheet.id);
-              Alert.alert('Success', 'Timesheet deleted successfully');
-              await fetchDashboard();
-            } catch (error: any) {
-              console.error('Delete timesheet error:', error);
-              Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to delete timesheet');
-            } finally {
-              setActionLoading(false);
-            }
-          }
-        }
-      ]
-    );
+  const handleDeleteTimesheet = async (timesheet: any) => {
+    try {
+      setActionLoading(true);
+      console.log('Deleting timesheet:', timesheet.id);
+      const result = await deleteTimesheet(timesheet.id);
+      console.log('Delete result:', result);
+      Alert.alert('Success', 'Timesheet deleted!');
+      await fetchDashboard();
+    } catch (error: any) {
+      console.error('Delete timesheet error:', error);
+      Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to delete timesheet');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const renderActiveEmployee = ({ item }: any) => {
