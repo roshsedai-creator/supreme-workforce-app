@@ -204,11 +204,20 @@ class TimesheetAPITester:
                 has_active_employees = "active_employees" in data
                 
                 if has_pending_approvals and has_active_employees:
-                    pending_count = len(data.get("pending_approvals", []))
-                    active_count = len(data.get("active_employees", []))
+                    # These are integers, not arrays
+                    pending_count = data.get("pending_approvals", 0)
+                    active_count = data.get("active_employees", 0)
                     
-                    self.log_test("Supervisor dashboard API", True, 
-                                f"Pending approvals: {pending_count}, Active employees: {active_count}")
+                    # Also check for the arrays that contain the actual data
+                    has_pending_timesheets = "pending_timesheets" in data
+                    has_active_timesheets = "active_timesheets" in data
+                    
+                    if has_pending_timesheets and has_active_timesheets:
+                        self.log_test("Supervisor dashboard API", True, 
+                                    f"Pending approvals: {pending_count}, Active employees: {active_count}, Has data arrays: Yes")
+                    else:
+                        self.log_test("Supervisor dashboard API", False, 
+                                    f"Missing data arrays - pending_timesheets: {has_pending_timesheets}, active_timesheets: {has_active_timesheets}")
                 else:
                     missing_fields = []
                     if not has_pending_approvals:
