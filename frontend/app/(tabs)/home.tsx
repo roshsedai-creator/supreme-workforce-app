@@ -35,9 +35,21 @@ export default function HomeScreen() {
   const [manualBreak, setManualBreak] = useState('30');
   const [manualNotes, setManualNotes] = useState('');
 
-  // Update date when modal opens
+  // Update date when modal opens - use local timezone (Australian)
   const openManualModal = () => {
-    setManualDate(format(new Date(), 'yyyy-MM-dd'));
+    // Get current date in local timezone (AEST/AEDT)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const localDate = `${year}-${month}-${day}`;
+    
+    console.log('Opening manual modal with date:', localDate);
+    setManualDate(localDate);
+    setManualClockIn('09:00');
+    setManualClockOut('17:00');
+    setManualBreak('30');
+    setManualNotes('');
     setShowManualModal(true);
   };
 
