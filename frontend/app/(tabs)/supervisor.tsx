@@ -195,19 +195,36 @@ export default function SupervisorScreen() {
   };
 
   const handleDeleteTimesheet = async (timesheet: any) => {
-    try {
-      setActionLoading(true);
-      console.log('Deleting timesheet:', timesheet.id);
-      const result = await deleteTimesheet(timesheet.id);
-      console.log('Delete result:', result);
-      Alert.alert('Success', 'Timesheet deleted!');
-      await fetchDashboard();
-    } catch (error: any) {
-      console.error('Delete timesheet error:', error);
-      Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to delete timesheet');
-    } finally {
-      setActionLoading(false);
-    }
+    // Add confirmation dialog
+    Alert.alert(
+      'Delete Timesheet',
+      `Are you sure you want to delete this timesheet?\n\nEmployee: ${timesheet.employee_name || 'Unknown'}\nDate: ${format(new Date(timesheet.clock_in), 'MMM dd, yyyy')}`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              console.log('Deleting timesheet:', timesheet.id);
+              const result = await deleteTimesheet(timesheet.id);
+              console.log('Delete result:', result);
+              Alert.alert('✅ Deleted', 'Timesheet has been deleted successfully!');
+              await fetchDashboard();
+            } catch (error: any) {
+              console.error('Delete timesheet error:', error);
+              Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to delete timesheet');
+            } finally {
+              setActionLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderActiveEmployee = ({ item }: any) => {
