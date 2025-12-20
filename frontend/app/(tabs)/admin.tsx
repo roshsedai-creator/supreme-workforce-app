@@ -1048,26 +1048,58 @@ export default function AdminScreen() {
                 value={siteName}
                 onChangeText={setSiteName}
               />
+              
+              <Text style={styles.inputLabel}>Address</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Address"
+                placeholder="Enter full address (e.g., 200 Creek St, Brisbane QLD)"
                 value={siteAddress}
                 onChangeText={setSiteAddress}
+                multiline
               />
-              <TextInput
-                style={styles.input}
-                placeholder="GPS Latitude (e.g., -27.4698)"
-                value={siteGpsLat}
-                onChangeText={setSiteGpsLat}
-                keyboardType="numeric"
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="GPS Longitude (e.g., 153.0251)"
-                value={siteGpsLong}
-                onChangeText={setSiteGpsLong}
-                keyboardType="numeric"
-              />
+              
+              {/* Auto-lookup button */}
+              <TouchableOpacity
+                style={[styles.lookupButton, lookingUpAddress && styles.buttonDisabled]}
+                onPress={lookupAddressCoordinates}
+                disabled={lookingUpAddress}
+              >
+                {lookingUpAddress ? (
+                  <ActivityIndicator color={colors.white} size="small" />
+                ) : (
+                  <>
+                    <Ionicons name="location" size={20} color={colors.white} />
+                    <Text style={styles.lookupButtonText}>Find GPS Coordinates</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+              
+              <View style={styles.coordinatesRow}>
+                <View style={styles.coordinateInput}>
+                  <Text style={styles.inputLabel}>Latitude</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="-27.4698"
+                    value={siteGpsLat}
+                    onChangeText={setSiteGpsLat}
+                    keyboardType="numeric"
+                  />
+                </View>
+                <View style={styles.coordinateInput}>
+                  <Text style={styles.inputLabel}>Longitude</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="153.0251"
+                    value={siteGpsLong}
+                    onChangeText={setSiteGpsLong}
+                    keyboardType="numeric"
+                  />
+                </View>
+              </View>
+              
+              <Text style={styles.helperText}>
+                💡 Tip: Enter the address and tap "Find GPS Coordinates" to auto-fill
+              </Text>
 
               <TouchableOpacity
                 style={[styles.submitButton, loading && styles.buttonDisabled]}
