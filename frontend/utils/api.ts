@@ -42,20 +42,28 @@ export const createSite = async (siteData: any) => {
 
 // Timesheets
 export const clockIn = async (employee_id: string, site_id: string, gps_lat: number, gps_long: number) => {
+  // Send local timestamp to backend to avoid timezone issues
+  const localTime = new Date().toISOString().split('.')[0]; // Remove milliseconds
+  
   const response = await api.post('/timesheets/clock-in', {
     employee_id,
     site_id,
     gps_lat,
     gps_long,
+    local_timestamp: localTime,
   });
   return response.data;
 };
 
 export const clockOut = async (timesheet_id: string, gps_lat: number, gps_long: number) => {
+  // Send local timestamp to backend to avoid timezone issues
+  const localTime = new Date().toISOString().split('.')[0]; // Remove milliseconds
+  
   const response = await api.post('/timesheets/clock-out', {
     timesheet_id,
     gps_lat,
     gps_long,
+    local_timestamp: localTime,
   });
   return response.data;
 };
