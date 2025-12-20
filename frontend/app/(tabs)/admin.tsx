@@ -145,6 +145,43 @@ export default function AdminScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
+  const handleBulkDeleteTimesheets = async (type: string) => {
+    let confirmMessage = '';
+    let endpoint = '';
+    
+    if (type === 'rejected') {
+      confirmMessage = 'Delete ALL rejected timesheets? This cannot be undone.';
+      endpoint = '/api/timesheets/bulk-delete?status=rejected';
+    } else if (type === 'out_of_bounds') {
+      confirmMessage = 'Delete ALL out-of-bounds timesheets? This cannot be undone.';
+      endpoint = '/api/timesheets/bulk-delete-out-of-bounds';
+    }
+    
+    Alert.alert(
+      'Confirm Delete',
+      confirmMessage,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}${endpoint}`);
+              Alert.alert('Success', response.data.message || 'Timesheets deleted');
+              fetchData();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete timesheets');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const fetchEarnings = async () => {
     try {
       const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/earnings/summary`);
