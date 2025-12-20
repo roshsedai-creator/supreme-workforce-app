@@ -49,7 +49,14 @@ export default function SupervisorScreen() {
                                permissions.approve_timesheets === true || 
                                permissions.manage_roster === true;
 
-  // If no supervisor permissions, show access denied message
+  useEffect(() => {
+    // Only fetch if user has supervisor access
+    if (canAccessSupervisor) {
+      fetchDashboard();
+    }
+  }, [canAccessSupervisor]);
+
+  // If no supervisor permissions, show access denied message (AFTER all hooks)
   if (!canAccessSupervisor) {
     return (
       <View style={styles.container}>
@@ -66,10 +73,6 @@ export default function SupervisorScreen() {
       </View>
     );
   }
-
-  useEffect(() => {
-    fetchDashboard();
-  }, []);
 
   const fetchDashboard = async () => {
     try {
