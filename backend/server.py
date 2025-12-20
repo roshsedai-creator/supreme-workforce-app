@@ -1727,9 +1727,24 @@ class ManualTimesheetRequest(BaseModel):
 async def create_manual_timesheet(request: ManualTimesheetRequest):
     """Create a manual timesheet entry (requires approval)"""
     try:
-        clock_in = datetime.fromisoformat(request.clock_in.replace('Z', '+00:00'))
-        clock_out = datetime.fromisoformat(request.clock_out.replace('Z', '+00:00'))
+        # Handle different datetime formats:
+        # 1. Local time: "2025-12-20T09:00:00" (no timezone - treat as-is)
+        # 2. UTC time: "2025-12-20T09:00:00Z" or with timezone offset
+        clock_in_str = request.clock_in.replace('Z', '')
+        clock_out_str = request.clock_out.replace('Z', '')
+        
+        # Remove any timezone offset for simplicity - we store as naive datetime
+        if '+' in clock_in_str:
+            clock_in_str = clock_in_str.split('+')[0]
+        if '+' in clock_out_str:
+            clock_out_str = clock_out_str.split('+')[0]
+            
+        clock_in = datetime.fromisoformat(clock_in_str)
+        clock_out = datetime.fromisoformat(clock_out_str)
+        
+        logging.info(f"Manual timesheet: clock_in={clock_in}, clock_out={clock_out}")
     except Exception as e:
+        logging.error(f"Datetime parsing error: {str(e)}")
         raise HTTPException(status_code=400, detail=f"Invalid datetime format: {str(e)}")
     
     if clock_out <= clock_in:
