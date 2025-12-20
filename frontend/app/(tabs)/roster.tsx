@@ -118,12 +118,33 @@ export default function RosterScreen() {
   const isSupervisor = user?.role === 'supervisor' || user?.role === 'admin';
 
   useEffect(() => {
-    loadData();
-    if (isSupervisor) {
-      loadSwapRequests();
-      loadTemplates();
+    // Only load data if user has roster access
+    if (canAccessRoster) {
+      loadData();
+      if (isSupervisor) {
+        loadSwapRequests();
+        loadTemplates();
+      }
     }
-  }, [selectedDate, filterSiteId]);
+  }, [selectedDate, filterSiteId, canAccessRoster]);
+
+  // If no roster permissions, show access denied message (AFTER all hooks)
+  if (!canAccessRoster) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.accessDeniedContainer}>
+          <Ionicons name="lock-closed" size={64} color={colors.error} />
+          <Text style={styles.accessDeniedTitle}>Access Denied</Text>
+          <Text style={styles.accessDeniedText}>
+            You don't have permission to access the Roster.
+          </Text>
+          <Text style={styles.accessDeniedText}>
+            Please contact your administrator if you need access.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   const loadData = async () => {
     try {
