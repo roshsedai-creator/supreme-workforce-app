@@ -42,8 +42,18 @@ export const createSite = async (siteData: any) => {
 
 // Timesheets
 export const clockIn = async (employee_id: string, site_id: string, gps_lat: number, gps_long: number) => {
-  // Send local timestamp to backend to avoid timezone issues
-  const localTime = new Date().toISOString().split('.')[0]; // Remove milliseconds
+  // Format local time WITHOUT converting to UTC
+  // This gives the actual time on the user's phone
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const localTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  
+  console.log('Clock-in local time:', localTime);
   
   const response = await api.post('/timesheets/clock-in', {
     employee_id,
@@ -56,8 +66,17 @@ export const clockIn = async (employee_id: string, site_id: string, gps_lat: num
 };
 
 export const clockOut = async (timesheet_id: string, gps_lat: number, gps_long: number) => {
-  // Send local timestamp to backend to avoid timezone issues
-  const localTime = new Date().toISOString().split('.')[0]; // Remove milliseconds
+  // Format local time WITHOUT converting to UTC
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const localTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+  
+  console.log('Clock-out local time:', localTime);
   
   const response = await api.post('/timesheets/clock-out', {
     timesheet_id,
