@@ -1584,9 +1584,17 @@ async def clock_in(request: ClockInRequest):
     radius = site.get("radius_meters", 100)
     out_of_bounds = distance > radius
     
-    # Use current time - stored as-is (will be interpreted as local time by frontend)
-    # The frontend JavaScript Date will handle timezone conversion automatically
-    now = datetime.now()  # Local server time
+    # Use client-provided local timestamp if available, otherwise use server time
+    if request.local_timestamp:
+        try:
+            # Parse the ISO timestamp from client (already in local time)
+            now = datetime.fromisoformat(request.local_timestamp.replace('Z', ''))
+            logging.info(f"Using client timestamp for clock-in: {now}")
+        except Exception as e:
+            logging.error(f"Failed to parse client timestamp: {e}")
+            now = datetime.now()
+    else:
+        now = datetime.now()  # Fallback to server local time
     
     # Create timesheet linked to roster shift (if available)
     timesheet = {
