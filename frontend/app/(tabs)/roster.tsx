@@ -50,28 +50,7 @@ interface Employee {
 export default function RosterScreen() {
   const { user } = useAuthStore();
   
-  // Check permissions - deny access if user doesn't have roster permissions
-  const permissions = user?.permissions || {};
-  const canAccessRoster = permissions.view_roster === true || permissions.manage_roster === true;
-
-  // If no roster permissions, show access denied message
-  if (!canAccessRoster) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.accessDeniedContainer}>
-          <Ionicons name="lock-closed" size={64} color={colors.error} />
-          <Text style={styles.accessDeniedTitle}>Access Denied</Text>
-          <Text style={styles.accessDeniedText}>
-            You don't have permission to access the Roster.
-          </Text>
-          <Text style={styles.accessDeniedText}>
-            Please contact your administrator if you need access.
-          </Text>
-        </View>
-      </View>
-    );
-  }
-  
+  // ALL HOOKS MUST BE AT THE TOP - before any conditional returns
   const [shifts, setShifts] = useState<RosterShift[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -132,7 +111,10 @@ export default function RosterScreen() {
     { day: 5, name: 'Saturday', available: false, start_time: '09:00', end_time: '17:00' },
     { day: 6, name: 'Sunday', available: false, start_time: '09:00', end_time: '17:00' },
   ]);
-
+  
+  // Check permissions - deny access if user doesn't have roster permissions
+  const permissions = user?.permissions || {};
+  const canAccessRoster = permissions.view_roster === true || permissions.manage_roster === true;
   const isSupervisor = user?.role === 'supervisor' || user?.role === 'admin';
 
   useEffect(() => {
