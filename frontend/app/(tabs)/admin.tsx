@@ -1880,6 +1880,40 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.6,
   },
+  lookupButton: {
+    backgroundColor: '#10B981',
+    padding: 12,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    gap: 8,
+  },
+  lookupButtonText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  coordinatesRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  coordinateInput: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: 6,
+  },
+  helperText: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    marginBottom: 16,
+    fontStyle: 'italic',
+  },
   summaryRow: {
     flexDirection: 'row',
     marginBottom: 16,
