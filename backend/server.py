@@ -291,11 +291,13 @@ class ClockInRequest(BaseModel):
     site_id: str
     gps_lat: float
     gps_long: float
+    local_timestamp: Optional[str] = None  # ISO datetime string from client
 
 class ClockOutRequest(BaseModel):
     timesheet_id: str
     gps_lat: float
     gps_long: float
+    local_timestamp: Optional[str] = None  # ISO datetime string from client
 
 class BreakRequest(BaseModel):
     timesheet_id: str
