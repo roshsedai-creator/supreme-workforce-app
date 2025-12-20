@@ -262,20 +262,41 @@ export default function RosterScreen() {
       return;
     }
 
+    if (!user?.id) {
+      Alert.alert('Error', 'User session expired. Please login again.');
+      return;
+    }
+
     try {
       setLoading(true);
-      await axios.post(
-        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts?created_by=${user?.id}`,
+      
+      // Format times as local datetime strings (without timezone conversion)
+      const startTimeStr = shiftStart.toISOString().split('.')[0]; // Remove milliseconds
+      const endTimeStr = shiftEnd.toISOString().split('.')[0];
+      
+      console.log('Creating shift:', {
+        employee_id: selectedEmployee,
+        site_id: selectedSite,
+        role: selectedRole,
+        shift_type: shiftType,
+        start_time: startTimeStr,
+        end_time: endTimeStr,
+      });
+
+      const response = await axios.post(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts?created_by=${user.id}`,
         {
           employee_id: selectedEmployee,
           site_id: selectedSite,
           role: selectedRole,
           shift_type: shiftType,
-          start_time: shiftStart.toISOString(),
-          end_time: shiftEnd.toISOString(),
+          start_time: startTimeStr,
+          end_time: endTimeStr,
           notes: shiftNotes,
         }
       );
+      
+      console.log('Shift created:', response.data);
       
       const shiftTypeLabel = shiftType === 'work' ? 'Shift' : 
                             shiftType === 'rdo' ? 'RDO' :
@@ -286,7 +307,9 @@ export default function RosterScreen() {
       resetCreateForm();
       loadData();
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to create shift');
+      console.error('Create shift error:', error);
+      console.error('Error response:', error.response?.data);
+      Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to create shift');
     } finally {
       setLoading(false);
     }
