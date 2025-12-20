@@ -1035,6 +1035,27 @@ const styles = StyleSheet.create({
     marginTop: 8,
     lineHeight: 24,
   },
+  employeeName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  manualBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.warning + '20',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 4,
+    gap: 4,
+    alignSelf: 'flex-start',
+  },
+  manualBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.warning,
+  },
   // Signature styles
   signatureContainer: {
     padding: 20,
