@@ -1572,18 +1572,25 @@ export default function AdminScreen() {
               />
 
               <Text style={styles.inputLabel}>Assign to Site *</Text>
-              <View style={styles.pickerContainer}>
+              <View style={styles.pickerWrapper}>
                 <Picker
                   selectedValue={inviteSiteId}
-                  onValueChange={(value) => setInviteSiteId(value)}
+                  onValueChange={(value) => {
+                    console.log('Site selected:', value);
+                    setInviteSiteId(value);
+                  }}
                   style={styles.picker}
+                  mode="dropdown"
                 >
-                  <Picker.Item label="Select a site" value="" />
+                  <Picker.Item label="-- Tap to Select Site --" value="" />
                   {sites.map((site) => (
                     <Picker.Item key={site.id} label={site.name} value={site.id} />
                   ))}
                 </Picker>
               </View>
+              {inviteSiteId ? (
+                <Text style={styles.selectedSiteText}>✓ Selected: {sites.find(s => s.id === inviteSiteId)?.name}</Text>
+              ) : null}
 
               <Text style={styles.helperText}>
                 * All fields are required. An invitation link will be generated that you can share with the employee.
