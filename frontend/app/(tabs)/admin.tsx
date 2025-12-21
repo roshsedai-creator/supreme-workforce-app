@@ -2085,10 +2085,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.gray[200],
     overflow: 'hidden',
+    minHeight: 50,
   },
   picker: {
     height: 50,
     color: colors.text.primary,
+    width: '100%',
+  },
+  selectedSiteText: {
+    fontSize: 12,
+    color: colors.success,
+    marginTop: 4,
+    fontWeight: '500',
   },
   infoBox: {
     flexDirection: 'row',
