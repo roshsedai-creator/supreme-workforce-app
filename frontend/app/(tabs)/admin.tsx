@@ -1183,14 +1183,18 @@ export default function AdminScreen() {
               )}
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Assign Site</Text>
+                <Text style={styles.inputLabel}>Assign Site *</Text>
                 <View style={styles.pickerWrapper}>
                   <Picker
                     selectedValue={selectedSiteId}
-                    onValueChange={(value) => setSelectedSiteId(value)}
+                    onValueChange={(value) => {
+                      console.log('Employee site selected:', value);
+                      setSelectedSiteId(value);
+                    }}
                     style={styles.picker}
+                    mode="dropdown"
                   >
-                    <Picker.Item label="Select a site..." value="" />
+                    <Picker.Item label="-- Tap to Select Site --" value="" />
                     {sites.map((site) => (
                       <Picker.Item 
                         key={site.id} 
@@ -1200,15 +1204,22 @@ export default function AdminScreen() {
                     ))}
                   </Picker>
                 </View>
+                {selectedSiteId ? (
+                  <Text style={styles.selectedSiteText}>✓ Selected: {sites.find(s => s.id === selectedSiteId)?.name}</Text>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Role</Text>
+                <Text style={styles.inputLabel}>Role *</Text>
                 <View style={styles.pickerWrapper}>
                   <Picker
                     selectedValue={role}
-                    onValueChange={(value) => setRole(value)}
+                    onValueChange={(value) => {
+                      console.log('Role selected:', value);
+                      setRole(value);
+                    }}
                     style={styles.picker}
+                    mode="dropdown"
                   >
                     {['employee', 'supervisor', 'admin'].map((r) => (
                       <Picker.Item 
