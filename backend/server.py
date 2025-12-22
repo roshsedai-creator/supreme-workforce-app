@@ -356,6 +356,7 @@ class PayrollExportRequest(BaseModel):
     start_date: datetime
     end_date: datetime
     site_id: Optional[str] = None
+    employee_id: Optional[str] = None  # Filter by specific employee
 
 # Roster models
 class RosterShift(BaseModel):
