@@ -25,6 +25,7 @@ export default function PayrollScreen() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [sites, setSites] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   
   // Filters
   const [periodType, setPeriodType] = useState<'week' | 'fortnight'>('fortnight');
@@ -36,7 +37,17 @@ export default function PayrollScreen() {
   const permissions = user?.permissions || {};
   const canAccessPayroll = permissions.export_payroll === true || permissions.manage_users === true || permissions.manage_sites === true;
 
-  // If no payroll permissions, show access denied message
+  useEffect(() => {
+    if (canAccessPayroll) {
+      fetchData();
+    }
+  }, [periodType, currentPeriod, canAccessPayroll]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [timesheets, selectedEmployee, selectedSite]);
+
+  // If no payroll permissions, show access denied message (AFTER hooks)
   if (!canAccessPayroll) {
     return (
       <View style={styles.container}>
@@ -53,14 +64,6 @@ export default function PayrollScreen() {
       </View>
     );
   }
-
-  useEffect(() => {
-    fetchData();
-  }, [periodType, currentPeriod]);
-
-  useEffect(() => {
-    applyFilters();
-  }, [timesheets, selectedEmployee, selectedSite]);
 
   const getPeriodDates = () => {
     const now = new Date();
