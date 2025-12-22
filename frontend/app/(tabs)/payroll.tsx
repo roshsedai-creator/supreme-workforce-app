@@ -138,15 +138,48 @@ export default function PayrollScreen() {
         start_date: periodStart.toISOString(),
         end_date: periodEnd.toISOString(),
         site_id: selectedSite !== 'all' ? selectedSite : null,
+        employee_id: selectedEmployee !== 'all' ? selectedEmployee : null,
       });
 
       Alert.alert(
         'Payroll Exported',
-        `Records: ${response.data.record_count}\nTotal Hours: ${response.data.total_hours.toFixed(2)}\nTotal Pay: $${response.data.total_pay.toFixed(2)}\n\nCSV data ready for download.`,
+        `Records: ${response.data.record_count}\nTotal Hours: ${response.data.total_hours.toFixed(2)}\nTotal Pay: $${response.data.total_pay.toFixed(2)}\n\nCSV includes site location for each entry.`,
         [{ text: 'OK' }]
       );
     } catch (error) {
       Alert.alert('Error', 'Failed to export payroll');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportIndividualReport = async (employeeId: string) => {
+    const { periodStart, periodEnd } = getPeriodDates();
+    const employee = employees.find(e => e.id === employeeId);
+    
+    setExporting(true);
+    try {
+      const response = await axios.post(`${API_URL}/api/payroll/employee-report/${employeeId}`, {
+        start_date: periodStart.toISOString(),
+        end_date: periodEnd.toISOString(),
+      });
+
+      const { employee: emp, summary, period } = response.data;
+      
+      Alert.alert(
+        `📊 ${emp.name}'s Pay Report`,
+        `Period: ${period.start} to ${period.end}\n\n` +
+        `Total Shifts: ${summary.total_shifts}\n` +
+        `Total Hours: ${summary.total_hours.toFixed(2)}\n` +
+        `Total Pay: $${summary.total_pay.toFixed(2)}\n\n` +
+        `Sites Worked: ${summary.sites_worked.join(', ')}\n\n` +
+        `Base Rate: $${emp.base_rate}/hr`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to generate employee report');
+    } finally {
+      setExporting(false);
     }
   };
 
