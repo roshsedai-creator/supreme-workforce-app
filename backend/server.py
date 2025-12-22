@@ -2136,7 +2136,7 @@ async def update_pay_rate(award_level: int, rate: PayRateCreate):
 
 @api_router.post("/payroll/export")
 async def export_payroll(request: PayrollExportRequest):
-    """Export payroll data to CSV format"""
+    """Export payroll data to CSV format with site location"""
     import csv
     from io import StringIO
     
@@ -2152,14 +2152,22 @@ async def export_payroll(request: PayrollExportRequest):
     if request.site_id:
         query["site_id"] = request.site_id
     
+    if request.employee_id:
+        query["employee_id"] = request.employee_id
+    
     timesheets = await db.timesheets.find(query).to_list(1000)
     
-    # Get employee and pay rate info
+    # Get employee, site and pay rate info
     csv_data = []
     for ts in timesheets:
         user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
         if not user:
             continue
+        
+        # Get site info
+        site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])}) if ts.get("site_id") else None
+        site_name = site["name"] if site else "Unknown Site"
+        site_address = site.get("address", "N/A") if site else "N/A"
         
         pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
         
@@ -2175,19 +2183,28 @@ async def export_payroll(request: PayrollExportRequest):
         else:
             rate = base_rate
         
+        # Check for public holiday bonus
+        if ts.get("is_public_holiday"):
+            rate = base_rate * 2.5
+        
         total_pay = ts["total_hours"] * rate
         
         csv_data.append({
             "Employee ID": ts["employee_id"][-6:],
             "Name": f"{user['first_name']} {user['last_name']}",
+            "Phone": user.get("phone", "N/A"),
+            "Site": site_name,
+            "Site Address": site_address,
             "Date": clock_in.strftime("%Y-%m-%d"),
+            "Day": clock_in.strftime("%A"),
             "Clock In": clock_in.strftime("%H:%M"),
             "Clock Out": ts["clock_out"].strftime("%H:%M"),
             "Total Hours": f"{ts['total_hours']:.2f}",
             "Break (min)": ts["break_minutes"],
             "Rate": f"${rate:.2f}",
             "Total Pay": f"${total_pay:.2f}",
-            "Award Level": user.get("award_level", 1)
+            "Award Level": user.get("award_level", 1),
+            "Holiday": "Yes" if ts.get("is_public_holiday") else "No"
         })
     
     # Convert to CSV string
@@ -2203,6 +2220,134 @@ async def export_payroll(request: PayrollExportRequest):
         "record_count": len(csv_data),
         "total_hours": sum([float(row["Total Hours"]) for row in csv_data]),
         "total_pay": sum([float(row["Total Pay"].replace("$", "")) for row in csv_data])
+    }
+
+@api_router.post("/payroll/employee-report/{employee_id}")
+async def get_employee_payroll_report(employee_id: str, request: PayrollExportRequest):
+    """Get individual employee payroll report with site details"""
+    import csv
+    from io import StringIO
+    
+    # Get employee info
+    try:
+        user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    except:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    query = {
+        "employee_id": employee_id,
+        "clock_out": {"$ne": None},
+        "approval_status": "approved",
+        "clock_in": {
+            "$gte": request.start_date,
+            "$lte": request.end_date
+        }
+    }
+    
+    timesheets = await db.timesheets.find(query).sort("clock_in", 1).to_list(1000)
+    
+    # Get pay rate
+    pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+    base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
+    
+    # Build report data
+    report_data = []
+    total_hours = 0
+    total_pay = 0
+    sites_worked = set()
+    
+    for ts in timesheets:
+        # Get site info
+        site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])}) if ts.get("site_id") else None
+        site_name = site["name"] if site else "Unknown Site"
+        site_address = site.get("address", "N/A") if site else "N/A"
+        sites_worked.add(site_name)
+        
+        clock_in = ts["clock_in"]
+        day_of_week = clock_in.weekday()
+        
+        # Calculate rate
+        if ts.get("is_public_holiday"):
+            rate = base_rate * 2.5
+            rate_type = "Public Holiday (2.5x)"
+        elif day_of_week == 6:  # Sunday
+            rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
+            rate_type = "Sunday (2x)"
+        elif day_of_week == 5:  # Saturday
+            rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
+            rate_type = "Saturday (1.5x)"
+        else:
+            rate = base_rate
+            rate_type = "Weekday"
+        
+        hours = ts["total_hours"]
+        pay = hours * rate
+        total_hours += hours
+        total_pay += pay
+        
+        report_data.append({
+            "date": clock_in.strftime("%Y-%m-%d"),
+            "day": clock_in.strftime("%A"),
+            "site_name": site_name,
+            "site_address": site_address,
+            "clock_in": clock_in.strftime("%H:%M"),
+            "clock_out": ts["clock_out"].strftime("%H:%M"),
+            "break_minutes": ts["break_minutes"],
+            "hours": round(hours, 2),
+            "rate_type": rate_type,
+            "rate": round(rate, 2),
+            "pay": round(pay, 2),
+            "is_holiday": ts.get("is_public_holiday", False),
+            "holiday_name": ts.get("holiday_name", "")
+        })
+    
+    # Generate CSV
+    output = StringIO()
+    if report_data:
+        fieldnames = ["Date", "Day", "Site", "Site Address", "Clock In", "Clock Out", "Break (min)", "Hours", "Rate Type", "Rate", "Pay"]
+        writer = csv.DictWriter(output, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in report_data:
+            writer.writerow({
+                "Date": row["date"],
+                "Day": row["day"],
+                "Site": row["site_name"],
+                "Site Address": row["site_address"],
+                "Clock In": row["clock_in"],
+                "Clock Out": row["clock_out"],
+                "Break (min)": row["break_minutes"],
+                "Hours": row["hours"],
+                "Rate Type": row["rate_type"],
+                "Rate": f"${row['rate']:.2f}",
+                "Pay": f"${row['pay']:.2f}"
+            })
+    
+    return {
+        "success": True,
+        "employee": {
+            "id": employee_id,
+            "name": f"{user['first_name']} {user['last_name']}",
+            "phone": user.get("phone", ""),
+            "email": user.get("email", ""),
+            "job_title": user.get("job_title", ""),
+            "award_level": user.get("award_level", 1),
+            "base_rate": base_rate
+        },
+        "period": {
+            "start": request.start_date.strftime("%Y-%m-%d"),
+            "end": request.end_date.strftime("%Y-%m-%d")
+        },
+        "summary": {
+            "total_shifts": len(report_data),
+            "total_hours": round(total_hours, 2),
+            "total_pay": round(total_pay, 2),
+            "sites_worked": list(sites_worked)
+        },
+        "timesheets": report_data,
+        "csv_data": output.getvalue()
     }
 
 @api_router.post("/payroll/export-excel")
