@@ -347,11 +347,34 @@ export default function PayrollScreen() {
         </View>
       </View>
 
-      {/* Export Button */}
-      <TouchableOpacity style={styles.exportButton} onPress={handleExportCSV}>
-        <Ionicons name="download" size={20} color={colors.white} />
-        <Text style={styles.exportText}>Export CSV</Text>
-      </TouchableOpacity>
+      {/* Export Buttons */}
+      <View style={styles.exportContainer}>
+        <TouchableOpacity 
+          style={[styles.exportButton, exporting && styles.buttonDisabled]} 
+          onPress={handleExportCSV}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <>
+              <Ionicons name="download" size={20} color={colors.white} />
+              <Text style={styles.exportText}>Export All CSV</Text>
+            </>
+          )}
+        </TouchableOpacity>
+        
+        {selectedEmployee !== 'all' && (
+          <TouchableOpacity 
+            style={[styles.individualReportButton, exporting && styles.buttonDisabled]} 
+            onPress={() => exportIndividualReport(selectedEmployee)}
+            disabled={exporting}
+          >
+            <Ionicons name="person" size={20} color={colors.white} />
+            <Text style={styles.exportText}>Employee Report</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       {/* Timesheets List */}
       <FlatList
