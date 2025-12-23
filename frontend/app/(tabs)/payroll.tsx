@@ -28,7 +28,7 @@ export default function PayrollScreen() {
   const [exporting, setExporting] = useState(false);
   
   // Filters
-  const [periodType, setPeriodType] = useState<'week' | 'fortnight'>('fortnight');
+  const [periodType, setPeriodType] = useState<'week' | 'fortnight' | 'month' | 'all'>('fortnight');
   const [currentPeriod, setCurrentPeriod] = useState(0); // 0 = current, -1 = previous, etc.
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedSite, setSelectedSite] = useState<string>('all');
