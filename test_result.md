@@ -372,6 +372,30 @@ backend:
         agent: "testing"
         comment: "CRITICAL BUG FIXED! Testing revealed new employees were not getting default permissions (permissions object was null). Fixed by adding get_default_permissions() call in POST /api/users endpoint. Comprehensive testing confirms: 1) New employees now receive proper restrictive permissions (view_home, view_own_timesheets, clock_in_out only), 2) Admins receive full permissions, 3) Permission updates via PUT /api/users work correctly. RBAC system is now secure and production-ready."
 
+  - task: "Smart Dashboard API - Employee analytics and insights"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Smart Dashboard feature fully implemented and tested successfully. GET /api/employee/smart-dashboard/{employee_id} returns comprehensive employee analytics: this_week stats (hours_worked, earnings_estimate, shifts_completed, overtime_hours, approaching_overtime), next_shift information, performance metrics (punctuality_score, current_streak, total_shifts_30d), and dynamic alerts array. Tested with employee ID 69461c4be9693ef7e04bdc12 (Nagita nagita). All required fields present and properly formatted. Endpoint working correctly on internal port."
+
+  - task: "Live Sites Status API - Real-time workforce monitoring"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "Live Sites Status API fully functional. GET /api/sites/live-status returns real-time status of all sites with active employee counts. Returns 3 sites (Novotel Brisbane, Ibis Styles Brisbane, Hotel Grand Chancellor) with proper structure including site details, active_count, active_employees array, and GPS coordinates. Fixed routing conflict by moving endpoint before /sites/{site_id} to prevent 'live-status' being interpreted as site_id. All fields properly formatted and endpoint working correctly."
+
 frontend:
   - task: "Login screen with mock PIN authentication"
     implemented: true
