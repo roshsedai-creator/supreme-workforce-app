@@ -28,6 +28,7 @@ export default function SupervisorScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
   const [showModal, setShowModal] = useState(false);
+  const [showActiveModal, setShowActiveModal] = useState(false);
   const [notes, setNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [showSignature, setShowSignature] = useState(false);
