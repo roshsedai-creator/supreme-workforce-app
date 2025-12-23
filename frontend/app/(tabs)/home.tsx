@@ -548,25 +548,25 @@ export default function HomeScreen() {
           )}
 
           {/* Alerts Section */}
-          {smartData.alerts && smartData.alerts.length > 0 && (
+          {smartData?.alerts && Array.isArray(smartData.alerts) && smartData.alerts.length > 0 && (
             <View style={styles.alertsContainer}>
               {smartData.alerts.map((alert: any, index: number) => (
                 <View 
                   key={index} 
                   style={[
                     styles.alertCard,
-                    alert.type === 'warning' && styles.alertWarning,
-                    alert.type === 'info' && styles.alertInfo,
+                    alert?.type === 'warning' && styles.alertWarning,
+                    alert?.type === 'info' && styles.alertInfo,
                   ]}
                 >
                   <Ionicons 
-                    name={alert.icon as any || 'information-circle'} 
+                    name={(alert?.icon || 'information-circle') as any} 
                     size={20} 
-                    color={alert.type === 'warning' ? colors.warning : colors.primary} 
+                    color={alert?.type === 'warning' ? colors.warning : colors.primary} 
                   />
                   <View style={styles.alertContent}>
-                    <Text style={styles.alertTitle}>{alert.title}</Text>
-                    <Text style={styles.alertMessage}>{alert.message}</Text>
+                    <Text style={styles.alertTitle}>{alert?.title || ''}</Text>
+                    <Text style={styles.alertMessage}>{alert?.message || ''}</Text>
                   </View>
                 </View>
               ))}
