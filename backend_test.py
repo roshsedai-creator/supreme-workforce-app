@@ -234,6 +234,146 @@ class TimesheetAPITester:
         except Exception as e:
             self.log_test("Supervisor dashboard API", False, f"Exception: {str(e)}")
     
+    def test_smart_dashboard_api(self):
+        """Test 5: Smart Dashboard API for employee"""
+        print("\n=== Testing Smart Dashboard API ===")
+        
+        # Test employee ID from review request
+        employee_id = "69461c4be9693ef7e04bdc12"  # Nagita nagita
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/employee/smart-dashboard/{employee_id}")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify required fields are present
+                required_fields = ["success", "employee_name", "this_week", "performance", "alerts"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_test("Smart Dashboard API", False, f"Missing required fields: {missing_fields}")
+                    return
+                
+                # Verify this_week structure
+                this_week = data.get("this_week", {})
+                week_required = ["hours_worked", "earnings_estimate", "shifts_completed", "overtime_hours", "approaching_overtime"]
+                week_missing = [field for field in week_required if field not in this_week]
+                
+                if week_missing:
+                    self.log_test("Smart Dashboard API - this_week", False, f"Missing this_week fields: {week_missing}")
+                    return
+                
+                # Verify performance structure
+                performance = data.get("performance", {})
+                perf_required = ["punctuality_score", "current_streak", "total_shifts_30d"]
+                perf_missing = [field for field in perf_required if field not in performance]
+                
+                if perf_missing:
+                    self.log_test("Smart Dashboard API - performance", False, f"Missing performance fields: {perf_missing}")
+                    return
+                
+                # Success - log detailed results
+                employee_name = data.get("employee_name")
+                hours_worked = this_week.get("hours_worked")
+                earnings = this_week.get("earnings_estimate")
+                shifts = this_week.get("shifts_completed")
+                overtime = this_week.get("overtime_hours")
+                
+                punctuality = performance.get("punctuality_score")
+                streak = performance.get("current_streak")
+                total_shifts = performance.get("total_shifts_30d")
+                
+                alerts_count = len(data.get("alerts", []))
+                next_shift = data.get("next_shift")
+                
+                details = f"Employee: {employee_name}, This Week: {hours_worked}h worked, ${earnings} estimated, {shifts} shifts, Performance: {punctuality}% punctuality, {streak} day streak, {alerts_count} alerts"
+                
+                self.log_test("Smart Dashboard API", True, details)
+                
+            elif response.status_code == 404:
+                self.log_test("Smart Dashboard API", False, f"Employee not found (ID: {employee_id})")
+            else:
+                self.log_test("Smart Dashboard API", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Smart Dashboard API", False, f"Exception: {str(e)}")
+    
+    def test_live_sites_status_api(self):
+        """Test 6: Live Sites Status API"""
+        print("\n=== Testing Live Sites Status API ===")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/sites/live-status")
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Verify required fields
+                required_fields = ["success", "timestamp", "total_active", "sites"]
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_test("Live Sites Status API", False, f"Missing required fields: {missing_fields}")
+                    return
+                
+                sites = data.get("sites", [])
+                total_active = data.get("total_active", 0)
+                timestamp = data.get("timestamp")
+                
+                # Verify site structure if sites exist
+                if sites:
+                    site = sites[0]
+                    site_required = ["id", "name", "active_count", "active_employees"]
+                    site_missing = [field for field in site_required if field not in site]
+                    
+                    if site_missing:
+                        self.log_test("Live Sites Status API", False, f"Missing site fields: {site_missing}")
+                        return
+                
+                details = f"Total Active: {total_active}, Sites: {len(sites)}, Timestamp: {timestamp}"
+                if sites:
+                    details += f", Sample Site: {sites[0]['name']} ({sites[0]['active_count']} active)"
+                
+                self.log_test("Live Sites Status API", True, details)
+                
+            else:
+                self.log_test("Live Sites Status API", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Live Sites Status API", False, f"Exception: {str(e)}")
+    
+    def test_login_with_review_credentials(self):
+        """Test 7: Login API with review request credentials"""
+        print("\n=== Testing Login API with Review Credentials ===")
+        
+        # Test credentials from review request
+        test_credentials = {
+            "identifier": "0420576508",  # Nagita nagita
+            "pin": "2003"
+        }
+        
+        try:
+            response = self.session.post(f"{BACKEND_URL}/auth/login", json=test_credentials)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("user") and data.get("token"):
+                    user = data["user"]
+                    self.log_test("Login API (Review Credentials)", True, 
+                                f"Successfully logged in: {user.get('first_name')} {user.get('last_name')} (ID: {user.get('id')})")
+                else:
+                    self.log_test("Login API (Review Credentials)", False, f"Invalid response structure: {data}")
+            elif response.status_code == 401:
+                self.log_test("Login API (Review Credentials)", False, "Invalid PIN")
+            elif response.status_code == 404:
+                self.log_test("Login API (Review Credentials)", False, "User not found")
+            else:
+                self.log_test("Login API (Review Credentials)", False, f"Status: {response.status_code}, Response: {response.text}")
+                
+        except Exception as e:
+            self.log_test("Login API (Review Credentials)", False, f"Exception: {str(e)}")
+    
     def run_all_tests(self):
         """Run all backend API tests"""
         print("🚀 Starting Backend API Testing for Timesheet & Workforce Management App")
