@@ -670,6 +670,74 @@ export default function SupervisorScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Active Employees Modal */}
+      <Modal
+        visible={showActiveModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowActiveModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                🟢 Active Employees ({dashboard?.active_employees || 0})
+              </Text>
+              <TouchableOpacity onPress={() => setShowActiveModal(false)}>
+                <Ionicons name="close" size={28} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+              {dashboard?.active_timesheets?.length > 0 ? (
+                dashboard.active_timesheets.map((item: any) => {
+                  const clockIn = new Date(item.clock_in);
+                  const now = new Date();
+                  const hoursWorked = ((now.getTime() - clockIn.getTime()) / (1000 * 60 * 60)).toFixed(1);
+                  
+                  return (
+                    <View key={item.id} style={styles.activeEmployeeItem}>
+                      <View style={styles.activeEmployeeHeader}>
+                        <View style={styles.activeIndicatorSmall} />
+                        <Text style={styles.activeEmployeeName}>
+                          {item.employee_name || 'Unknown Employee'}
+                        </Text>
+                      </View>
+                      <View style={styles.activeEmployeeDetails}>
+                        <View style={styles.activeDetailRow}>
+                          <Ionicons name="time-outline" size={16} color={colors.text.secondary} />
+                          <Text style={styles.activeDetailText}>
+                            Clocked in: {format(clockIn, 'h:mm a')}
+                          </Text>
+                        </View>
+                        <View style={styles.activeDetailRow}>
+                          <Ionicons name="hourglass-outline" size={16} color={colors.text.secondary} />
+                          <Text style={styles.activeDetailText}>
+                            Working: {hoursWorked} hours
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })
+              ) : (
+                <View style={styles.emptySection}>
+                  <Ionicons name="people-outline" size={48} color={colors.gray[300]} />
+                  <Text style={styles.emptyText}>No employees currently active</Text>
+                </View>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.closeModalBtn}
+              onPress={() => setShowActiveModal(false)}
+            >
+              <Text style={styles.closeModalBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
