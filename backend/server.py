@@ -3035,58 +3035,6 @@ async def get_employee_smart_dashboard(employee_id: str):
         "alerts": alerts
     }
 
-@api_router.get("/sites/live-status")
-async def get_live_site_status():
-    """Get live status of all sites - who's working where right now"""
-    sites = await db.sites.find().to_list(100)
-    
-    site_status = []
-    for site in sites:
-        site_id = str(site["_id"])
-        
-        # Get active timesheets for this site
-        active_timesheets = await db.timesheets.find({
-            "site_id": site_id,
-            "clock_out": None
-        }).to_list(100)
-        
-        active_employees = []
-        for ts in active_timesheets:
-            user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
-            if user:
-                clock_in_time = ts["clock_in"]
-                hours_worked = (datetime.now() - clock_in_time).total_seconds() / 3600 if isinstance(clock_in_time, datetime) else 0
-                
-                active_employees.append({
-                    "id": ts["employee_id"],
-                    "name": f"{user['first_name']} {user['last_name']}",
-                    "clock_in": clock_in_time.strftime("%H:%M") if isinstance(clock_in_time, datetime) else str(clock_in_time),
-                    "hours_worked": round(hours_worked, 1),
-                    "job_title": user.get("job_title", "Employee")
-                })
-        
-        site_status.append({
-            "id": site_id,
-            "name": site["name"],
-            "address": site.get("address", ""),
-            "active_count": len(active_employees),
-            "active_employees": active_employees,
-            "coordinates": {
-                "lat": site.get("gps_lat"),
-                "long": site.get("gps_long")
-            }
-        })
-    
-    # Sort by active count (busiest first)
-    site_status.sort(key=lambda x: x["active_count"], reverse=True)
-    
-    return {
-        "success": True,
-        "timestamp": datetime.now().isoformat(),
-        "total_active": sum(s["active_count"] for s in site_status),
-        "sites": site_status
-    }
-
 # Root endpoint
 @api_router.get("/")
 async def root():
