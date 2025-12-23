@@ -373,6 +373,15 @@ export default function PayrollScreen() {
               ))}
             </Picker>
           </View>
+          {selectedEmployee !== 'all' && (
+            <TouchableOpacity 
+              style={styles.viewWeeklyButton}
+              onPress={() => fetchEmployeeWeekly(selectedEmployee)}
+            >
+              <Ionicons name="calendar" size={16} color={colors.primary} />
+              <Text style={styles.viewWeeklyText}>View Weekly</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.filterGroup}>
