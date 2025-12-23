@@ -2897,20 +2897,14 @@ async def preview_invoice():
 async def get_employee_smart_dashboard(employee_id: str):
     """Get smart dashboard data for employee - weekly stats, earnings preview, alerts"""
     from datetime import timedelta
-    import logging
-    
-    logging.info(f"Smart dashboard request for employee_id: {employee_id}")
     
     # Get employee
     try:
         user = await db.users.find_one({"_id": ObjectId(employee_id)})
-        logging.info(f"User lookup result: {user is not None}")
     except Exception as e:
-        logging.error(f"ObjectId conversion error: {str(e)}")
         raise HTTPException(status_code=404, detail="Employee not found")
     
     if not user:
-        logging.error(f"User not found for ID: {employee_id}")
         raise HTTPException(status_code=404, detail="Employee not found")
     
     now = datetime.now()
