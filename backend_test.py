@@ -10,7 +10,7 @@ from datetime import datetime
 import sys
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://workforce-doctor.preview.emergentagent.com/api"
+BACKEND_URL = "http://localhost:8001/api"
 
 class TimesheetAPITester:
     def __init__(self):
