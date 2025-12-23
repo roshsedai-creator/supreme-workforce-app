@@ -466,6 +466,123 @@ export default function PayrollScreen() {
           </View>
         }
       />
+
+      {/* Employee Weekly Timesheet Modal */}
+      <Modal
+        visible={showEmployeeWeekly}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowEmployeeWeekly(false)}
+      >
+        <SafeAreaView style={styles.weeklyModalContainer}>
+          {/* Header */}
+          <View style={styles.weeklyHeader}>
+            <TouchableOpacity onPress={() => setShowEmployeeWeekly(false)}>
+              <Ionicons name="close" size={28} color={colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={styles.weeklyTitle}>Weekly Timesheet</Text>
+            <View style={{ width: 28 }} />
+          </View>
+
+          {loadingWeekly ? (
+            <View style={styles.centerContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : weeklyData ? (
+            <ScrollView style={styles.weeklyContent}>
+              {/* Employee Info */}
+              <View style={styles.employeeInfoCard}>
+                <View style={styles.employeeAvatar}>
+                  <Ionicons name="person" size={32} color={colors.white} />
+                </View>
+                <View style={styles.employeeDetails}>
+                  <Text style={styles.employeeNameLarge}>{weeklyData.employee.name}</Text>
+                  <Text style={styles.employeeJob}>{weeklyData.employee.job_title || 'Employee'}</Text>
+                </View>
+              </View>
+
+              {/* Week Period */}
+              <View style={styles.weekPeriodCard}>
+                <Text style={styles.weekPeriodLabel}>{weeklyData.week.label}</Text>
+                <View style={styles.ratesRow}>
+                  <Text style={styles.rateText}>Weekday: ${weeklyData.rates.weekday}/hr</Text>
+                  <Text style={styles.rateText}>Sat: ${weeklyData.rates.saturday}/hr</Text>
+                  <Text style={styles.rateText}>Sun: ${weeklyData.rates.sunday}/hr</Text>
+                </View>
+              </View>
+
+              {/* Weekly Breakdown - Day by Day */}
+              <View style={styles.daysContainer}>
+                {weeklyData.breakdown.map((day: any) => (
+                  <View 
+                    key={day.day} 
+                    style={[
+                      styles.dayCard, 
+                      !day.has_entries && styles.dayCardEmpty,
+                      (day.day === 'Saturday' || day.day === 'Sunday') && styles.dayCardWeekend
+                    ]}
+                  >
+                    <View style={styles.dayHeader}>
+                      <View>
+                        <Text style={styles.dayName}>{day.day}</Text>
+                        <Text style={styles.dayDate}>{day.date_formatted}</Text>
+                      </View>
+                      <View style={styles.dayTotals}>
+                        <Text style={styles.dayHours}>{day.total_hours}h</Text>
+                        <Text style={styles.dayPay}>${day.total_pay.toFixed(2)}</Text>
+                      </View>
+                    </View>
+
+                    {day.entries.length > 0 ? (
+                      day.entries.map((entry: any, idx: number) => (
+                        <View key={idx} style={styles.entryRow}>
+                          <View style={styles.entryTime}>
+                            <Ionicons name="time-outline" size={14} color={colors.text.secondary} />
+                            <Text style={styles.entryTimeText}>
+                              {entry.clock_in} - {entry.clock_out}
+                            </Text>
+                          </View>
+                          <View style={styles.entrySite}>
+                            <Ionicons name="location-outline" size={14} color={colors.text.secondary} />
+                            <Text style={styles.entrySiteText}>{entry.site}</Text>
+                          </View>
+                          <View style={styles.entryDetails}>
+                            <Text style={styles.entryHours}>{entry.hours}h @ ${entry.rate}/hr</Text>
+                            {entry.is_manual && (
+                              <View style={styles.manualBadge}>
+                                <Text style={styles.manualBadgeText}>Manual</Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.noEntryText}>No work recorded</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+
+              {/* Summary */}
+              <View style={styles.weeklySummaryCard}>
+                <Text style={styles.summaryTitle}>Weekly Summary</Text>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabelLarge}>Days Worked</Text>
+                  <Text style={styles.summaryValueLarge}>{weeklyData.summary.days_worked}</Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={styles.summaryLabelLarge}>Total Hours</Text>
+                  <Text style={styles.summaryValueLarge}>{weeklyData.summary.total_hours}h</Text>
+                </View>
+                <View style={[styles.summaryRow, styles.summaryRowTotal]}>
+                  <Text style={styles.summaryLabelTotal}>Total Pay</Text>
+                  <Text style={styles.summaryValueTotal}>${weeklyData.summary.total_pay.toFixed(2)}</Text>
+                </View>
+              </View>
+            </ScrollView>
+          ) : null}
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
