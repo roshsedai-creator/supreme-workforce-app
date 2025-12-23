@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -29,6 +29,7 @@ export default function HomeScreen() {
   
   // Smart Dashboard data
   const [smartData, setSmartData] = useState<any>(null);
+  const smartDataFetched = useRef(false);
   
   // Manual timesheet modal state
   const [showManualModal, setShowManualModal] = useState(false);
@@ -39,7 +40,7 @@ export default function HomeScreen() {
   const [manualNotes, setManualNotes] = useState('');
 
   // Update date when modal opens - use local timezone (Australian)
-  const openManualModal = () => {
+  const openManualModal = useCallback(() => {
     // Get current date in local timezone (AEST/AEDT)
     const now = new Date();
     const year = now.getFullYear();
@@ -47,42 +48,42 @@ export default function HomeScreen() {
     const day = String(now.getDate()).padStart(2, '0');
     const localDate = `${year}-${month}-${day}`;
     
-    console.log('Opening manual modal with date:', localDate);
     setManualDate(localDate);
     setManualClockIn('09:00');
     setManualClockOut('17:00');
     setManualBreak('30');
     setManualNotes('');
     setShowManualModal(true);
-  };
+  }, []);
 
-  // Fetch smart dashboard data
-  const fetchSmartDashboard = async () => {
-    if (!user?.id) return;
+  // Memoized fetch smart dashboard function
+  const fetchSmartDashboard = useCallback(async (userId: string) => {
+    if (!userId || smartDataFetched.current) return;
     try {
+      smartDataFetched.current = true;
       const response = await axios.get(
-        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/employee/smart-dashboard/${user.id}`
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/employee/smart-dashboard/${userId}`
       );
       setSmartData(response.data);
     } catch (error) {
-      console.log('Smart dashboard not available:', error);
+      console.log('Smart dashboard not available');
+      smartDataFetched.current = false; // Allow retry on error
     }
-  };
+  }, []);
 
+  // Initial data fetch
   useEffect(() => {
     requestLocationPermission();
     fetchCurrentTimesheet();
     fetchSiteData();
   }, []);
 
-  // Fetch smart dashboard when user is available
+  // Fetch smart dashboard when user is available (only once)
   useEffect(() => {
-    console.log('Smart Dashboard Effect - User ID:', user?.id);
-    if (user?.id) {
-      console.log('Calling fetchSmartDashboard for:', user.id);
-      fetchSmartDashboard();
+    if (user?.id && !smartDataFetched.current) {
+      fetchSmartDashboard(user.id);
     }
-  }, [user?.id]);
+  }, [user?.id, fetchSmartDashboard]);
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
