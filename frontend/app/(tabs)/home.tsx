@@ -77,7 +77,9 @@ export default function HomeScreen() {
 
   // Fetch smart dashboard when user is available
   useEffect(() => {
+    console.log('Smart Dashboard Effect - User ID:', user?.id);
     if (user?.id) {
+      console.log('Calling fetchSmartDashboard for:', user.id);
       fetchSmartDashboard();
     }
   }, [user?.id]);
