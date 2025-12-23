@@ -377,6 +377,7 @@ class TimesheetAPITester:
     def run_all_tests(self):
         """Run all backend API tests"""
         print("🚀 Starting Backend API Testing for Timesheet & Workforce Management App")
+        print("🆕 Including Smart Dashboard Feature Tests")
         print(f"Backend URL: {BACKEND_URL}")
         print("=" * 80)
         
@@ -385,6 +386,11 @@ class TimesheetAPITester:
         self.test_manual_timesheet_creation()
         self.test_timesheet_delete_api()
         self.test_supervisor_dashboard_api()
+        
+        # NEW: Smart Dashboard Feature Tests
+        self.test_login_with_review_credentials()
+        self.test_smart_dashboard_api()
+        self.test_live_sites_status_api()
         
         # Summary
         print("\n" + "=" * 80)
