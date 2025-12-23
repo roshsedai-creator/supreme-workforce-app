@@ -443,6 +443,129 @@ export default function HomeScreen() {
         </Text>
       </View>
 
+      {/* Smart Dashboard Section */}
+      {smartData && (
+        <View style={styles.smartDashboard}>
+          {/* Weekly Stats Card */}
+          <View style={styles.weeklyStatsCard}>
+            <View style={styles.weeklyStatsHeader}>
+              <Ionicons name="analytics" size={22} color={colors.primary} />
+              <Text style={styles.weeklyStatsTitle}>This Week</Text>
+            </View>
+            
+            <View style={styles.statsGrid}>
+              <View style={styles.statItem}>
+                <View style={[styles.statIcon, { backgroundColor: colors.primary + '15' }]}>
+                  <Ionicons name="time" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.statValue}>{smartData.this_week.hours_worked}h</Text>
+                <Text style={styles.statLabel}>Hours</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <View style={[styles.statIcon, { backgroundColor: colors.success + '15' }]}>
+                  <Ionicons name="cash" size={20} color={colors.success} />
+                </View>
+                <Text style={styles.statValue}>${smartData.this_week.earnings_estimate}</Text>
+                <Text style={styles.statLabel}>Est. Pay</Text>
+              </View>
+              
+              <View style={styles.statItem}>
+                <View style={[styles.statIcon, { backgroundColor: colors.gold + '15' }]}>
+                  <Ionicons name="checkmark-circle" size={20} color={colors.gold} />
+                </View>
+                <Text style={styles.statValue}>{smartData.this_week.shifts_completed}</Text>
+                <Text style={styles.statLabel}>Shifts</Text>
+              </View>
+            </View>
+            
+            {/* Overtime Warning */}
+            {smartData.this_week.approaching_overtime && (
+              <View style={styles.overtimeWarning}>
+                <Ionicons name="warning" size={18} color={colors.warning} />
+                <Text style={styles.overtimeText}>
+                  Approaching overtime ({smartData.this_week.hours_worked}/38h)
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Next Shift Card */}
+          {smartData.next_shift && (
+            <View style={styles.nextShiftCard}>
+              <View style={styles.nextShiftHeader}>
+                <View style={styles.nextShiftBadge}>
+                  <Ionicons name="calendar" size={16} color={colors.white} />
+                  <Text style={styles.nextShiftBadgeText}>Next Shift</Text>
+                </View>
+              </View>
+              <View style={styles.nextShiftContent}>
+                <Text style={styles.nextShiftDate}>{smartData.next_shift.date}</Text>
+                <Text style={styles.nextShiftTime}>{smartData.next_shift.time}</Text>
+                <View style={styles.nextShiftLocation}>
+                  <Ionicons name="location" size={14} color={colors.text.secondary} />
+                  <Text style={styles.nextShiftSite}>{smartData.next_shift.site}</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Performance Stats */}
+          {smartData.performance && (
+            <View style={styles.performanceCard}>
+              <View style={styles.performanceHeader}>
+                <Ionicons name="trophy" size={20} color={colors.gold} />
+                <Text style={styles.performanceTitle}>Your Performance</Text>
+              </View>
+              <View style={styles.performanceStats}>
+                <View style={styles.perfStatItem}>
+                  <Text style={styles.perfStatValue}>{smartData.performance.current_streak}</Text>
+                  <Text style={styles.perfStatLabel}>Day Streak</Text>
+                </View>
+                <View style={styles.perfDivider} />
+                <View style={styles.perfStatItem}>
+                  <Text style={styles.perfStatValue}>{smartData.performance.total_shifts_30d}</Text>
+                  <Text style={styles.perfStatLabel}>Shifts (30d)</Text>
+                </View>
+                <View style={styles.perfDivider} />
+                <View style={styles.perfStatItem}>
+                  <Text style={[styles.perfStatValue, { color: colors.success }]}>
+                    {smartData.performance.punctuality_score}%
+                  </Text>
+                  <Text style={styles.perfStatLabel}>Punctuality</Text>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {/* Alerts Section */}
+          {smartData.alerts && smartData.alerts.length > 0 && (
+            <View style={styles.alertsContainer}>
+              {smartData.alerts.map((alert: any, index: number) => (
+                <View 
+                  key={index} 
+                  style={[
+                    styles.alertCard,
+                    alert.type === 'warning' && styles.alertWarning,
+                    alert.type === 'info' && styles.alertInfo,
+                  ]}
+                >
+                  <Ionicons 
+                    name={alert.icon as any || 'information-circle'} 
+                    size={20} 
+                    color={alert.type === 'warning' ? colors.warning : colors.primary} 
+                  />
+                  <View style={styles.alertContent}>
+                    <Text style={styles.alertTitle}>{alert.title}</Text>
+                    <Text style={styles.alertMessage}>{alert.message}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Manual Timesheet Button */}
       <TouchableOpacity
         style={styles.manualButton}
