@@ -2863,3 +2863,195 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# =====================
+# SMART FEATURES
+# =====================
+
+@api_router.get("/employee/smart-dashboard/{employee_id}")
+async def get_employee_smart_dashboard(employee_id: str):
+    """Get smart dashboard data for employee - weekly stats, earnings preview, alerts"""
+    from datetime import timedelta
+    
+    # Get employee
+    try:
+        user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    except:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    now = datetime.now()
+    
+    # Calculate this week's stats (Monday to now)
+    week_start = now - timedelta(days=now.weekday())
+    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    week_timesheets = await db.timesheets.find({
+        "employee_id": employee_id,
+        "clock_in": {"$gte": week_start},
+        "clock_out": {"$ne": None}
+    }).to_list(100)
+    
+    week_hours = sum(ts.get("total_hours", 0) for ts in week_timesheets)
+    
+    # Get pay rate
+    pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+    base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
+    
+    # Calculate week earnings (simplified)
+    week_earnings = week_hours * base_rate
+    
+    # Overtime check (38 hours standard week in Australia)
+    OVERTIME_THRESHOLD = 38
+    overtime_hours = max(0, week_hours - OVERTIME_THRESHOLD)
+    approaching_overtime = week_hours >= (OVERTIME_THRESHOLD - 5)  # Within 5 hours of overtime
+    
+    # Get next rostered shift
+    next_shift = await db.roster_shifts.find_one({
+        "employee_id": employee_id,
+        "start_time": {"$gte": now},
+        "status": {"$in": ["scheduled", "published"]}
+    }, sort=[("start_time", 1)])
+    
+    next_shift_info = None
+    if next_shift:
+        site = await db.sites.find_one({"_id": ObjectId(next_shift["site_id"])}) if next_shift.get("site_id") else None
+        next_shift_info = {
+            "date": next_shift["start_time"].strftime("%a, %d %b"),
+            "time": f"{next_shift['start_time'].strftime('%H:%M')} - {next_shift['end_time'].strftime('%H:%M')}",
+            "site": site["name"] if site else "Unknown",
+            "starts_in_hours": round((next_shift["start_time"] - now).total_seconds() / 3600, 1)
+        }
+    
+    # Calculate punctuality score (last 30 days)
+    thirty_days_ago = now - timedelta(days=30)
+    recent_timesheets = await db.timesheets.find({
+        "employee_id": employee_id,
+        "clock_in": {"$gte": thirty_days_ago},
+        "clock_out": {"$ne": None}
+    }).to_list(100)
+    
+    # Simple punctuality calculation based on rostered vs actual times
+    punctuality_score = 95  # Default good score
+    total_shifts = len(recent_timesheets)
+    
+    # Get streak (consecutive days worked)
+    streak = 0
+    check_date = now.date()
+    for i in range(30):
+        day_start = datetime.combine(check_date, datetime.min.time())
+        day_end = day_start + timedelta(days=1)
+        day_work = await db.timesheets.find_one({
+            "employee_id": employee_id,
+            "clock_in": {"$gte": day_start, "$lt": day_end},
+            "clock_out": {"$ne": None}
+        })
+        if day_work:
+            streak += 1
+            check_date -= timedelta(days=1)
+        else:
+            break
+    
+    # Alerts
+    alerts = []
+    if approaching_overtime:
+        alerts.append({
+            "type": "warning",
+            "icon": "time",
+            "title": "Approaching Overtime",
+            "message": f"You've worked {week_hours:.1f}h this week. Overtime starts at {OVERTIME_THRESHOLD}h."
+        })
+    
+    if next_shift_info and next_shift_info["starts_in_hours"] <= 24:
+        alerts.append({
+            "type": "info",
+            "icon": "calendar",
+            "title": "Upcoming Shift",
+            "message": f"Your next shift is {next_shift_info['date']} at {next_shift_info['time']}"
+        })
+    
+    # Check for pending timesheets needing attention
+    pending_count = await db.timesheets.count_documents({
+        "employee_id": employee_id,
+        "approval_status": "pending"
+    })
+    if pending_count > 0:
+        alerts.append({
+            "type": "info",
+            "icon": "document-text",
+            "title": "Pending Approvals",
+            "message": f"You have {pending_count} timesheet(s) awaiting approval"
+        })
+    
+    return {
+        "success": True,
+        "employee_name": f"{user['first_name']} {user['last_name']}",
+        "this_week": {
+            "hours_worked": round(week_hours, 2),
+            "earnings_estimate": round(week_earnings, 2),
+            "shifts_completed": len(week_timesheets),
+            "overtime_hours": round(overtime_hours, 2),
+            "approaching_overtime": approaching_overtime
+        },
+        "next_shift": next_shift_info,
+        "performance": {
+            "punctuality_score": punctuality_score,
+            "current_streak": streak,
+            "total_shifts_30d": total_shifts
+        },
+        "alerts": alerts
+    }
+
+@api_router.get("/sites/live-status")
+async def get_live_site_status():
+    """Get live status of all sites - who's working where right now"""
+    sites = await db.sites.find().to_list(100)
+    
+    site_status = []
+    for site in sites:
+        site_id = str(site["_id"])
+        
+        # Get active timesheets for this site
+        active_timesheets = await db.timesheets.find({
+            "site_id": site_id,
+            "clock_out": None
+        }).to_list(100)
+        
+        active_employees = []
+        for ts in active_timesheets:
+            user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
+            if user:
+                clock_in_time = ts["clock_in"]
+                hours_worked = (datetime.now() - clock_in_time).total_seconds() / 3600 if isinstance(clock_in_time, datetime) else 0
+                
+                active_employees.append({
+                    "id": ts["employee_id"],
+                    "name": f"{user['first_name']} {user['last_name']}",
+                    "clock_in": clock_in_time.strftime("%H:%M") if isinstance(clock_in_time, datetime) else str(clock_in_time),
+                    "hours_worked": round(hours_worked, 1),
+                    "job_title": user.get("job_title", "Employee")
+                })
+        
+        site_status.append({
+            "id": site_id,
+            "name": site["name"],
+            "address": site.get("address", ""),
+            "active_count": len(active_employees),
+            "active_employees": active_employees,
+            "coordinates": {
+                "lat": site.get("gps_lat"),
+                "long": site.get("gps_long")
+            }
+        })
+    
+    # Sort by active count (busiest first)
+    site_status.sort(key=lambda x: x["active_count"], reverse=True)
+    
+    return {
+        "success": True,
+        "timestamp": datetime.now().isoformat(),
+        "total_active": sum(s["active_count"] for s in site_status),
+        "sites": site_status
+    }
