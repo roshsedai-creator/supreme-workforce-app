@@ -452,8 +452,8 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Smart Dashboard Section */}
-      {smartData && (
+      {/* Smart Dashboard Section - with safe rendering */}
+      {smartData?.this_week && (
         <View style={styles.smartDashboard}>
           {/* Weekly Stats Card */}
           <View style={styles.weeklyStatsCard}>
@@ -467,7 +467,7 @@ export default function HomeScreen() {
                 <View style={[styles.statIcon, { backgroundColor: colors.primary + '15' }]}>
                   <Ionicons name="time" size={20} color={colors.primary} />
                 </View>
-                <Text style={styles.statValue}>{smartData.this_week.hours_worked}h</Text>
+                <Text style={styles.statValue}>{smartData.this_week?.hours_worked || 0}h</Text>
                 <Text style={styles.statLabel}>Hours</Text>
               </View>
               
@@ -475,7 +475,7 @@ export default function HomeScreen() {
                 <View style={[styles.statIcon, { backgroundColor: colors.success + '15' }]}>
                   <Ionicons name="cash" size={20} color={colors.success} />
                 </View>
-                <Text style={styles.statValue}>${smartData.this_week.earnings_estimate}</Text>
+                <Text style={styles.statValue}>${smartData.this_week?.earnings_estimate || 0}</Text>
                 <Text style={styles.statLabel}>Est. Pay</Text>
               </View>
               
@@ -483,17 +483,17 @@ export default function HomeScreen() {
                 <View style={[styles.statIcon, { backgroundColor: colors.gold + '15' }]}>
                   <Ionicons name="checkmark-circle" size={20} color={colors.gold} />
                 </View>
-                <Text style={styles.statValue}>{smartData.this_week.shifts_completed}</Text>
+                <Text style={styles.statValue}>{smartData.this_week?.shifts_completed || 0}</Text>
                 <Text style={styles.statLabel}>Shifts</Text>
               </View>
             </View>
             
             {/* Overtime Warning */}
-            {smartData.this_week.approaching_overtime && (
+            {smartData.this_week?.approaching_overtime && (
               <View style={styles.overtimeWarning}>
                 <Ionicons name="warning" size={18} color={colors.warning} />
                 <Text style={styles.overtimeText}>
-                  Approaching overtime ({smartData.this_week.hours_worked}/38h)
+                  Approaching overtime ({smartData.this_week?.hours_worked || 0}/38h)
                 </Text>
               </View>
             )}
@@ -509,11 +509,11 @@ export default function HomeScreen() {
                 </View>
               </View>
               <View style={styles.nextShiftContent}>
-                <Text style={styles.nextShiftDate}>{smartData.next_shift.date}</Text>
-                <Text style={styles.nextShiftTime}>{smartData.next_shift.time}</Text>
+                <Text style={styles.nextShiftDate}>{smartData.next_shift?.date || ''}</Text>
+                <Text style={styles.nextShiftTime}>{smartData.next_shift?.time || ''}</Text>
                 <View style={styles.nextShiftLocation}>
                   <Ionicons name="location" size={14} color={colors.text.secondary} />
-                  <Text style={styles.nextShiftSite}>{smartData.next_shift.site}</Text>
+                  <Text style={styles.nextShiftSite}>{smartData.next_shift?.site || ''}</Text>
                 </View>
               </View>
             </View>
@@ -528,18 +528,18 @@ export default function HomeScreen() {
               </View>
               <View style={styles.performanceStats}>
                 <View style={styles.perfStatItem}>
-                  <Text style={styles.perfStatValue}>{smartData.performance.current_streak}</Text>
+                  <Text style={styles.perfStatValue}>{smartData.performance?.current_streak || 0}</Text>
                   <Text style={styles.perfStatLabel}>Day Streak</Text>
                 </View>
                 <View style={styles.perfDivider} />
                 <View style={styles.perfStatItem}>
-                  <Text style={styles.perfStatValue}>{smartData.performance.total_shifts_30d}</Text>
+                  <Text style={styles.perfStatValue}>{smartData.performance?.total_shifts_30d || 0}</Text>
                   <Text style={styles.perfStatLabel}>Shifts (30d)</Text>
                 </View>
                 <View style={styles.perfDivider} />
                 <View style={styles.perfStatItem}>
                   <Text style={[styles.perfStatValue, { color: colors.success }]}>
-                    {smartData.performance.punctuality_score}%
+                    {smartData.performance?.punctuality_score || 0}%
                   </Text>
                   <Text style={styles.perfStatLabel}>Punctuality</Text>
                 </View>
