@@ -2351,6 +2351,141 @@ async def get_employee_payroll_report(employee_id: str, request: PayrollExportRe
         "csv_data": output.getvalue()
     }
 
+@api_router.get("/payroll/employee-weekly/{employee_id}")
+async def get_employee_weekly_timesheet(employee_id: str, week_start: str):
+    """Get employee weekly timesheet breakdown (Monday to Sunday) like Employment Hero"""
+    from datetime import timedelta
+    
+    # Get employee info
+    try:
+        user = await db.users.find_one({"_id": ObjectId(employee_id)})
+    except:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="Employee not found")
+    
+    # Parse week start date
+    try:
+        week_start_date = datetime.fromisoformat(week_start.replace('Z', ''))
+    except:
+        raise HTTPException(status_code=400, detail="Invalid week_start date format")
+    
+    # Calculate week end (Sunday)
+    week_end_date = week_start_date + timedelta(days=6, hours=23, minutes=59, seconds=59)
+    
+    # Get pay rate
+    pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
+    base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
+    sat_rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
+    sun_rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
+    
+    # Get timesheets for this week
+    query = {
+        "employee_id": employee_id,
+        "clock_out": {"$ne": None},
+        "clock_in": {
+            "$gte": week_start_date,
+            "$lte": week_end_date
+        }
+    }
+    
+    timesheets = await db.timesheets.find(query).sort("clock_in", 1).to_list(100)
+    
+    # Initialize days of the week
+    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+    weekly_breakdown = []
+    total_hours = 0
+    total_pay = 0
+    
+    for i, day_name in enumerate(days):
+        day_date = week_start_date + timedelta(days=i)
+        day_entries = []
+        day_hours = 0
+        day_pay = 0
+        
+        # Find timesheets for this day
+        for ts in timesheets:
+            ts_date = ts["clock_in"].date() if isinstance(ts["clock_in"], datetime) else datetime.fromisoformat(str(ts["clock_in"])).date()
+            if ts_date == day_date.date():
+                # Get site info
+                site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])}) if ts.get("site_id") else None
+                site_name = site["name"] if site else "Unknown"
+                
+                hours = ts.get("total_hours", 0)
+                
+                # Calculate rate for this day
+                if ts.get("is_public_holiday"):
+                    rate = base_rate * 2.5
+                    rate_type = "Holiday"
+                elif i == 5:  # Saturday
+                    rate = sat_rate
+                    rate_type = "Saturday"
+                elif i == 6:  # Sunday
+                    rate = sun_rate
+                    rate_type = "Sunday"
+                else:
+                    rate = base_rate
+                    rate_type = "Weekday"
+                
+                pay = hours * rate
+                day_hours += hours
+                day_pay += pay
+                
+                day_entries.append({
+                    "id": str(ts["_id"]),
+                    "clock_in": ts["clock_in"].strftime("%H:%M") if isinstance(ts["clock_in"], datetime) else ts["clock_in"],
+                    "clock_out": ts["clock_out"].strftime("%H:%M") if isinstance(ts["clock_out"], datetime) else ts["clock_out"],
+                    "break_minutes": ts.get("break_minutes", 0),
+                    "hours": round(hours, 2),
+                    "site": site_name,
+                    "rate": round(rate, 2),
+                    "rate_type": rate_type,
+                    "pay": round(pay, 2),
+                    "status": ts.get("approval_status", "pending"),
+                    "is_manual": ts.get("is_manual_entry", False)
+                })
+        
+        total_hours += day_hours
+        total_pay += day_pay
+        
+        weekly_breakdown.append({
+            "day": day_name,
+            "date": day_date.strftime("%Y-%m-%d"),
+            "date_formatted": day_date.strftime("%d %b"),
+            "entries": day_entries,
+            "total_hours": round(day_hours, 2),
+            "total_pay": round(day_pay, 2),
+            "has_entries": len(day_entries) > 0
+        })
+    
+    return {
+        "success": True,
+        "employee": {
+            "id": employee_id,
+            "name": f"{user['first_name']} {user['last_name']}",
+            "phone": user.get("phone", ""),
+            "job_title": user.get("job_title", ""),
+            "award_level": user.get("award_level", 1)
+        },
+        "week": {
+            "start": week_start_date.strftime("%Y-%m-%d"),
+            "end": week_end_date.strftime("%Y-%m-%d"),
+            "label": f"{week_start_date.strftime('%d %b')} - {week_end_date.strftime('%d %b %Y')}"
+        },
+        "rates": {
+            "weekday": base_rate,
+            "saturday": sat_rate,
+            "sunday": sun_rate
+        },
+        "breakdown": weekly_breakdown,
+        "summary": {
+            "total_hours": round(total_hours, 2),
+            "total_pay": round(total_pay, 2),
+            "days_worked": sum(1 for d in weekly_breakdown if d["has_entries"])
+        }
+    }
+
 @api_router.post("/payroll/export-excel")
 async def export_payroll_excel(request: PayrollExportRequest):
     """Export payroll data to Excel format"""
