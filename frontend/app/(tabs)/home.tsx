@@ -65,7 +65,7 @@ export default function HomeScreen() {
       );
       setSmartData(response.data);
     } catch (error) {
-      console.log('Smart dashboard not available');
+      console.log('Smart dashboard not available:', error);
     }
   };
 
@@ -73,8 +73,14 @@ export default function HomeScreen() {
     requestLocationPermission();
     fetchCurrentTimesheet();
     fetchSiteData();
-    fetchSmartDashboard();
   }, []);
+
+  // Fetch smart dashboard when user is available
+  useEffect(() => {
+    if (user?.id) {
+      fetchSmartDashboard();
+    }
+  }, [user?.id]);
 
   const requestLocationPermission = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
