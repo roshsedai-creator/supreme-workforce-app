@@ -27,6 +27,9 @@ export default function HomeScreen() {
   const [location, setLocation] = useState<any>(null);
   const [siteData, setSiteData] = useState<any>(null);
   
+  // Smart Dashboard data
+  const [smartData, setSmartData] = useState<any>(null);
+  
   // Manual timesheet modal state
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualDate, setManualDate] = useState('');
@@ -53,10 +56,24 @@ export default function HomeScreen() {
     setShowManualModal(true);
   };
 
+  // Fetch smart dashboard data
+  const fetchSmartDashboard = async () => {
+    if (!user?.id) return;
+    try {
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/employee/smart-dashboard/${user.id}`
+      );
+      setSmartData(response.data);
+    } catch (error) {
+      console.log('Smart dashboard not available');
+    }
+  };
+
   useEffect(() => {
     requestLocationPermission();
     fetchCurrentTimesheet();
     fetchSiteData();
+    fetchSmartDashboard();
   }, []);
 
   const requestLocationPermission = async () => {
