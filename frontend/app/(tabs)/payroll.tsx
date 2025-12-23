@@ -263,9 +263,14 @@ export default function PayrollScreen() {
         </TouchableOpacity>
         
         <View style={styles.periodInfo}>
-          <Text style={styles.periodLabel}>{periodType === 'week' ? 'Week' : 'Fortnight'}</Text>
+          <Text style={styles.periodLabel}>
+            {periodType === 'week' ? 'Week' : 
+             periodType === 'fortnight' ? 'Fortnight' : 
+             periodType === 'month' ? 'Month' : 'All Time'}
+          </Text>
           <Text style={styles.periodDates}>
-            {format(periodStart, 'MMM dd')} - {format(periodEnd, 'MMM dd, yyyy')}
+            {periodType === 'all' ? 'All Approved Timesheets' : 
+              `${format(periodStart, 'MMM dd')} - ${format(periodEnd, 'MMM dd, yyyy')}`}
           </Text>
         </View>
 
