@@ -2837,33 +2837,6 @@ async def preview_invoice():
     else:
         raise HTTPException(status_code=404, detail="Template not found")
 
-# Root endpoint
-@api_router.get("/")
-async def root():
-    return {"message": "Supreme Hospitality Services Timesheet API", "version": "1.0.0"}
-
-# Include the router in the main app
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-
 # =====================
 # SMART FEATURES
 # =====================
@@ -3055,3 +3028,30 @@ async def get_live_site_status():
         "total_active": sum(s["active_count"] for s in site_status),
         "sites": site_status
     }
+
+# Root endpoint
+@api_router.get("/")
+async def root():
+    return {"message": "Supreme Hospitality Services Timesheet API", "version": "1.0.0"}
+
+# Include the router in the main app
+app.include_router(api_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    client.close()
