@@ -300,6 +300,22 @@ export default function PayrollScreen() {
             Fortnightly
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleButton, periodType === 'month' && styles.toggleButtonActive]}
+          onPress={() => setPeriodType('month')}
+        >
+          <Text style={[styles.toggleText, periodType === 'month' && styles.toggleTextActive]}>
+            Monthly
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.toggleButton, periodType === 'all' && styles.toggleButtonActive]}
+          onPress={() => setPeriodType('all')}
+        >
+          <Text style={[styles.toggleText, periodType === 'all' && styles.toggleTextActive]}>
+            All
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Filters */}
