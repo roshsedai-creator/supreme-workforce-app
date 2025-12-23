@@ -513,7 +513,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All DELETE endpoints and RBAC testing completed successfully"
+    - "Smart Dashboard feature testing completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "completed"
