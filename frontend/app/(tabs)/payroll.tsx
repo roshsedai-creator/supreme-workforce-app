@@ -67,6 +67,22 @@ export default function PayrollScreen() {
 
   const getPeriodDates = () => {
     const now = new Date();
+    
+    // For "all" period, return a wide date range
+    if (periodType === 'all') {
+      const periodStart = new Date('2025-01-01');
+      const periodEnd = new Date('2025-12-31');
+      return { periodStart, periodEnd };
+    }
+    
+    // For "month", return current month
+    if (periodType === 'month') {
+      const monthsToAdd = currentPeriod;
+      const periodStart = startOfMonth(addMonths(now, monthsToAdd));
+      const periodEnd = endOfMonth(addMonths(now, monthsToAdd));
+      return { periodStart, periodEnd };
+    }
+    
     const weeksToAdd = periodType === 'fortnight' ? currentPeriod * 2 : currentPeriod;
     const periodStart = startOfWeek(addWeeks(now, weeksToAdd), { weekStartsOn: 1 });
     const periodEnd = endOfWeek(addWeeks(periodStart, periodType === 'fortnight' ? 1 : 0), { weekStartsOn: 1 });
