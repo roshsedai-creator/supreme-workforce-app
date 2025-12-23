@@ -921,6 +921,56 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: 12,
   },
+  activeEmployeeItem: {
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.success,
+  },
+  activeEmployeeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  activeIndicatorSmall: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: colors.success,
+    marginRight: 10,
+  },
+  activeEmployeeName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  activeEmployeeDetails: {
+    marginLeft: 20,
+  },
+  activeDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 8,
+  },
+  activeDetailText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  closeModalBtn: {
+    backgroundColor: colors.primary,
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  closeModalBtnText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '600',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
