@@ -773,6 +773,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  tapHint: {
+    fontSize: 10,
+    color: colors.primary,
+    marginTop: 4,
+  },
   statValue: {
     fontSize: 32,
     fontWeight: 'bold',
