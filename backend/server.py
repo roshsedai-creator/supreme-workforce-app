@@ -3040,6 +3040,11 @@ async def get_live_site_status():
 async def root():
     return {"message": "Supreme Hospitality Services Timesheet API", "version": "1.0.0"}
 
+# Test endpoint for debugging
+@api_router.get("/test-smart-dashboard")
+async def test_smart_dashboard():
+    return {"message": "Smart dashboard endpoint is reachable", "status": "ok"}
+
 # Include the router in the main app
 app.include_router(api_router)
 
