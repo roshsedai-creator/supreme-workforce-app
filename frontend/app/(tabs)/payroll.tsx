@@ -205,6 +205,30 @@ export default function PayrollScreen() {
     }
   };
 
+  // Fetch Employee Weekly Timesheet (Employment Hero style)
+  const fetchEmployeeWeekly = async (employeeId: string) => {
+    const { periodStart } = getPeriodDates();
+    // Get Monday of the selected week
+    const weekStart = startOfWeek(periodStart, { weekStartsOn: 1 });
+    
+    setLoadingWeekly(true);
+    setWeeklyEmployeeId(employeeId);
+    setShowEmployeeWeekly(true);
+    
+    try {
+      const response = await axios.get(
+        `${API_URL}/api/payroll/employee-weekly/${employeeId}?week_start=${weekStart.toISOString()}`
+      );
+      setWeeklyData(response.data);
+    } catch (error) {
+      console.error('Failed to fetch weekly data:', error);
+      Alert.alert('Error', 'Failed to load weekly timesheet');
+      setShowEmployeeWeekly(false);
+    } finally {
+      setLoadingWeekly(false);
+    }
+  };
+
   const renderTimesheet = ({ item }: any) => {
     const clockIn = new Date(item.clock_in);
     const clockOut = item.clock_out ? new Date(item.clock_out) : null;
