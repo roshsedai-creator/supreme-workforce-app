@@ -28,10 +28,16 @@ export default function PayrollScreen() {
   const [exporting, setExporting] = useState(false);
   
   // Filters
-  const [periodType, setPeriodType] = useState<'week' | 'fortnight' | 'month' | 'all'>('fortnight');
+  const [periodType, setPeriodType] = useState<'week' | 'fortnight' | 'month' | 'all'>('week');
   const [currentPeriod, setCurrentPeriod] = useState(0); // 0 = current, -1 = previous, etc.
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
   const [selectedSite, setSelectedSite] = useState<string>('all');
+  
+  // Employee Weekly View Modal
+  const [showEmployeeWeekly, setShowEmployeeWeekly] = useState(false);
+  const [weeklyEmployeeId, setWeeklyEmployeeId] = useState<string>('');
+  const [weeklyData, setWeeklyData] = useState<any>(null);
+  const [loadingWeekly, setLoadingWeekly] = useState(false);
 
   // Check permissions - deny access if user doesn't have payroll permissions
   const permissions = user?.permissions || {};
