@@ -350,11 +350,16 @@ export default function SupervisorScreen() {
         }
       >
       <View style={styles.statsHeader}>
-        <View style={styles.statCard}>
+        <TouchableOpacity 
+          style={styles.statCard}
+          onPress={() => setShowActiveModal(true)}
+          activeOpacity={0.7}
+        >
           <Ionicons name="people" size={32} color={colors.success} />
           <Text style={styles.statValue}>{dashboard?.active_employees || 0}</Text>
           <Text style={styles.statLabel}>Active Now</Text>
-        </View>
+          <Text style={styles.tapHint}>Tap to view</Text>
+        </TouchableOpacity>
         <View style={styles.statCard}>
           <Ionicons name="clipboard" size={32} color={colors.warning} />
           <Text style={styles.statValue}>{dashboard?.pending_approvals || 0}</Text>
