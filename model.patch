@@ -16,7 +16,7 @@ index 0000000..910f567
 +import sys
 +
 +# Configuration
-+BASE_URL = "https://workforce-doctor.preview.emergentagent.com/api"
++BASE_URL = "https://timewizard-12.preview.emergentagent.com/api"
 +HEADERS = {"Content-Type": "application/json"}
 +
 +# Test credentials from test_result.md
@@ -603,7 +603,7 @@ index 569e20d..c70e7e3 100644
 -----------+import uuid
 -----------+import time
 -----------+
------------+BASE_URL = "https://workforce-doctor.preview.emergentagent.com/api"
+-----------+BASE_URL = "https://timewizard-12.preview.emergentagent.com/api"
 -----------+ADMIN_CREDENTIALS = {"identifier": "0457802302", "pin": "1234"}
 -----------+
 -----------+def make_request(method, endpoint, data=None, timeout=15):
@@ -877,7 +877,7 @@ index 569e20d..c70e7e3 100644
 -----------+import json
 -----------+import uuid
 -----------+
------------+BASE_URL = "https://workforce-doctor.preview.emergentagent.com/api"
+-----------+BASE_URL = "https://timewizard-12.preview.emergentagent.com/api"
 -----------+
 -----------+def test_delete_user_issue():
 -----------+    """Test the DELETE user endpoint issue"""
@@ -3187,7 +3187,7 @@ index 569e20d..c70e7e3 100644
 --------------------------+import json
 --------------------------+from datetime import datetime, timedelta
 --------------------------+
---------------------------+BASE_URL = "https://workforce-doctor.preview.emergentagent.com/api"
+--------------------------+BASE_URL = "https://timewizard-12.preview.emergentagent.com/api"
 --------------------------+
 --------------------------+# Test accounts
 --------------------------+ADMIN_ACCOUNT = {"phone": "0457802302", "pin": "1234"}
@@ -3559,7 +3559,7 @@ index 569e20d..c70e7e3 100644
 ----------------+from datetime import datetime
 ----------------+
 ----------------+# Configuration
-----------------+BASE_URL = "https://workforce-doctor.preview.emergentagent.com/api"
+----------------+BASE_URL = "https://timewizard-12.preview.emergentagent.com/api"
 ----------------+
 ----------------+# Test accounts
 ----------------+TEST_ACCOUNTS = {

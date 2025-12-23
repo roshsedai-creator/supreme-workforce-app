@@ -240,7 +240,7 @@ Once deployed:
 
 **Web Version (Browser):**
 ```
-https://workforce-doctor.preview.emergentagent.com
+https://timewizard-12.preview.emergentagent.com
 ```
 
 **iOS App Store:**

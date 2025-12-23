@@ -71,7 +71,7 @@ eas build --platform android --profile preview
 ## App Configuration
 
 The app is pre-configured to connect to:
-- **Backend URL:** https://workforce-doctor.preview.emergentagent.com
+- **Backend URL:** https://timewizard-12.preview.emergentagent.com
 
 ---
 

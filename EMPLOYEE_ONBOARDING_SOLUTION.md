@@ -51,7 +51,7 @@ Reply to this message or fill in the form by EOD today."
 ## **PHASE 2: Admin Creates All Accounts** (1-2 hours)
 
 **Login as Admin:**
-- URL: https://workforce-doctor.preview.emergentagent.com
+- URL: https://timewizard-12.preview.emergentagent.com
 - Phone: 0457802302
 - PIN: 1234
 
@@ -125,7 +125,7 @@ Questions? Call me.
 - PIN: The PIN they just created
 
 **First Login:**
-1. Open app: https://workforce-doctor.preview.emergentagent.com
+1. Open app: https://timewizard-12.preview.emergentagent.com
 2. Enter phone + PIN
 3. Click "Sign In"
 4. Start using the app!
@@ -157,7 +157,7 @@ If preview is down or email doesn't work, use this backup:
 ## **📱 FOR MOBILE APP USAGE:**
 
 **Option 1: Web App (Easiest - Works Now)**
-- Employees just open: https://workforce-doctor.preview.emergentagent.com
+- Employees just open: https://timewizard-12.preview.emergentagent.com
 - Works on any phone browser
 - No download needed
 - Save to home screen for app-like experience

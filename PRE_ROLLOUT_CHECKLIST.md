@@ -40,7 +40,7 @@
 ## 3. ✅ REGISTRATION FUNCTION
 
 **Test Steps:**
-1. Open: `https://workforce-doctor.preview.emergentagent.com/register`
+1. Open: `https://timewizard-12.preview.emergentagent.com/register`
 2. Fill form:
    - First Name: Test
    - Last Name: User
@@ -346,8 +346,8 @@
 - [x] Pilot plan ready
 
 **Links to Share:**
-- **Registration:** `https://workforce-doctor.preview.emergentagent.com/register`
-- **Login:** `https://workforce-doctor.preview.emergentagent.com`
+- **Registration:** `https://timewizard-12.preview.emergentagent.com/register`
+- **Login:** `https://timewizard-12.preview.emergentagent.com`
 
 ---
 
@@ -361,7 +361,7 @@ Hi [Name],
 You've been selected to help test our new Staff Tracker app before full rollout!
 
 STEP 1: Register
-🔗 https://workforce-doctor.preview.emergentagent.com/register
+🔗 https://timewizard-12.preview.emergentagent.com/register
 
 Fill in:
 - Your name
