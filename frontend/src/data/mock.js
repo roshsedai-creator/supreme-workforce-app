@@ -144,7 +144,7 @@ export const navLinks = [
 
 export const heroImages = {
   main: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=1920&q=80",
-  jobSeeker: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80",
-  engageServices: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
+  jobSeeker: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=800&q=80",
+  engageServices: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
   corporate: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"
 };
