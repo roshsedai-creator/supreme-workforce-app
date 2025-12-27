@@ -17,6 +17,22 @@ const ServicesPage = () => {
       features: ["Daily room servicing", "Turndown service", "Deep cleaning programs", "Linen management", "Quality assurance"]
     },
     {
+      icon: Users,
+      title: "Labour Hire Solutions",
+      slug: "labour-hire",
+      description: "Flexible staffing solutions for hotels, events, and hospitality venues across Australia.",
+      image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80",
+      features: ["Trained hospitality staff", "Flexible arrangements", "Short & long term placements", "Event staffing", "Emergency cover"]
+    },
+    {
+      icon: UtensilsCrossed,
+      title: "Kitchen Stewarding Services",
+      slug: "kitchen-stewarding",
+      description: "Professional kitchen stewarding for hotels, restaurants, and commercial kitchens.",
+      image: "https://images.pexels.com/photos/8113499/pexels-photo-8113499.jpeg?auto=compress&cs=tinysrgb&w=800",
+      features: ["Dishwashing & pot wash", "Equipment cleaning", "Floor maintenance", "Waste management", "Hygiene compliance"]
+    },
+    {
       icon: Building,
       title: "Commercial Facility Cleaning",
       slug: "commercial-cleaning",
@@ -33,14 +49,6 @@ const ServicesPage = () => {
       features: ["Common area cleaning", "Room turnovers", "Move-in/move-out cleans", "Periodic deep cleans", "Waste management"]
     },
     {
-      icon: UtensilsCrossed,
-      title: "Kitchen Stewarding Services",
-      slug: "kitchen-stewarding",
-      description: "Professional kitchen stewarding for hotels, restaurants, and commercial kitchens.",
-      image: "https://images.pexels.com/photos/8113499/pexels-photo-8113499.jpeg?auto=compress&cs=tinysrgb&w=800",
-      features: ["Dishwashing & pot wash", "Equipment cleaning", "Floor maintenance", "Waste management", "Hygiene compliance"]
-    },
-    {
       icon: Stethoscope,
       title: "Healthcare Facility Support",
       slug: "healthcare",
@@ -55,14 +63,6 @@ const ServicesPage = () => {
       description: "Reliable housekeeping for serviced apartments and short-stay accommodation.",
       image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
       features: ["Guest turnovers", "Linen services", "Inventory management", "Maintenance reporting", "Flexible scheduling"]
-    },
-    {
-      icon: Users,
-      title: "Labour Hire Solutions",
-      slug: "labour-hire",
-      description: "Flexible staffing solutions for hotels, events, and hospitality venues across Australia.",
-      image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80",
-      features: ["Trained hospitality staff", "Flexible arrangements", "Short & long term placements", "Event staffing", "Emergency cover"]
     }
   ];
 
