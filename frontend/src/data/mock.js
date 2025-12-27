@@ -148,8 +148,10 @@ export const heroImages = {
   corporate: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"
 };
 
-// Professional bed making video (YouTube)
-export const heroVideo = {
-  youtubeId: "dQw4w9WgXcQ", // Replace with actual bed making video
-  videoUrl: "https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e2d9726e9c8a8c3c4e3b05be5e54&profile_id=164&oauth2_token_id=57447761"
+// Professional hospitality videos from Pexels
+export const heroVideos = {
+  // Main hero - Hotel maid making bed
+  bedMaking: "https://videos.pexels.com/video-files/6466563/6466563-uhd_2732_1440_25fps.mp4",
+  // Public area cleaning/vacuuming
+  publicAreaCleaning: "https://videos.pexels.com/video-files/4109339/4109339-uhd_2732_1440_25fps.mp4"
 };
