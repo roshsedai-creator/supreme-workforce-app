@@ -75,13 +75,13 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Register Button */}
+          {/* Contact Us Button */}
           <div className="hidden lg:flex items-center gap-3">
-            <Link to="/register">
+            <Link to="/contact">
               <Button 
                 className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full px-6 h-9 text-sm font-semibold"
               >
-                Register
+                Contact Us
               </Button>
             </Link>
           </div>
@@ -113,11 +113,11 @@ const Header = () => {
                 ))}
               </nav>
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>
                   <Button 
                     className="w-full bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full h-10 text-sm font-semibold"
                   >
-                    Register
+                    Contact Us
                   </Button>
                 </Link>
               </div>
