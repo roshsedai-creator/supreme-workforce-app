@@ -2,12 +2,6 @@ import React from 'react';
 import { partners } from '../data/mock';
 
 const Partners = () => {
-  // Brand colors for partners without logos
-  const brandColors = {
-    "Ibis": { bg: "#E31837", text: "white" },
-    "Causeway Group": { bg: "#2E5D4B", text: "white" }
-  };
-
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
@@ -19,39 +13,19 @@ const Partners = () => {
         </p>
         
         {/* Partners Grid */}
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
-          {partners.map((partner) => {
-            if (partner.logo) {
-              return (
-                <div 
-                  key={partner.id}
-                  className="w-[180px] h-[90px] bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center p-4"
-                >
-                  <img 
-                    src={partner.logo} 
-                    alt={partner.name}
-                    className="max-h-[70px] max-w-[150px] object-contain"
-                  />
-                </div>
-              );
-            } else {
-              const colors = brandColors[partner.name] || { bg: "#703493", text: "white" };
-              return (
-                <div 
-                  key={partner.id}
-                  className="w-[180px] h-[90px] rounded-xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center p-4"
-                  style={{ backgroundColor: colors.bg }}
-                >
-                  <span 
-                    className="font-bold text-lg text-center leading-tight"
-                    style={{ color: colors.text }}
-                  >
-                    {partner.name}
-                  </span>
-                </div>
-              );
-            }
-          })}
+        <div className="flex flex-wrap justify-center items-center gap-6 md:gap-8">
+          {partners.map((partner) => (
+            <div 
+              key={partner.id}
+              className="w-[180px] h-[100px] bg-white border border-gray-200 rounded-xl shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 flex items-center justify-center p-4"
+            >
+              <img 
+                src={partner.logo} 
+                alt={partner.name}
+                className="max-h-[80px] max-w-[160px] object-contain"
+              />
+            </div>
+          ))}
         </div>
       </div>
     </section>
