@@ -16,26 +16,33 @@ const Blog = () => {
         <div className="grid md:grid-cols-3 gap-8">
           {blogPosts.map((post) => (
             <article key={post.id} className="group cursor-pointer bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
-              <div className="overflow-hidden">
-                <img 
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full h-[200px] object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-              </div>
+              <Link to={`/blog/${post.id}`}>
+                <div className="overflow-hidden">
+                  <img 
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-[200px] object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                </div>
+              </Link>
               <div className="p-6">
                 <p className="text-[#D4B37A] text-sm font-medium mb-2">
                   {post.date}
                 </p>
-                <h3 className="text-gray-900 text-lg font-bold mb-3 group-hover:text-[#703493] transition-colors line-clamp-2">
-                  {post.title}
-                </h3>
+                <Link to={`/blog/${post.id}`}>
+                  <h3 className="text-gray-900 text-lg font-bold mb-3 group-hover:text-[#703493] transition-colors line-clamp-2">
+                    {post.title}
+                  </h3>
+                </Link>
                 <p className="text-gray-600 text-sm line-clamp-3 mb-4">
                   {post.excerpt}
                 </p>
-                <span className="text-[#703493] font-semibold text-sm hover:text-[#D4B37A] transition-colors">
+                <Link 
+                  to={`/blog/${post.id}`}
+                  className="text-[#703493] font-semibold text-sm hover:text-[#D4B37A] transition-colors"
+                >
                   Read Article →
-                </span>
+                </Link>
               </div>
             </article>
           ))}
