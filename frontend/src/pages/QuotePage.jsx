@@ -5,19 +5,15 @@ import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
-import { CheckCircle } from 'lucide-react';
 import { companyInfo } from '../data/mock';
 
 const QuotePage = () => {
-  const navigate = useNavigate();
-  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     businessName: '',
     contactName: '',
     email: '',
     phone: '',
     industry: '',
-    propertyType: '',
     numberOfRooms: '',
     servicesRequired: [],
     additionalInfo: ''
@@ -35,37 +31,38 @@ const QuotePage = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    // In production, this would send to backend
-    console.log('Quote request:', formData);
-    setSubmitted(true);
-  };
+    
+    // Create email content
+    const subject = encodeURIComponent(`Quote Request from ${formData.businessName}`);
+    const body = encodeURIComponent(
+`New Quote Request from Supreme Hospitality Services website:
 
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Header />
-        <section className="pt-[106px]">
-          <div className="bg-[#703493] py-20">
-            <div className="container mx-auto px-4 text-center">
-              <CheckCircle className="w-20 h-20 text-[#D4B37A] mx-auto mb-6" />
-              <h1 className="text-white text-4xl md:text-5xl font-bold mb-4">Thank You!</h1>
-              <p className="text-white/80 text-lg max-w-2xl mx-auto">
-                Your quote request has been submitted successfully. Our team will review your requirements and contact you within 24-48 business hours.
-              </p>
-            </div>
-          </div>
-          <div className="py-16 text-center">
-            <Button onClick={() => navigate('/')} className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-8 py-5">
-              Return to Home
-            </Button>
-          </div>
-        </section>
-        <Footer />
-      </div>
+BUSINESS DETAILS
+================
+Business Name: ${formData.businessName}
+Contact Name: ${formData.contactName}
+Email: ${formData.email}
+Phone: ${formData.phone}
+
+SERVICE REQUIREMENTS
+====================
+Industry: ${formData.industry}
+Number of Rooms/Areas: ${formData.numberOfRooms || 'Not specified'}
+Services Required: ${formData.servicesRequired.join(', ') || 'Not specified'}
+
+ADDITIONAL INFORMATION
+======================
+${formData.additionalInfo || 'None provided'}
+
+---
+This quote request was submitted via the Get a Quote form on the website.`
     );
-  }
+    
+    // Open email client
+    window.location.href = `mailto:${companyInfo.email}?subject=${subject}&body=${body}`;
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -180,6 +177,9 @@ const QuotePage = () => {
               <Button type="submit" className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-8 py-5 w-full md:w-auto">
                 Submit Quote Request
               </Button>
+              <p className="text-gray-500 text-sm mt-3">
+                Clicking submit will open your email client to send this quote request to our team.
+              </p>
             </div>
           </form>
         </div>
