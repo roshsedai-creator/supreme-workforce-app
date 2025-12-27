@@ -36,13 +36,7 @@ const Testimonials = () => {
               </p>
               
               <div className="flex flex-col items-center">
-                <img 
-                  src={current.avatar}
-                  alt={current.name}
-                  className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-[#D4B37A]"
-                />
-                <h4 className="text-[#703493] font-bold text-lg">{current.name}</h4>
-                <p className="text-gray-500 text-sm">{current.role}</p>
+                <p className="text-[#703493] font-semibold text-base">{current.role}</p>
               </div>
             </div>
 
