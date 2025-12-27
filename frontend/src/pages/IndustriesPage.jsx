@@ -10,6 +10,7 @@ const IndustriesPage = () => {
     {
       icon: Building2,
       title: "Hotels & Resorts",
+      slug: "housekeeping",
       description: "Delivering exceptional guest experiences through premium housekeeping services for luxury hotels, boutique accommodations, and resort properties across Australia.",
       image: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
       features: ["24/7 housekeeping support", "Turndown services", "VIP room preparation", "Event support"]
@@ -17,6 +18,7 @@ const IndustriesPage = () => {
     {
       icon: GraduationCap,
       title: "Student Accommodation",
+      slug: "student-accommodation",
       description: "Specialised cleaning solutions for universities, colleges, and student housing facilities ensuring clean, safe living environments for students.",
       image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
       features: ["Move-in/move-out cleans", "Common area maintenance", "Periodic deep cleaning", "Vacation turnovers"]
@@ -24,6 +26,7 @@ const IndustriesPage = () => {
     {
       icon: Stethoscope,
       title: "Healthcare & Aged Care",
+      slug: "healthcare",
       description: "Compliant, specialised cleaning services for hospitals, aged care facilities, and medical centres with strict infection control protocols.",
       image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
       features: ["Infection control standards", "Specialised equipment", "Trained healthcare cleaners", "24/7 availability"]
@@ -31,6 +34,7 @@ const IndustriesPage = () => {
     {
       icon: Briefcase,
       title: "Corporate & Commercial",
+      slug: "commercial-cleaning",
       description: "Professional office cleaning and facility management for corporate headquarters, commercial buildings, and business parks.",
       image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
       features: ["Daily office cleaning", "After-hours services", "Green cleaning options", "Flexible scheduling"]
@@ -38,6 +42,7 @@ const IndustriesPage = () => {
     {
       icon: Home,
       title: "Serviced Apartments",
+      slug: "serviced-apartments",
       description: "Reliable housekeeping for serviced apartments and short-stay accommodation ensuring consistent quality for every guest.",
       image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
       features: ["Guest turnovers", "Linen management", "Inventory control", "Maintenance reporting"]
@@ -45,9 +50,10 @@ const IndustriesPage = () => {
     {
       icon: ShoppingBag,
       title: "Retail & Hospitality Venues",
-      description: "Cleaning services for shopping centres, restaurants, entertainment venues, and public spaces.",
+      slug: "kitchen-stewarding",
+      description: "Cleaning services for shopping centres, restaurants, entertainment venues, and public spaces including kitchen stewarding.",
       image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
-      features: ["High-traffic area cleaning", "Window & facade cleaning", "Floor maintenance", "Waste management"]
+      features: ["High-traffic area cleaning", "Kitchen stewarding", "Floor maintenance", "Waste management"]
     }
   ];
 
