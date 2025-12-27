@@ -157,7 +157,7 @@ const ServiceDetailPage = () => {
           <h2 className="text-[#703493] text-2xl md:text-3xl font-bold mb-8 text-center">Explore Our Other Services</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {otherServices.map((otherService) => (
-              <Link key={otherService.id} to={otherService.link} className="group">
+              <Link key={otherService.id} to={`/services/${otherService.slug}`} className="group">
                 <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow">
                   <div className="h-48 overflow-hidden">
                     <img 
