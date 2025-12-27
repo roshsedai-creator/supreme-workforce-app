@@ -95,7 +95,7 @@ async def get_status_checks():
 
 @api_router.post("/contact")
 async def submit_contact_form(form: ContactForm):
-    """Handle contact form submission and store in database"""
+    """Handle contact form submission, store in database and send email"""
     try:
         # Store in database
         contact_doc = {
@@ -110,6 +110,41 @@ async def submit_contact_form(form: ContactForm):
             "status": "new"
         }
         await db.enquiries.insert_one(contact_doc)
+        
+        # Send email notification via Resend
+        if resend.api_key:
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #703493;">New Contact Form Submission</h2>
+                <hr style="border: 1px solid #D4B37A;">
+                <p><strong>Name:</strong> {form.name}</p>
+                <p><strong>Email:</strong> {form.email}</p>
+                <p><strong>Phone:</strong> {form.phone or 'Not provided'}</p>
+                <p><strong>Company:</strong> {form.company or 'Not provided'}</p>
+                <h3 style="color: #703493;">Message:</h3>
+                <p style="background: #f5f5f5; padding: 15px; border-radius: 5px;">{form.message}</p>
+                <hr style="border: 1px solid #D4B37A;">
+                <p style="color: #666; font-size: 12px;">This email was sent from the Supreme Hospitality Services contact form.</p>
+            </div>
+            """
+            
+            params = {
+                "from": SENDER_EMAIL,
+                "to": [COMPANY_EMAIL],
+                "subject": f"New Contact Enquiry from {form.name}",
+                "html": html_content,
+                "reply_to": form.email
+            }
+            
+            try:
+                # Run sync SDK in thread to keep FastAPI non-blocking
+                await asyncio.to_thread(resend.Emails.send, params)
+                logger.info(f"Email sent successfully for contact form from {form.name}")
+            except Exception as email_error:
+                logger.error(f"Failed to send email: {str(email_error)}")
+                # Don't fail the request if email fails - data is still stored
+        else:
+            logger.warning("RESEND_API_KEY not configured - email not sent")
         
         logger.info(f"Contact form submitted by {form.name} ({form.email})")
         
