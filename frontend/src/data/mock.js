@@ -189,8 +189,8 @@ export const heroImages = {
 
 // Professional hospitality videos from Pexels
 export const heroVideos = {
-  // Main hero - Hotel receptionist receiving guest (professional service)
-  main: "https://videos.pexels.com/video-files/5373056/5373056-uhd_2732_1440_25fps.mp4",
+  // Main hero - Women working in a hotel (professional staff)
+  main: "https://videos.pexels.com/video-files/5137833/5137833-uhd_2732_1440_25fps.mp4",
   // Hotel maid making bed (landscape)
   bedMaking: "https://videos.pexels.com/video-files/6466563/6466563-uhd_2732_1440_25fps.mp4",
   // Public area cleaning/vacuuming
