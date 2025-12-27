@@ -189,8 +189,8 @@ export const heroImages = {
 
 // Professional hospitality videos from Pexels
 export const heroVideos = {
-  // Main hero - Luxury hotel room view (high quality, professional)
-  main: "https://videos.pexels.com/video-files/5498751/5498751-uhd_2560_1440_25fps.mp4",
+  // Main hero - Woman making bed (housekeeping in action)
+  main: "https://videos.pexels.com/video-files/6863727/6863727-uhd_2732_1440_25fps.mp4",
   // Hotel maid making bed (landscape)
   bedMaking: "https://videos.pexels.com/video-files/6466563/6466563-uhd_2732_1440_25fps.mp4",
   // Public area cleaning/vacuuming
