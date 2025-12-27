@@ -55,6 +55,14 @@ const ServicesPage = () => {
       description: "Reliable housekeeping for serviced apartments and short-stay accommodation.",
       image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
       features: ["Guest turnovers", "Linen services", "Inventory management", "Maintenance reporting", "Flexible scheduling"]
+    },
+    {
+      icon: Users,
+      title: "Labour Hire Solutions",
+      slug: "labour-hire",
+      description: "Flexible staffing solutions for hotels, events, and hospitality venues across Australia.",
+      image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80",
+      features: ["Trained hospitality staff", "Flexible arrangements", "Short & long term placements", "Event staffing", "Emergency cover"]
     }
   ];
 
