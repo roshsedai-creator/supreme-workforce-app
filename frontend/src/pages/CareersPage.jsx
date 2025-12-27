@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
-import { MapPin, Clock, Briefcase, Users, Heart, TrendingUp, Award, Coffee } from 'lucide-react';
+import { MapPin, Clock, Briefcase, ExternalLink } from 'lucide-react';
+import { companyInfo } from '../data/mock';
 
 const CareersPage = () => {
   const jobs = [
@@ -16,11 +17,18 @@ const CareersPage = () => {
   ];
 
   const benefits = [
-    { icon: TrendingUp, title: "Career Growth", description: "Clear pathways for advancement and professional development" },
-    { icon: Award, title: "Training Programs", description: "Comprehensive training to help you excel in your role" },
-    { icon: Heart, title: "Health & Wellbeing", description: "Programs designed to support your physical and mental health" },
-    { icon: Coffee, title: "Work-Life Balance", description: "Flexible scheduling options to suit your lifestyle" }
+    { title: "Career Growth", description: "Clear pathways for advancement and professional development" },
+    { title: "Training Programs", description: "Comprehensive training to help you excel in your role" },
+    { title: "Health & Wellbeing", description: "Programs designed to support your physical and mental health" },
+    { title: "Work-Life Balance", description: "Flexible scheduling options to suit your lifestyle" }
   ];
+
+  const handleApply = (jobTitle) => {
+    // Open email with job application
+    const subject = encodeURIComponent(`Job Application: ${jobTitle}`);
+    const body = encodeURIComponent(`Hi Supreme Hospitality Services,\n\nI am interested in applying for the ${jobTitle} position.\n\nPlease find my details below:\n\nName: \nPhone: \nExperience: \n\nI have attached my resume for your review.\n\nThank you.`);
+    window.location.href = `mailto:${companyInfo.email}?subject=${subject}&body=${body}`;
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -48,9 +56,6 @@ const CareersPage = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {benefits.map((benefit, index) => (
               <div key={index} className="text-center p-6 bg-gray-50 rounded-xl">
-                <div className="w-14 h-14 bg-[#D4B37A]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <benefit.icon className="w-7 h-7 text-[#703493]" />
-                </div>
                 <h3 className="text-[#703493] text-lg font-bold mb-2">{benefit.title}</h3>
                 <p className="text-gray-600 text-sm">{benefit.description}</p>
               </div>
@@ -84,26 +89,43 @@ const CareersPage = () => {
                       </span>
                     </div>
                   </div>
-                  <Button className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-6 whitespace-nowrap">
+                  <Button 
+                    onClick={() => handleApply(job.title)}
+                    className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-6 whitespace-nowrap"
+                  >
                     Apply Now
                   </Button>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* View All on Seek */}
+          <div className="text-center mt-10">
+            <a 
+              href={companyInfo.seekUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 bg-[#D4B37A] text-[#703493] px-8 py-4 rounded-md font-semibold hover:bg-[#c9a86c] transition-colors"
+            >
+              View All Positions on Seek <ExternalLink className="w-5 h-5" />
+            </a>
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-[#D4B37A]">
+      <section className="py-16 bg-[#703493]">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-[#703493] text-3xl md:text-4xl font-bold mb-4">Don't See the Right Role?</h2>
-          <p className="text-[#703493]/80 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">Don't See the Right Role?</h2>
+          <p className="text-white/80 mb-8 max-w-2xl mx-auto">
             We're always looking for talented individuals. Submit your resume and we'll be in touch when a suitable position opens.
           </p>
-          <Button className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-8 py-6 text-base font-semibold">
-            Submit Your Resume
-          </Button>
+          <a href={`mailto:${companyInfo.email}?subject=General%20Application`}>
+            <Button className="bg-[#D4B37A] text-[#703493] hover:bg-[#c9a86c] rounded-md px-8 py-6 text-base font-semibold">
+              Submit Your Resume
+            </Button>
+          </a>
         </div>
       </section>
 

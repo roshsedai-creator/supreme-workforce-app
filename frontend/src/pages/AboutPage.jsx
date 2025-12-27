@@ -4,6 +4,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Users, Award, Shield, Heart, Target, Clock } from 'lucide-react';
+import { companyInfo } from '../data/mock';
 
 const AboutPage = () => {
   const values = [
@@ -13,6 +14,14 @@ const AboutPage = () => {
     { icon: Heart, title: "Care", description: "We genuinely care about our clients, their guests, and our communities." },
     { icon: Target, title: "Reliability", description: "Consistent, dependable service you can count on every time." },
     { icon: Clock, title: "Responsiveness", description: "Quick to act and adapt to meet your evolving needs." }
+  ];
+
+  const milestones = [
+    { year: "2020", title: "Founded", description: "Supreme Hospitality Services established in Melbourne" },
+    { year: "2021", title: "Expansion", description: "Expanded operations to Sydney and Brisbane" },
+    { year: "2022", title: "Growth", description: "Reached 2,000+ team members across Australia" },
+    { year: "2023", title: "Innovation", description: "Launched industry-leading training programs" },
+    { year: "2024", title: "Leadership", description: "Recognised as a leading hospitality services provider" }
   ];
 
   return (
@@ -25,8 +34,44 @@ const AboutPage = () => {
           <div className="container mx-auto px-4">
             <h1 className="text-white text-4xl md:text-5xl font-bold mb-4">About Supreme</h1>
             <p className="text-white/80 text-lg max-w-2xl">
-              Delivering excellence in hospitality services across Australia for over two decades.
+              Delivering excellence in hospitality services across Australia since 2020.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Managing Director Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="flex justify-center">
+              <div className="relative">
+                <img 
+                  src={companyInfo.mdPhoto}
+                  alt="Managing Director"
+                  className="w-[350px] h-[400px] object-cover rounded-xl shadow-2xl"
+                />
+                <div className="absolute -bottom-4 -right-4 bg-[#D4B37A] text-[#703493] px-6 py-3 rounded-lg shadow-lg">
+                  <p className="font-bold">Founder & Managing Director</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <span className="text-[#D4B37A] font-semibold uppercase tracking-wider text-sm">Leadership</span>
+              <h2 className="text-[#703493] text-3xl md:text-4xl font-bold mb-6 mt-2">Meet Our Managing Director</h2>
+              <p className="text-gray-600 mb-4">
+                With a vision to transform the hospitality services industry in Australia, our Managing Director founded Supreme Hospitality Services in 2020. Starting with a small team of dedicated professionals in Melbourne, he built the company on the principles of excellence, integrity, and genuine care for both clients and employees.
+              </p>
+              <p className="text-gray-600 mb-4">
+                Drawing from years of experience in the hospitality sector, he recognised the need for a service provider that could deliver consistent, high-quality outcomes while treating team members as valued partners rather than just employees. This people-first approach has been instrumental in Supreme's rapid growth and success.
+              </p>
+              <p className="text-gray-600 mb-6">
+                Under his leadership, Supreme has grown from a local Melbourne operation to a nationwide presence with over 4,000 dedicated professionals serving some of Australia's most prestigious hospitality brands including Accor Group, Novotel, Ibis, Causeway Group, and Quest Apartments.
+              </p>
+              <blockquote className="border-l-4 border-[#D4B37A] pl-4 italic text-gray-700">
+                "Our success is built on the foundation of our people. When you invest in your team, they invest in delivering exceptional service to your clients."
+              </blockquote>
+            </div>
           </div>
         </div>
       </section>
@@ -34,31 +79,23 @@ const AboutPage = () => {
       {/* Our Story */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="text-[#D4B37A] font-semibold uppercase tracking-wider text-sm">Our Story</span>
-              <h2 className="text-[#703493] text-3xl md:text-4xl font-bold mb-6 mt-2">A Legacy of Service Excellence</h2>
-              <p className="text-gray-600 mb-4">
-                Supreme Hospitality Services was founded with a simple yet powerful vision: to revolutionize the way hospitality cleaning services are delivered in Australia.
-              </p>
-              <p className="text-gray-600 mb-4">
-                Over the years, we've grown from a small team to a nationwide workforce of over 4,000 dedicated professionals, serving some of Australia's most prestigious hotels, commercial buildings, and educational institutions.
-              </p>
-              <p className="text-gray-600 mb-6">
-                Our success is built on a foundation of trust, quality, and an unwavering commitment to exceeding expectations.
-              </p>
-              <Link to="/contact">
-                <Button className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-6 py-5">
-                  Get in Touch
-                </Button>
-              </Link>
-            </div>
-            <div>
-              <img 
-                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80" 
-                alt="Our Team"
-                className="rounded-xl shadow-xl w-full h-[400px] object-cover"
-              />
+          <div className="text-center mb-12">
+            <span className="text-[#D4B37A] font-semibold uppercase tracking-wider text-sm">Our Journey</span>
+            <h2 className="text-[#703493] text-3xl md:text-4xl font-bold mt-2">The Supreme Story</h2>
+          </div>
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-8">
+              {milestones.map((milestone, index) => (
+                <div key={index} className="flex gap-6 items-start">
+                  <div className="flex-shrink-0 w-20 h-20 bg-[#703493] text-white rounded-full flex items-center justify-center font-bold text-lg">
+                    {milestone.year}
+                  </div>
+                  <div className="pt-2">
+                    <h3 className="text-[#703493] text-xl font-bold">{milestone.title}</h3>
+                    <p className="text-gray-600">{milestone.description}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -94,7 +131,7 @@ const AboutPage = () => {
           </p>
           <Link to="/contact">
             <Button className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-8 py-6 text-base font-semibold">
-              Request a Consultation
+              Get in Touch
             </Button>
           </Link>
         </div>

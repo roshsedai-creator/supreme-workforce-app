@@ -27,24 +27,31 @@ const BlogPage = () => {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {blogPosts.map((post) => (
               <article key={post.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-xl transition-shadow">
-                <img 
-                  src={post.image}
-                  alt={post.title}
-                  className="w-full h-[200px] object-cover"
-                />
+                <Link to={`/blog/${post.id}`}>
+                  <img 
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-[200px] object-cover"
+                  />
+                </Link>
                 <div className="p-6">
                   <p className="text-[#D4B37A] text-sm font-medium mb-2">
                     {post.date}
                   </p>
-                  <h3 className="text-gray-900 text-lg font-bold mb-3 hover:text-[#703493] transition-colors">
-                    {post.title}
-                  </h3>
+                  <Link to={`/blog/${post.id}`}>
+                    <h3 className="text-gray-900 text-lg font-bold mb-3 hover:text-[#703493] transition-colors">
+                      {post.title}
+                    </h3>
+                  </Link>
                   <p className="text-gray-600 text-sm mb-4">
                     {post.excerpt}
                   </p>
-                  <span className="text-[#703493] font-semibold text-sm hover:text-[#D4B37A] transition-colors cursor-pointer">
+                  <Link 
+                    to={`/blog/${post.id}`}
+                    className="text-[#703493] font-semibold text-sm hover:text-[#D4B37A] transition-colors"
+                  >
                     Read Article →
-                  </span>
+                  </Link>
                 </div>
               </article>
             ))}
