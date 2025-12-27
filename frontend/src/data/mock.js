@@ -14,9 +14,9 @@ export const companyInfo = {
 };
 
 export const stats = [
-  { value: "4000+", label: "Dedicated team members Australia-wide" },
-  { value: "150+", label: "Trusted clients" },
-  { value: "1M+", label: "Service hours delivered" },
+  { value: "500+", label: "Dedicated team members Australia-wide" },
+  { value: "20+", label: "Trusted clients" },
+  { value: "700+", label: "Service hours delivered" },
   { value: "24/7", label: "Around the clock support" }
 ];
 
