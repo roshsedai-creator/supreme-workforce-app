@@ -37,7 +37,7 @@ const ServicesPage = () => {
       title: "Kitchen Stewarding Services",
       slug: "kitchen-stewarding",
       description: "Professional kitchen stewarding for hotels, restaurants, and commercial kitchens.",
-      image: "https://images.unsplash.com/photo-1585837146751-a44118595680?w=800&q=80",
+      image: "https://images.pexels.com/photos/8113499/pexels-photo-8113499.jpeg?auto=compress&cs=tinysrgb&w=800",
       features: ["Dishwashing & pot wash", "Equipment cleaning", "Floor maintenance", "Waste management", "Hygiene compliance"]
     },
     {
