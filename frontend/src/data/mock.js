@@ -54,11 +54,11 @@ export const corporateServices = [
 ];
 
 export const partners = [
-  { id: 1, name: "Accor Group", logo: "https://logo.clearbit.com/accor.com" },
-  { id: 2, name: "Novotel", logo: "https://logo.clearbit.com/novotel.com" },
-  { id: 3, name: "Ibis", logo: "https://logo.clearbit.com/ibis.com" },
-  { id: 4, name: "Causeway Group", logo: "https://logo.clearbit.com/causeway.com.au" },
-  { id: 5, name: "Quest Apartments", logo: "https://logo.clearbit.com/questapartments.com.au" }
+  { id: 1, name: "Accor", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/liuqqbks_image.png" },
+  { id: 2, name: "Novotel", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/2xxjkyhc_image.png" },
+  { id: 3, name: "Quest Apartments", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/x86auu2t_image.png" },
+  { id: 4, name: "Ibis", logo: null },
+  { id: 5, name: "Causeway Group", logo: null }
 ];
 
 export const testimonials = [
