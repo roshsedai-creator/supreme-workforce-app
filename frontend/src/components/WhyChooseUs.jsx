@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, Users, Clock, Award, Sparkles, HeartHandshake } from 'lucide-react';
+import { Shield, Users, Clock, Award, Sparkles, HeartHandshake, Leaf, BadgeCheck, Zap, ThumbsUp, Building, Phone } from 'lucide-react';
 
 const WhyChooseUs = () => {
   const reasons = [
@@ -37,6 +37,42 @@ const WhyChooseUs = () => {
       icon: HeartHandshake,
       title: "True Partnership",
       description: "We don't just provide a service—we become an extension of your team, invested in your success.",
+      color: "from-[#D4B37A] to-[#b8975f]"
+    },
+    {
+      icon: Leaf,
+      title: "Eco-Friendly Practices",
+      description: "Sustainable cleaning solutions that protect the environment without compromising on quality.",
+      color: "from-[#703493] to-[#5a2a76]"
+    },
+    {
+      icon: BadgeCheck,
+      title: "ISO 9001 Standards",
+      description: "Quality management systems that ensure consistent, reliable service delivery every time.",
+      color: "from-[#D4B37A] to-[#b8975f]"
+    },
+    {
+      icon: Zap,
+      title: "Rapid Response",
+      description: "Quick turnaround times and emergency support when unexpected situations arise.",
+      color: "from-[#703493] to-[#5a2a76]"
+    },
+    {
+      icon: ThumbsUp,
+      title: "99% Client Retention",
+      description: "Our clients stay because we deliver results. Industry-leading satisfaction rates speak for themselves.",
+      color: "from-[#D4B37A] to-[#b8975f]"
+    },
+    {
+      icon: Building,
+      title: "Melbourne Based",
+      description: "Local expertise with deep understanding of Australian hospitality standards and regulations.",
+      color: "from-[#703493] to-[#5a2a76]"
+    },
+    {
+      icon: Phone,
+      title: "Dedicated Support",
+      description: "A single point of contact who knows your property and is always available when you need them.",
       color: "from-[#D4B37A] to-[#b8975f]"
     }
   ];
