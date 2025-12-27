@@ -14,10 +14,12 @@ import Blog from '../components/Blog';
 import JobsCTA from '../components/JobsCTA';
 import Footer from '../components/Footer';
 import Chatbot from '../components/Chatbot';
+import ScrollProgress from '../components/ScrollProgress';
 
 const HomePage = () => {
   return (
     <div className="min-h-screen">
+      <ScrollProgress />
       <Header />
       <main>
         <Hero />
