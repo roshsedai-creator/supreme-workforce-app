@@ -13,7 +13,7 @@ const ServicesPage = () => {
       title: "Hotel & Resort Housekeeping",
       slug: "housekeeping",
       description: "Premium housekeeping solutions tailored to deliver exceptional guest experiences.",
-      image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80",
+      image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80",
       features: ["Daily room servicing", "Turndown service", "Deep cleaning programs", "Linen management", "Quality assurance"]
     },
     {
