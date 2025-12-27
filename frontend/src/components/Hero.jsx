@@ -41,7 +41,7 @@ const Hero = () => {
           className="absolute inset-0 w-full h-full object-cover"
           poster={heroImages.main}
         >
-          <source src={heroVideos.bedMaking} type="video/mp4" />
+          <source src={heroVideos.main} type="video/mp4" />
           {/* Fallback to image if video doesn't load */}
         </video>
         
