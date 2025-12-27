@@ -189,7 +189,9 @@ export const heroImages = {
 
 // Professional hospitality videos from Pexels
 export const heroVideos = {
-  // Main hero - Hotel maid making bed (landscape)
+  // Main hero - Professional bellboy walking in hotel corridor (luxury hotel service)
+  main: "https://videos.pexels.com/video-files/5372872/5372872-uhd_2732_1440_25fps.mp4",
+  // Hotel maid making bed (landscape)
   bedMaking: "https://videos.pexels.com/video-files/6466563/6466563-uhd_2732_1440_25fps.mp4",
   // Public area cleaning/vacuuming
   publicAreaCleaning: "https://videos.pexels.com/video-files/4109339/4109339-uhd_2732_1440_25fps.mp4",
