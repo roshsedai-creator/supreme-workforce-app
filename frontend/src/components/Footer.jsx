@@ -22,11 +22,13 @@ const Footer = () => {
             <p className="text-gray-400 text-sm italic mb-6">
               "{companyInfo.mission}"
             </p>
-            <Button 
-              className="bg-[#D4B37A] hover:bg-[#c9a86c] text-[#703493] rounded-md px-6 py-4 text-sm font-semibold w-full"
-            >
-              Client Portal
-            </Button>
+            <Link to="/quote">
+              <Button 
+                className="bg-[#D4B37A] hover:bg-[#c9a86c] text-[#703493] rounded-md px-6 py-4 text-sm font-semibold w-full"
+              >
+                Get a Free Quote
+              </Button>
+            </Link>
           </div>
 
           {/* Quick Links */}
