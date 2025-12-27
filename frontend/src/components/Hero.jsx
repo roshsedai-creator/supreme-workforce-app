@@ -115,7 +115,7 @@ const Hero = () => {
           >
             <source src={heroVideos.teamWork} type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#703493]/95 via-[#703493]/70 to-[#703493]/40"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30"></div>
           <div className="relative h-full flex flex-col items-center justify-center text-center p-8">
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">Career Opportunities</p>
             <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">Join Our Team</h2>
@@ -130,7 +130,7 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Engage Services - Hotel Lobby Video */}
+        {/* Engage Services - Housekeeping Towels Video */}
         <div className="relative h-[350px] overflow-hidden">
           <video
             autoPlay
@@ -140,7 +140,7 @@ const Hero = () => {
             className="absolute inset-0 w-full h-full object-cover"
             poster={heroImages.engageServices}
           >
-            <source src={heroVideos.hotelLobby} type="video/mp4" />
+            <source src={heroVideos.housekeepingTowels} type="video/mp4" />
           </video>
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30"></div>
           <div className="relative h-full flex flex-col items-center justify-center text-center p-8">
