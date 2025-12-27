@@ -100,7 +100,7 @@ const IndustriesPage = () => {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/contact">
+                  <Link to={`/services/${industry.slug}`}>
                     <Button className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-6 py-4">
                       Learn More
                     </Button>
