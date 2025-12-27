@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
-import { heroImages } from '../data/mock';
+import { heroImages, heroVideos } from '../data/mock';
 import { Play, Volume2, VolumeX } from 'lucide-react';
 
 const Hero = () => {
