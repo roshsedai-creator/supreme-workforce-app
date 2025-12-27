@@ -189,8 +189,8 @@ export const heroImages = {
 
 // Professional hospitality videos from Pexels
 export const heroVideos = {
-  // Main hero - Chambermaid tidying up hotel room
-  main: "https://videos.pexels.com/video-files/6466569/6466569-uhd_2732_1440_25fps.mp4",
+  // Main hero - Person putting do not disturb sign (professional hotel service)
+  main: "https://videos.pexels.com/video-files/6466570/6466570-uhd_2732_1440_25fps.mp4",
   // Hotel maid making bed (landscape)
   bedMaking: "https://videos.pexels.com/video-files/6466563/6466563-uhd_2732_1440_25fps.mp4",
   // Public area cleaning/vacuuming
