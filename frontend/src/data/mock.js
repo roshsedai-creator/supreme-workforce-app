@@ -4,11 +4,13 @@ export const companyInfo = {
   name: "Supreme Hospitality Services",
   shortName: "supreme",
   tagline: "Excellence in Service",
-  phone: "1800 789 456",
+  phone: "03 9221 6236",
   email: "info@supremehospitality.com.au",
-  address: "Level 20, 101 Collins St, Melbourne 3000",
+  address: "Level 27, 101 Collins St, Melbourne 3000",
   mission: "Delivering excellence through expertise, dedication and integrity, with our people at the heart of everything we do.",
-  logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/rojltk1e_logo.png"
+  logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/rojltk1e_logo.png",
+  mdPhoto: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/pplkqmlh_5sTYwl7ElCDBJS58a5Pz.png",
+  seekUrl: "https://www.seek.com.au/supreme-hospitality-services-jobs"
 };
 
 export const stats = [
