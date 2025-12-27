@@ -13,23 +13,15 @@ const Partners = () => {
         </p>
         
         {/* Partners Grid */}
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12">
+        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-10">
           {partners.map((partner) => (
             <div 
               key={partner.id}
-              className="flex items-center justify-center w-[180px] h-[100px] bg-gray-50 border border-gray-200 rounded-xl p-4 hover:border-[#D4B37A] hover:shadow-lg transition-all"
+              className="flex items-center justify-center w-[200px] h-[90px] bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-[#D4B37A] hover:shadow-lg transition-all group"
             >
-              {partner.logo ? (
-                <img 
-                  src={partner.logo} 
-                  alt={partner.name}
-                  className="max-h-[60px] max-w-[140px] object-contain filter grayscale hover:grayscale-0 transition-all"
-                />
-              ) : (
-                <span className="text-gray-600 font-semibold text-center text-sm">
-                  {partner.name}
-                </span>
-              )}
+              <span className="text-gray-700 font-bold text-lg text-center group-hover:text-[#703493] transition-colors">
+                {partner.name}
+              </span>
             </div>
           ))}
         </div>
