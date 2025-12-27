@@ -38,11 +38,13 @@ const Header = () => {
             </a>
           </div>
           <div className="flex items-center gap-3 ml-auto">
-            <Button 
-              className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full px-6 h-8 text-sm font-semibold"
-            >
-              Get a Quote
-            </Button>
+            <Link to="/quote">
+              <Button 
+                className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full px-6 h-8 text-sm font-semibold"
+              >
+                Get a Quote
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -73,19 +75,15 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Auth Buttons */}
+          {/* Register Button */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              className="text-[#703493] border-[#703493] hover:bg-[#703493] hover:text-white rounded-full px-6 h-9 text-sm font-medium transition-colors"
-            >
-              Login
-            </Button>
-            <Button 
-              className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full px-6 h-9 text-sm font-semibold"
-            >
-              Register
-            </Button>
+            <Link to="/register">
+              <Button 
+                className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full px-6 h-9 text-sm font-semibold"
+              >
+                Register
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -114,18 +112,14 @@ const Header = () => {
                   </Link>
                 ))}
               </nav>
-              <div className="flex gap-3 mt-4 pt-4 border-t border-gray-100">
-                <Button 
-                  variant="outline" 
-                  className="flex-1 text-[#703493] border-[#703493] hover:bg-[#703493] hover:text-white rounded-full h-10 text-sm font-medium"
-                >
-                  Login
-                </Button>
-                <Button 
-                  className="flex-1 bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full h-10 text-sm font-semibold"
-                >
-                  Register
-                </Button>
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                  <Button 
+                    className="w-full bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full h-10 text-sm font-semibold"
+                  >
+                    Register
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
