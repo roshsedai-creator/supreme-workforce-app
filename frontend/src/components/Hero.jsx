@@ -103,7 +103,7 @@ const Hero = () => {
 
       {/* Two Column CTA with Videos */}
       <div className="grid md:grid-cols-2">
-        {/* Job Seeker - Public Area Cleaning Video */}
+        {/* Job Seeker - Team Working Video */}
         <div className="relative h-[350px] overflow-hidden">
           <video
             autoPlay
@@ -113,13 +113,13 @@ const Hero = () => {
             className="absolute inset-0 w-full h-full object-cover"
             poster={heroImages.jobSeeker}
           >
-            <source src={heroVideos.publicAreaCleaning} type="video/mp4" />
+            <source src={heroVideos.teamWork} type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-t from-[#703493] via-[#703493]/80 to-[#703493]/60"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-[#703493]/95 via-[#703493]/70 to-[#703493]/40"></div>
           <div className="relative h-full flex flex-col items-center justify-center text-center p-8">
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">Career Opportunities</p>
             <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">Join Our Team</h2>
-            <p className="text-white/80 text-sm mb-6 max-w-sm">Build a rewarding career with Australia's leading hospitality services provider</p>
+            <p className="text-white/90 text-sm mb-6 max-w-sm">Build a rewarding career with Australia's leading hospitality services provider</p>
             <Link to="/careers">
               <Button 
                 className="bg-[#D4B37A] text-[#703493] hover:bg-white rounded-full px-10 py-5 text-base font-semibold"
@@ -130,7 +130,7 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Engage Services - Bed Making Video */}
+        {/* Engage Services - Hotel Lobby Video */}
         <div className="relative h-[350px] overflow-hidden">
           <video
             autoPlay
@@ -140,13 +140,13 @@ const Hero = () => {
             className="absolute inset-0 w-full h-full object-cover"
             poster={heroImages.engageServices}
           >
-            <source src={heroVideos.bedMaking} type="video/mp4" />
+            <source src={heroVideos.hotelLobby} type="video/mp4" />
           </video>
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/50"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30"></div>
           <div className="relative h-full flex flex-col items-center justify-center text-center p-8">
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">For Businesses</p>
             <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">Partner With Us</h2>
-            <p className="text-white/80 text-sm mb-6 max-w-sm">Discover tailored solutions for your hospitality or commercial facility</p>
+            <p className="text-white/90 text-sm mb-6 max-w-sm">Discover tailored solutions for your hospitality or commercial facility</p>
             <Link to="/quote">
               <Button 
                 className="bg-white text-[#703493] hover:bg-[#D4B37A] rounded-full px-10 py-5 text-base font-semibold"
