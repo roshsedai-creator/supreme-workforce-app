@@ -80,6 +80,16 @@ export const services = [
     image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
     features: ["Guest turnovers", "Linen services", "Inventory management", "Maintenance reporting", "Flexible scheduling", "Quality inspections"],
     link: "/services/serviced-apartments"
+  },
+  {
+    id: 7,
+    slug: "labour-hire",
+    title: "Labour Hire Solutions",
+    description: "Flexible staffing solutions for hotels, events, and hospitality venues across Australia.",
+    fullDescription: "Our labour hire solutions provide you with trained, reliable hospitality staff when you need them most. Whether you need housekeepers for a busy season, stewards for a major event, or emergency cover for unexpected absences, we have the right people ready to step in and maintain your service standards.",
+    image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80",
+    features: ["Trained hospitality professionals", "Flexible short & long term arrangements", "Event staffing specialists", "Emergency cover available", "Pre-vetted and reference checked", "Ongoing support and supervision"],
+    link: "/services/labour-hire"
   }
 ];
 
