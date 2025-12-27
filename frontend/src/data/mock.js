@@ -24,22 +24,22 @@ export const services = [
   {
     id: 1,
     title: "Hotel & Resort Housekeeping",
-    description: "Premium housekeeping solutions tailored to your property's unique needs.",
-    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80",
+    description: "Premium housekeeping solutions tailored for luxury hotels, boutique accommodations, and world-class resorts.",
+    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80",
     link: "/services/housekeeping"
   },
   {
     id: 2,
     title: "Commercial Facility Cleaning",
-    description: "Professional cleaning for offices, retail spaces and commercial buildings.",
-    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80",
+    description: "Professional cleaning services for offices, retail spaces, and commercial buildings with meticulous attention to detail.",
+    image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
     link: "/services/commercial-cleaning"
   },
   {
     id: 3,
     title: "Educational & Student Living",
-    description: "Specialised cleaning services for universities and student residences.",
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
+    description: "Specialised cleaning services for universities, colleges, and student residences ensuring pristine living environments.",
+    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80",
     link: "/services/student-accommodation"
   }
 ];
@@ -65,23 +65,23 @@ export const partners = [
 export const testimonials = [
   {
     id: 1,
-    name: "Sarah Johnson",
-    role: "Hotel Manager, Crown Melbourne",
-    content: "Supreme Hospitality has elevated our guest experience. Their attention to detail and professional approach sets them apart in the industry.",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&q=80"
+    name: "Amanda Richardson",
+    role: "General Manager, Novotel Melbourne",
+    content: "Supreme Hospitality has consistently exceeded our expectations. Their team demonstrates exceptional professionalism and attention to detail that directly enhances our guest experience.",
+    avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&q=80"
   },
   {
     id: 2,
-    name: "Michael Chen",
-    role: "Operations Director, Marriott Sydney",
-    content: "A true partner in hospitality excellence. Their team integrates seamlessly with our operations and consistently delivers outstanding results.",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80"
+    name: "David Chen",
+    role: "Operations Director, Quest Apartments",
+    content: "Partnering with Supreme has streamlined our operations significantly. Their reliability and quality of service have made them an invaluable extension of our team.",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&q=80"
   },
   {
     id: 3,
-    name: "Emily Rodriguez",
-    role: "Facility Manager, University of Melbourne",
-    content: "The dedication to cleanliness and student wellbeing is remarkable. Our residents consistently praise the quality of service provided.",
+    name: "Sarah Mitchell",
+    role: "Facility Manager, Accor Group",
+    content: "The dedication and expertise of the Supreme team is outstanding. They understand the unique demands of the hospitality industry and deliver exceptional results every time.",
     avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80"
   }
 ];
@@ -89,27 +89,27 @@ export const testimonials = [
 export const blogPosts = [
   {
     id: 1,
-    title: "Building Team Morale: Recognition Programs That Work",
-    excerpt: "Discover how recognition and appreciation can transform your housekeeping team's performance. We explore practical strategies that boost morale and create lasting positive change in the workplace.",
-    author: "James Wilson",
-    date: "December 3, 2025",
-    image: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80"
+    title: "Excellence in Housekeeping: Setting the Standard",
+    excerpt: "Discover how professional housekeeping services can transform guest experiences and elevate your property's reputation in the competitive hospitality market.",
+    author: "Supreme Team",
+    date: "December 15, 2024",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80"
   },
   {
     id: 2,
-    title: "Peak Season Preparation: A Complete Guide for Hotels",
-    excerpt: "Summer brings increased demand across the hospitality sector. Learn how to scale your operations effectively while maintaining the quality standards your guests expect.",
-    author: "James Wilson",
-    date: "November 18, 2025",
+    title: "The Future of Hospitality Cleaning Services",
+    excerpt: "Exploring innovative approaches and sustainable practices that are shaping the future of hospitality cleaning and facility management services.",
+    author: "Supreme Team",
+    date: "November 28, 2024",
     image: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80"
   },
   {
     id: 3,
-    title: "Workplace Safety Excellence: Our Commitment",
-    excerpt: "Safety is fundamental to everything we do. Explore our comprehensive approach to workplace health and safety that protects our team members every day.",
-    author: "James Wilson",
-    date: "October 20, 2025",
-    image: "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=800&q=80"
+    title: "Building High-Performance Housekeeping Teams",
+    excerpt: "Key strategies for developing skilled, motivated teams that consistently deliver exceptional service and exceed guest expectations.",
+    author: "Supreme Team",
+    date: "October 20, 2024",
+    image: "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80"
   }
 ];
 
@@ -133,17 +133,23 @@ export const footerLinks = {
 };
 
 export const navLinks = [
-  { label: "About Us", href: "/about", hasDropdown: true },
-  { label: "Services", href: "/services", hasDropdown: true },
-  { label: "Industries", href: "/industries", hasDropdown: true },
-  { label: "Careers", href: "/careers", hasDropdown: true },
+  { label: "About Us", href: "/about", hasDropdown: false },
+  { label: "Services", href: "/services", hasDropdown: false },
+  { label: "Industries", href: "/industries", hasDropdown: false },
+  { label: "Careers", href: "/careers", hasDropdown: false },
   { label: "Insights", href: "/blog", hasDropdown: false },
-  { label: "Contact", href: "/contact", hasDropdown: true }
+  { label: "Contact", href: "/contact", hasDropdown: false }
 ];
 
 export const heroImages = {
-  main: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=1920&q=80",
-  jobSeeker: "https://images.unsplash.com/photo-1584820927498-cfe5211fd8bf?w=800&q=80",
-  engageServices: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
+  main: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1920&q=80",
+  jobSeeker: "https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=800&q=80",
+  engageServices: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
   corporate: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80"
+};
+
+// Professional bed making video (YouTube)
+export const heroVideo = {
+  youtubeId: "dQw4w9WgXcQ", // Replace with actual bed making video
+  videoUrl: "https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e2d9726e9c8a8c3c4e3b05be5e54&profile_id=164&oauth2_token_id=57447761"
 };
