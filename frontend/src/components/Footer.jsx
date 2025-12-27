@@ -16,20 +16,20 @@ const Footer = () => {
               <img 
                 src={companyInfo.logo} 
                 alt="Supreme Hospitality Services" 
-                className="h-20 w-auto object-contain"
+                className="h-16 w-auto object-contain"
               />
             </Link>
             <p className="text-gray-400 text-sm italic mb-6">
               "{companyInfo.mission}"
             </p>
             <Button 
-              className="bg-[#D4B37A] hover:bg-[#c9a86c] text-[#703493] rounded-md px-8 py-5 text-base font-semibold w-full"
+              className="bg-[#D4B37A] hover:bg-[#c9a86c] text-[#703493] rounded-md px-6 py-4 text-sm font-semibold w-full"
             >
               Client Portal
             </Button>
           </div>
 
-          {/* Useful Links */}
+          {/* Quick Links */}
           <div>
             <h3 className="text-white font-bold mb-4">Quick Links</h3>
             <ul className="space-y-2">
@@ -46,7 +46,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Explore */}
+          {/* Legal */}
           <div>
             <h3 className="text-white font-bold mb-4">Legal</h3>
             <ul className="space-y-2">
@@ -97,7 +97,7 @@ const Footer = () => {
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-[#703493] text-white flex items-center justify-center hover:bg-[#D4B37A] hover:text-[#703493] transition-colors"
+                className="w-10 h-10 rounded-full bg-[#D4B37A] text-[#703493] flex items-center justify-center hover:bg-[#703493] hover:text-white transition-colors"
               >
                 <Facebook className="w-5 h-5" />
               </a>
@@ -105,7 +105,7 @@ const Footer = () => {
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-[#703493] text-white flex items-center justify-center hover:bg-[#D4B37A] hover:text-[#703493] transition-colors"
+                className="w-10 h-10 rounded-full bg-[#D4B37A] text-[#703493] flex items-center justify-center hover:bg-[#703493] hover:text-white transition-colors"
               >
                 <Linkedin className="w-5 h-5" />
               </a>
@@ -113,7 +113,7 @@ const Footer = () => {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-10 h-10 rounded-full bg-[#703493] text-white flex items-center justify-center hover:bg-[#D4B37A] hover:text-[#703493] transition-colors"
+                className="w-10 h-10 rounded-full bg-[#D4B37A] text-[#703493] flex items-center justify-center hover:bg-[#703493] hover:text-white transition-colors"
               >
                 <Instagram className="w-5 h-5" />
               </a>
