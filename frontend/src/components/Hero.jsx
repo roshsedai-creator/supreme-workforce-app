@@ -1,8 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from './ui/button';
 import { heroImages, heroVideos } from '../data/mock';
-import { Play, Volume2, VolumeX } from 'lucide-react';
+import { Play, Volume2, VolumeX, ArrowRight, Sparkles } from 'lucide-react';
 
 const Hero = () => {
   const [isPlaying, setIsPlaying] = useState(true);
