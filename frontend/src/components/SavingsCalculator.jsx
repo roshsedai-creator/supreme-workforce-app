@@ -6,10 +6,10 @@ const SavingsCalculator = () => {
   const [rooms, setRooms] = useState(50);
   const [currentCost, setCurrentCost] = useState(25);
   
-  // Calculate potential savings
+  // Calculate potential savings (10% savings)
   const monthlyCleans = rooms * 30;
   const currentMonthly = monthlyCleans * currentCost;
-  const supremeCost = currentCost * 0.85; // 15% savings
+  const supremeCost = currentCost * 0.90; // 10% savings
   const supremeMonthly = monthlyCleans * supremeCost;
   const monthlySavings = currentMonthly - supremeMonthly;
   const yearlySavings = monthlySavings * 12;
