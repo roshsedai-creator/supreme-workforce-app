@@ -52,16 +52,11 @@ export const corporateServices = [
 ];
 
 export const partners = [
-  { id: 1, name: "Hilton Hotels" },
-  { id: 2, name: "Marriott" },
-  { id: 3, name: "IHG" },
-  { id: 4, name: "Accor" },
-  { id: 5, name: "Hyatt" },
-  { id: 6, name: "Crown" },
-  { id: 7, name: "Four Seasons" },
-  { id: 8, name: "Radisson" },
-  { id: 9, name: "Sofitel" },
-  { id: 10, name: "Westin" }
+  { id: 1, name: "Accor Group", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Accor_logo.svg/320px-Accor_logo.svg.png" },
+  { id: 2, name: "Novotel", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Novotel_logo_2019.svg/320px-Novotel_logo_2019.svg.png" },
+  { id: 3, name: "Ibis", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Ibis_Hotels_logo_2012.svg/320px-Ibis_Hotels_logo_2012.svg.png" },
+  { id: 4, name: "Causeway Group", logo: null },
+  { id: 5, name: "Quest", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/2/21/Quest_Apartment_Hotels_logo.svg/320px-Quest_Apartment_Hotels_logo.svg.png" }
 ];
 
 export const testimonials = [
