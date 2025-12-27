@@ -40,7 +40,7 @@ const CareersPage = () => {
           <div className="container mx-auto px-4">
             <h1 className="text-white text-4xl md:text-5xl font-bold mb-4">Careers at Supreme</h1>
             <p className="text-white/80 text-lg max-w-2xl">
-              Join our team of 4,000+ professionals and build a rewarding career in hospitality services.
+              Join our growing team of 500+ professionals and build a rewarding career in hospitality services.
             </p>
           </div>
         </div>
