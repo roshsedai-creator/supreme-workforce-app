@@ -60,6 +60,26 @@ export const services = [
     image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
     features: ["Dishwashing & pot wash", "Equipment cleaning", "Floor & wall maintenance", "Waste management", "Hygiene compliance", "24/7 stewarding support"],
     link: "/services/kitchen-stewarding"
+  },
+  {
+    id: 5,
+    slug: "healthcare",
+    title: "Healthcare Facility Support",
+    description: "Compliant cleaning solutions for aged care and healthcare environments with strict infection control.",
+    fullDescription: "Our healthcare cleaning services meet the stringent requirements of medical facilities. We employ trained staff who understand infection control protocols, use hospital-grade disinfectants, and follow strict compliance procedures to maintain safe, hygienic healthcare environments.",
+    image: "https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?w=800&q=80",
+    features: ["Infection control", "Specialized equipment", "Trained staff", "Compliance reporting", "24/7 availability", "Medical waste handling"],
+    link: "/services/healthcare"
+  },
+  {
+    id: 6,
+    slug: "serviced-apartments",
+    title: "Serviced Apartments",
+    description: "Reliable housekeeping for serviced apartments and short-stay accommodation providers.",
+    fullDescription: "We provide flexible, reliable housekeeping services tailored for serviced apartments and short-stay accommodation. Our services include guest turnovers, linen management, inventory tracking, and maintenance reporting to ensure smooth operations and satisfied guests.",
+    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
+    features: ["Guest turnovers", "Linen services", "Inventory management", "Maintenance reporting", "Flexible scheduling", "Quality inspections"],
+    link: "/services/serviced-apartments"
   }
 ];
 
