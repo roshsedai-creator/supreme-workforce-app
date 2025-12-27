@@ -57,7 +57,7 @@ export const services = [
     title: "Kitchen Stewarding Services",
     description: "Professional kitchen stewarding and back-of-house cleaning for hotels, restaurants, and commercial kitchens.",
     fullDescription: "Our kitchen stewarding services ensure your back-of-house operations run smoothly and meet the highest hygiene standards. From dishwashing to equipment cleaning, waste management to floor maintenance, our trained stewards keep your kitchen spotless and compliant with health regulations.",
-    image: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80",
     features: ["Dishwashing & pot wash", "Equipment cleaning", "Floor & wall maintenance", "Waste management", "Hygiene compliance", "24/7 stewarding support"],
     link: "/services/kitchen-stewarding"
   },
