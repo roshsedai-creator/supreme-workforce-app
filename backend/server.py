@@ -273,6 +273,58 @@ async def get_enquiries():
     enquiries = await db.enquiries.find({}, {"_id": 0}).to_list(1000)
     return enquiries
 
+# Chatbot Models
+class ChatMessage(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+
+class ChatResponse(BaseModel):
+    response: str
+    session_id: str
+
+@api_router.post("/chat", response_model=ChatResponse)
+async def chat_with_bot(chat_message: ChatMessage):
+    """AI-powered chatbot endpoint"""
+    try:
+        # Generate or use existing session ID
+        session_id = chat_message.session_id or str(uuid.uuid4())
+        
+        # Get or create chat session
+        if session_id not in chat_sessions:
+            chat_sessions[session_id] = LlmChat(
+                api_key=EMERGENT_LLM_KEY,
+                session_id=session_id,
+                system_message=CHATBOT_SYSTEM_MESSAGE
+            ).with_model("openai", "gpt-4o-mini")
+        
+        chat = chat_sessions[session_id]
+        
+        # Create user message and get response
+        user_message = UserMessage(text=chat_message.message)
+        response = await chat.send_message(user_message)
+        
+        # Store chat in database for analytics
+        chat_doc = {
+            "id": str(uuid.uuid4()),
+            "session_id": session_id,
+            "user_message": chat_message.message,
+            "bot_response": response,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        await db.chat_history.insert_one(chat_doc)
+        
+        logger.info(f"Chat response generated for session {session_id}")
+        
+        return ChatResponse(response=response, session_id=session_id)
+        
+    except Exception as e:
+        logger.error(f"Error in chatbot: {str(e)}")
+        # Return a fallback response
+        return ChatResponse(
+            response="I apologize, but I'm having trouble right now. Please call us at 03 9221 6236 or email info@supremehospitality.com.au for immediate assistance.",
+            session_id=chat_message.session_id or str(uuid.uuid4())
+        )
+
 # Include the router in the main app
 app.include_router(api_router)
 
