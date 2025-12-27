@@ -3,7 +3,7 @@ import { stats } from '../data/mock';
 
 const Stats = () => {
   return (
-    <section className="py-16 bg-[#703493]">
+    <section className="py-16 bg-gradient-to-r from-[#703493] to-[#8b4aab]">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, index) => (

@@ -22,16 +22,15 @@ const Services = () => {
           {services.map((service) => (
             <div 
               key={service.id}
-              className="relative group overflow-hidden rounded-xl shadow-lg"
+              className="relative group overflow-hidden rounded-xl shadow-lg bg-white"
             >
               <div 
-                className="h-[400px] bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                className="h-[280px] bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                 style={{ backgroundImage: `url(${service.image})` }}
               ></div>
-              <div className="absolute inset-0 bg-gradient-to-t from-[#703493]/90 via-[#703493]/50 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 right-0 p-8">
-                <h3 className="text-white text-2xl font-bold mb-2">{service.title}</h3>
-                <p className="text-white/80 text-sm mb-4">{service.description}</p>
+              <div className="p-6">
+                <h3 className="text-[#703493] text-xl font-bold mb-2">{service.title}</h3>
+                <p className="text-gray-600 text-sm mb-4">{service.description}</p>
                 <Link 
                   to={service.link}
                   className="inline-flex items-center gap-2 text-[#D4B37A] font-semibold hover:gap-3 transition-all"
@@ -41,6 +40,12 @@ const Services = () => {
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="text-center mt-10">
+          <Link to="/services" className="inline-block bg-[#703493] text-white px-8 py-3 rounded-md font-semibold hover:bg-[#5a2a76] transition-colors">
+            View All Services
+          </Link>
         </div>
       </div>
     </section>

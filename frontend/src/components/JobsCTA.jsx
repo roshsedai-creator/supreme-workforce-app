@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 
 const JobsCTA = () => {
@@ -13,11 +14,13 @@ const JobsCTA = () => {
           Join a team that values excellence, integrity, and professional growth. 
           Discover exciting opportunities across Australia.
         </p>
-        <Button 
-          className="bg-[#D4B37A] text-[#703493] hover:bg-[#c9a86c] rounded-full px-10 py-6 text-base font-semibold"
-        >
-          Explore Opportunities
-        </Button>
+        <Link to="/careers">
+          <Button 
+            className="bg-[#D4B37A] text-[#703493] hover:bg-[#c9a86c] rounded-full px-10 py-6 text-base font-semibold"
+          >
+            Explore Opportunities
+          </Button>
+        </Link>
       </div>
     </section>
   );
