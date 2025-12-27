@@ -45,8 +45,8 @@ const Hero = () => {
           {/* Fallback to image if video doesn't load */}
         </video>
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#703493]/90 via-[#703493]/70 to-transparent"></div>
+        {/* Overlay - Subtle dark gradient to show video clearly */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent"></div>
         
         {/* Video Controls */}
         <div className="absolute bottom-6 right-6 flex gap-2 z-20">
