@@ -23,24 +23,43 @@ export const stats = [
 export const services = [
   {
     id: 1,
+    slug: "housekeeping",
     title: "Hotel & Resort Housekeeping",
     description: "Premium housekeeping solutions tailored for luxury hotels, boutique accommodations, and world-class resorts.",
+    fullDescription: "Our hotel and resort housekeeping services set the gold standard in the industry. We provide comprehensive room servicing, turndown services, and deep cleaning programs that ensure every guest enjoys an immaculate environment. Our trained professionals understand the nuances of luxury hospitality and deliver consistent excellence.",
     image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80",
+    features: ["Daily room servicing", "Turndown service", "Deep cleaning programs", "Linen management", "Quality assurance", "VIP room preparation"],
     link: "/services/housekeeping"
   },
   {
     id: 2,
+    slug: "commercial-cleaning",
     title: "Commercial Facility Cleaning",
     description: "Professional cleaning services for offices, retail spaces, and commercial buildings with meticulous attention to detail.",
+    fullDescription: "Transform your commercial spaces with our professional cleaning services. From corporate offices to retail environments, we deliver spotless results that create positive impressions. Our teams use industry-leading equipment and eco-friendly products to maintain pristine facilities.",
     image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+    features: ["Office cleaning", "Retail space maintenance", "Window cleaning", "Floor care", "Sanitization services", "After-hours cleaning"],
     link: "/services/commercial-cleaning"
   },
   {
     id: 3,
+    slug: "student-accommodation",
     title: "Educational & Student Living",
     description: "Specialised cleaning services for universities, colleges, and student residences ensuring pristine living environments.",
-    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&q=80",
+    fullDescription: "We understand the unique demands of educational institutions and student accommodation. Our services include regular cleaning schedules, move-in/move-out turnovers, and deep cleaning during semester breaks. We help create healthy, hygienic living and learning spaces for students.",
+    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&q=80",
+    features: ["Common area cleaning", "Room turnovers", "Move-in/move-out cleans", "Periodic deep cleans", "Waste management", "Study space maintenance"],
     link: "/services/student-accommodation"
+  },
+  {
+    id: 4,
+    slug: "kitchen-stewarding",
+    title: "Kitchen Stewarding Services",
+    description: "Professional kitchen stewarding and back-of-house cleaning for hotels, restaurants, and commercial kitchens.",
+    fullDescription: "Our kitchen stewarding services ensure your back-of-house operations run smoothly and meet the highest hygiene standards. From dishwashing to equipment cleaning, waste management to floor maintenance, our trained stewards keep your kitchen spotless and compliant with health regulations.",
+    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
+    features: ["Dishwashing & pot wash", "Equipment cleaning", "Floor & wall maintenance", "Waste management", "Hygiene compliance", "24/7 stewarding support"],
+    link: "/services/kitchen-stewarding"
   }
 ];
 
