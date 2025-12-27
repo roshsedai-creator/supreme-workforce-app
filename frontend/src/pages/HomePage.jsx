@@ -15,10 +15,12 @@ import JobsCTA from '../components/JobsCTA';
 import Footer from '../components/Footer';
 import Chatbot from '../components/Chatbot';
 import ScrollProgress from '../components/ScrollProgress';
+import PageLoader from '../components/PageLoader';
 
 const HomePage = () => {
   return (
     <div className="min-h-screen">
+      <PageLoader />
       <ScrollProgress />
       <Header />
       <main>
