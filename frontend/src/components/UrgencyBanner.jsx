@@ -26,9 +26,7 @@ const UrgencyBanner = () => {
   return (
     <section className="py-6 bg-gradient-to-r from-red-600 via-red-500 to-orange-500 relative overflow-hidden">
       {/* Animated background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\"20\" height=\"20\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cpath d=\"M0 0h20v20H0z\" fill=\"none\"/%3E%3Ccircle cx=\"10\" cy=\"10\" r=\"1\" fill=\"white\"/%3E%3C/svg%3E')] animate-pulse"></div>
-      </div>
+      <div className="absolute inset-0 opacity-10 bg-white/10"></div>
 
       <div className="container mx-auto px-4 relative">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
