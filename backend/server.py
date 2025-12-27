@@ -1,14 +1,17 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 
 ROOT_DIR = Path(__file__).parent
@@ -25,6 +28,8 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Company email
+COMPANY_EMAIL = "info@supremehospitality.com.au"
 
 # Define Models
 class StatusCheck(BaseModel):
@@ -36,6 +41,25 @@ class StatusCheck(BaseModel):
 
 class StatusCheckCreate(BaseModel):
     client_name: str
+
+# Contact Form Model
+class ContactForm(BaseModel):
+    name: str
+    email: EmailStr
+    phone: Optional[str] = None
+    company: Optional[str] = None
+    message: str
+
+# Quote Form Model
+class QuoteForm(BaseModel):
+    businessName: str
+    contactName: str
+    email: EmailStr
+    phone: str
+    industry: str
+    numberOfRooms: Optional[str] = None
+    servicesRequired: List[str] = []
+    additionalInfo: Optional[str] = None
 
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
@@ -65,6 +89,73 @@ async def get_status_checks():
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
     
     return status_checks
+
+@api_router.post("/contact")
+async def submit_contact_form(form: ContactForm):
+    """Handle contact form submission and store in database"""
+    try:
+        # Store in database
+        contact_doc = {
+            "id": str(uuid.uuid4()),
+            "name": form.name,
+            "email": form.email,
+            "phone": form.phone,
+            "company": form.company,
+            "message": form.message,
+            "type": "contact",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "new"
+        }
+        await db.enquiries.insert_one(contact_doc)
+        
+        logger.info(f"Contact form submitted by {form.name} ({form.email})")
+        
+        return {
+            "success": True,
+            "message": "Thank you for your enquiry. Our team will contact you shortly.",
+            "reference": contact_doc["id"]
+        }
+    except Exception as e:
+        logger.error(f"Error processing contact form: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit enquiry. Please try again.")
+
+@api_router.post("/quote")
+async def submit_quote_form(form: QuoteForm):
+    """Handle quote request submission and store in database"""
+    try:
+        # Store in database
+        quote_doc = {
+            "id": str(uuid.uuid4()),
+            "businessName": form.businessName,
+            "contactName": form.contactName,
+            "email": form.email,
+            "phone": form.phone,
+            "industry": form.industry,
+            "numberOfRooms": form.numberOfRooms,
+            "servicesRequired": form.servicesRequired,
+            "additionalInfo": form.additionalInfo,
+            "type": "quote",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "status": "new"
+        }
+        await db.enquiries.insert_one(quote_doc)
+        
+        logger.info(f"Quote request submitted by {form.contactName} from {form.businessName}")
+        
+        return {
+            "success": True,
+            "message": "Thank you for your quote request. Our team will review your requirements and contact you within 24-48 hours.",
+            "reference": quote_doc["id"]
+        }
+    except Exception as e:
+        logger.error(f"Error processing quote form: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit quote request. Please try again.")
+
+@api_router.get("/enquiries")
+async def get_enquiries():
+    """Get all enquiries (for admin purposes)"""
+    enquiries = await db.enquiries.find({}, {"_id": 0}).to_list(1000)
+    return enquiries
 
 # Include the router in the main app
 app.include_router(api_router)
