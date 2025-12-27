@@ -18,8 +18,26 @@ const ContactPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    alert('Thank you for your enquiry! Our team will be in touch shortly.');
-    setFormData({ name: '', email: '', phone: '', company: '', message: '' });
+    
+    // Create email content
+    const subject = encodeURIComponent(`Website Enquiry from ${formData.name}`);
+    const body = encodeURIComponent(
+`New enquiry from Supreme Hospitality Services website:
+
+Name: ${formData.name}
+Email: ${formData.email}
+Phone: ${formData.phone || 'Not provided'}
+Company: ${formData.company || 'Not provided'}
+
+Message:
+${formData.message}
+
+---
+This enquiry was submitted via the Contact Us form on the website.`
+    );
+    
+    // Open email client
+    window.location.href = `mailto:${companyInfo.email}?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -101,6 +119,9 @@ const ContactPage = () => {
                 <Button type="submit" className="bg-[#703493] text-white hover:bg-[#5a2a76] rounded-md px-8 py-5 w-full">
                   Send Message
                 </Button>
+                <p className="text-gray-500 text-sm text-center">
+                  Clicking send will open your email client to send this enquiry.
+                </p>
               </form>
             </div>
 
