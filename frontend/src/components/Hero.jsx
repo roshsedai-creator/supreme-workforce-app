@@ -41,7 +41,7 @@ const Hero = () => {
           className="absolute inset-0 w-full h-full object-cover"
           poster={heroImages.main}
         >
-          <source src="https://player.vimeo.com/external/370467553.sd.mp4?s=96de8b923370e2d9726e9c8a8c3c4e3b05be5e54&profile_id=164&oauth2_token_id=57447761" type="video/mp4" />
+          <source src={heroVideos.bedMaking} type="video/mp4" />
           {/* Fallback to image if video doesn't load */}
         </video>
         
