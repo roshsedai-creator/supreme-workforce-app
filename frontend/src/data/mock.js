@@ -27,7 +27,7 @@ export const services = [
     title: "Hotel & Resort Housekeeping",
     description: "Premium housekeeping solutions tailored for luxury hotels, boutique accommodations, and world-class resorts.",
     fullDescription: "Our hotel and resort housekeeping services set the gold standard in the industry. We provide comprehensive room servicing, turndown services, and deep cleaning programs that ensure every guest enjoys an immaculate environment. Our trained professionals understand the nuances of luxury hospitality and deliver consistent excellence.",
-    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=80",
     features: ["Daily room servicing", "Turndown service", "Deep cleaning programs", "Linen management", "Quality assurance", "VIP room preparation"],
     link: "/services/housekeeping"
   },
