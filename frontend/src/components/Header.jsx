@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, ChevronDown, Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -6,13 +6,22 @@ import { companyInfo, navLinks } from '../data/mock';
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50">
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'shadow-lg' : ''}`}>
       {/* Top Bar */}
       <div className="bg-primary py-3">
         <div className="container mx-auto px-4 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+          <div className="hidden md:flex items-center gap-6">
             <a 
               href={`mailto:${companyInfo.email}`} 
               className="flex items-center gap-2 text-white text-sm hover:opacity-80 transition-opacity"
@@ -28,7 +37,7 @@ const Header = () => {
               {companyInfo.phone}
             </a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 ml-auto">
             <Button 
               variant="outline" 
               className="bg-white text-primary border-white hover:bg-white/90 rounded-full px-6 h-9 text-sm font-medium"
@@ -46,13 +55,13 @@ const Header = () => {
       </div>
 
       {/* Main Navigation */}
-      <div className="bg-primary py-4">
+      <div className="bg-primary py-4 border-t border-white/10">
         <div className="container mx-auto px-4 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex flex-col items-center">
+          <Link to="/" className="flex flex-col items-center group">
             <div className="flex items-end">
               <span className="text-white text-5xl font-light tracking-wider">shs</span>
-              <div className="w-3 h-3 bg-white rounded-full mb-8 ml-1"></div>
+              <div className="w-3 h-3 bg-white rounded-full mb-8 ml-1 group-hover:scale-110 transition-transform"></div>
             </div>
             <span className="text-white/90 text-xs tracking-widest mt-[-4px]">{companyInfo.tagline}</span>
           </Link>
