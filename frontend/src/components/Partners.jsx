@@ -6,7 +6,7 @@ const Partners = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setScrollPosition((prev) => (prev + 1) % (partners.length * 150));
+      setScrollPosition((prev) => (prev + 1) % (partners.length * 180));
     }, 50);
     return () => clearInterval(interval);
   }, []);
@@ -17,9 +17,12 @@ const Partners = () => {
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <h2 className="text-primary text-3xl md:text-4xl font-semibold text-center mb-12">
-          Our Partners
+        <h2 className="text-[#703493] text-3xl md:text-4xl font-bold text-center mb-4">
+          Trusted By Industry Leaders
         </h2>
+        <p className="text-gray-600 text-center mb-12 max-w-2xl mx-auto">
+          We're proud to partner with some of Australia's most prestigious hospitality brands.
+        </p>
         
         {/* Scrolling Partners */}
         <div className="overflow-hidden">
@@ -30,9 +33,9 @@ const Partners = () => {
             {displayPartners.map((partner, index) => (
               <div 
                 key={`${partner.id}-${index}`}
-                className="flex-shrink-0 w-[150px] h-[80px] bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors"
+                className="flex-shrink-0 w-[160px] h-[80px] bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center hover:border-[#703493] hover:shadow-md transition-all"
               >
-                <span className="text-gray-500 font-medium text-sm text-center px-2">
+                <span className="text-gray-600 font-medium text-sm text-center px-2">
                   {partner.name}
                 </span>
               </div>
@@ -46,7 +49,7 @@ const Partners = () => {
             <button
               key={index}
               className={`w-2 h-2 rounded-full transition-colors ${
-                index === 0 ? 'bg-primary' : 'bg-gray-300'
+                index === 0 ? 'bg-[#703493]' : 'bg-gray-300'
               }`}
             />
           ))}
