@@ -13,7 +13,7 @@ import PremiumCTA from '../components/PremiumCTA';
 import Blog from '../components/Blog';
 import JobsCTA from '../components/JobsCTA';
 import Footer from '../components/Footer';
-import FloatingContact from '../components/FloatingContact';
+import Chatbot from '../components/Chatbot';
 
 const HomePage = () => {
   return (
@@ -34,7 +34,7 @@ const HomePage = () => {
         <JobsCTA />
       </main>
       <Footer />
-      <FloatingContact />
+      <Chatbot />
     </div>
   );
 };
