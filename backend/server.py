@@ -159,7 +159,7 @@ async def submit_contact_form(form: ContactForm):
 
 @api_router.post("/quote")
 async def submit_quote_form(form: QuoteForm):
-    """Handle quote request submission and store in database"""
+    """Handle quote request submission, store in database and send email"""
     try:
         # Store in database
         quote_doc = {
@@ -177,6 +177,48 @@ async def submit_quote_form(form: QuoteForm):
             "status": "new"
         }
         await db.enquiries.insert_one(quote_doc)
+        
+        # Send email notification via Resend
+        if resend.api_key:
+            services_list = ', '.join(form.servicesRequired) if form.servicesRequired else 'Not specified'
+            
+            html_content = f"""
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #703493;">New Quote Request</h2>
+                <hr style="border: 1px solid #D4B37A;">
+                <h3 style="color: #703493;">Business Details</h3>
+                <p><strong>Business Name:</strong> {form.businessName}</p>
+                <p><strong>Contact Name:</strong> {form.contactName}</p>
+                <p><strong>Email:</strong> {form.email}</p>
+                <p><strong>Phone:</strong> {form.phone}</p>
+                <p><strong>Industry:</strong> {form.industry}</p>
+                <p><strong>Number of Rooms:</strong> {form.numberOfRooms or 'Not specified'}</p>
+                <h3 style="color: #703493;">Services Required</h3>
+                <p style="background: #f5f5f5; padding: 15px; border-radius: 5px;">{services_list}</p>
+                <h3 style="color: #703493;">Additional Information</h3>
+                <p style="background: #f5f5f5; padding: 15px; border-radius: 5px;">{form.additionalInfo or 'None provided'}</p>
+                <hr style="border: 1px solid #D4B37A;">
+                <p style="color: #666; font-size: 12px;">This quote request was sent from the Supreme Hospitality Services website.</p>
+            </div>
+            """
+            
+            params = {
+                "from": SENDER_EMAIL,
+                "to": [COMPANY_EMAIL],
+                "subject": f"New Quote Request from {form.businessName}",
+                "html": html_content,
+                "reply_to": form.email
+            }
+            
+            try:
+                # Run sync SDK in thread to keep FastAPI non-blocking
+                await asyncio.to_thread(resend.Emails.send, params)
+                logger.info(f"Email sent successfully for quote request from {form.businessName}")
+            except Exception as email_error:
+                logger.error(f"Failed to send email: {str(email_error)}")
+                # Don't fail the request if email fails - data is still stored
+        else:
+            logger.warning("RESEND_API_KEY not configured - email not sent")
         
         logger.info(f"Quote request submitted by {form.contactName} from {form.businessName}")
         
