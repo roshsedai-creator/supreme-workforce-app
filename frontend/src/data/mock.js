@@ -154,8 +154,8 @@ export const heroVideos = {
   bedMaking: "https://videos.pexels.com/video-files/6466563/6466563-uhd_2732_1440_25fps.mp4",
   // Public area cleaning/vacuuming
   publicAreaCleaning: "https://videos.pexels.com/video-files/4109339/4109339-uhd_2732_1440_25fps.mp4",
-  // Hotel lobby/reception for business section
-  hotelLobby: "https://videos.pexels.com/video-files/5379003/5379003-uhd_2732_1440_25fps.mp4",
+  // Housekeeping - placing towels on bed
+  housekeepingTowels: "https://videos.pexels.com/video-files/6466246/6466246-uhd_2732_1440_25fps.mp4",
   // Team working together
   teamWork: "https://videos.pexels.com/video-files/6197078/6197078-uhd_2560_1440_25fps.mp4"
 };
