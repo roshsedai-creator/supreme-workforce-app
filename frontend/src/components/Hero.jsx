@@ -101,13 +101,20 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* Two Column CTA */}
+      {/* Two Column CTA with Videos */}
       <div className="grid md:grid-cols-2">
-        {/* Job Seeker */}
-        <div 
-          className="relative h-[350px] bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImages.jobSeeker})` }}
-        >
+        {/* Job Seeker - Public Area Cleaning Video */}
+        <div className="relative h-[350px] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            poster={heroImages.jobSeeker}
+          >
+            <source src={heroVideos.publicAreaCleaning} type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-gradient-to-t from-[#703493] via-[#703493]/80 to-[#703493]/60"></div>
           <div className="relative h-full flex flex-col items-center justify-center text-center p-8">
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">Career Opportunities</p>
@@ -123,11 +130,18 @@ const Hero = () => {
           </div>
         </div>
 
-        {/* Engage Services */}
-        <div 
-          className="relative h-[350px] bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImages.engageServices})` }}
-        >
+        {/* Engage Services - Bed Making Video */}
+        <div className="relative h-[350px] overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            poster={heroImages.engageServices}
+          >
+            <source src={heroVideos.bedMaking} type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/50"></div>
           <div className="relative h-full flex flex-col items-center justify-center text-center p-8">
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">For Businesses</p>
