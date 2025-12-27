@@ -95,11 +95,11 @@ const ServicesPage = () => {
           </div>
           <div className="grid md:grid-cols-4 gap-6">
             <div className="text-center p-6">
-              <div className="text-[#D4B37A] text-4xl font-bold mb-2">4000+</div>
+              <div className="text-[#D4B37A] text-4xl font-bold mb-2">500+</div>
               <p className="text-gray-600">Trained Professionals</p>
             </div>
             <div className="text-center p-6">
-              <div className="text-[#D4B37A] text-4xl font-bold mb-2">150+</div>
+              <div className="text-[#D4B37A] text-4xl font-bold mb-2">20+</div>
               <p className="text-gray-600">Satisfied Clients</p>
             </div>
             <div className="text-center p-6">
