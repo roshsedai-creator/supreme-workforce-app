@@ -49,7 +49,7 @@ const AboutPage = () => {
                 <img 
                   src={companyInfo.mdPhoto}
                   alt="Managing Director"
-                  className="w-[350px] h-[400px] object-cover rounded-xl shadow-2xl"
+                  className="w-[350px] h-[450px] object-contain rounded-xl shadow-2xl bg-gray-100"
                 />
                 <div className="absolute -bottom-4 -right-4 bg-[#D4B37A] text-[#703493] px-6 py-3 rounded-lg shadow-lg">
                   <p className="font-bold">Founder & Managing Director</p>
