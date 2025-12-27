@@ -66,7 +66,7 @@ const AboutPage = () => {
                 Drawing from years of experience in the hospitality sector, he recognised the need for a service provider that could deliver consistent, high-quality outcomes while treating team members as valued partners rather than just employees. This people-first approach has been instrumental in Supreme's rapid growth and success.
               </p>
               <p className="text-gray-600 mb-6">
-                Under his leadership, Supreme has grown from a local Melbourne operation to a nationwide presence with over 4,000 dedicated professionals serving some of Australia's most prestigious hospitality brands including Accor Group, Novotel, Ibis, Causeway Group, and Quest Apartments.
+                Under his leadership, Supreme has grown from a local Melbourne operation to a nationwide presence with over 500 dedicated professionals serving some of Australia's most prestigious hospitality brands including Accor, Novotel, Ibis, Causeway Group, and Quest Apartments.
               </p>
               <blockquote className="border-l-4 border-[#D4B37A] pl-4 italic text-gray-700">
                 "Our success is built on the foundation of our people. When you invest in your team, they invest in delivering exceptional service to your clients."
