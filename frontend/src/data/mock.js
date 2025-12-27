@@ -57,8 +57,9 @@ export const partners = [
   { id: 1, name: "Accor", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/liuqqbks_image.png" },
   { id: 2, name: "Novotel", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/2xxjkyhc_image.png" },
   { id: 3, name: "Quest Apartments", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/x86auu2t_image.png" },
-  { id: 4, name: "Ibis", logo: null },
-  { id: 5, name: "Causeway Group", logo: null }
+  { id: 4, name: "Ibis Hotels", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/53a84tj1_image.png" },
+  { id: 5, name: "Causeway 353 Hotel", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/3rsvd1un_image.png" },
+  { id: 6, name: "The Howey", logo: "https://customer-assets.emergentagent.com/job_ba775ead-be77-4cb2-bcbe-0984c2521f98/artifacts/zhnv17p0_image.png" }
 ];
 
 export const testimonials = [
