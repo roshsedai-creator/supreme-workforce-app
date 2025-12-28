@@ -28,21 +28,21 @@ const LeadershipTeam = () => {
       description: "Cultivates our people-first culture and ensures every team member thrives in the Supreme family."
     },
     {
-      name: "Michael Chen",
+      name: "David Mitchell",
       role: "Training Manager",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face&auto=format&q=80",
       description: "Develops comprehensive training programs that set industry standards for hospitality excellence."
     },
     {
       name: "Sarah Thompson",
       role: "Business Development Manager",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face",
+      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face&auto=format&q=80",
       description: "Drives strategic partnerships and expands Supreme's presence across Australia's hospitality sector."
     }
   ];
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -56,42 +56,64 @@ const LeadershipTeam = () => {
         </div>
 
         {/* Team Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
           {teamMembers.map((member, index) => (
             <div 
               key={index} 
-              className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
+              className="group bg-white rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-gray-100"
             >
-              {/* Image Container */}
-              <div className="relative h-72 overflow-hidden">
-                <img 
-                  src={member.image} 
-                  alt={member.name}
-                  className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                />
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#703493]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              {/* Image Container - Premium Styling */}
+              <div className="relative h-80 overflow-hidden bg-gradient-to-br from-[#703493]/10 to-[#D4B37A]/10">
+                {/* Decorative Background Pattern */}
+                <div className="absolute inset-0 opacity-5">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#703493] rounded-full -translate-y-1/2 translate-x-1/2"></div>
+                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-[#D4B37A] rounded-full translate-y-1/2 -translate-x-1/2"></div>
+                </div>
                 
+                {/* Profile Image with Premium Frame */}
+                <div className="absolute inset-0 flex items-center justify-center p-6">
+                  <div className="relative">
+                    {/* Outer Glow Ring */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#703493] to-[#D4B37A] rounded-full blur-md opacity-30 group-hover:opacity-50 transition-opacity duration-500 scale-105"></div>
+                    
+                    {/* Image Frame */}
+                    <div className="relative w-56 h-56 rounded-full p-1 bg-gradient-to-br from-[#703493] to-[#D4B37A] shadow-2xl group-hover:scale-105 transition-transform duration-500">
+                      <div className="w-full h-full rounded-full overflow-hidden bg-white p-1">
+                        <img 
+                          src={member.image} 
+                          alt={member.name}
+                          className="w-full h-full object-cover object-top rounded-full"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Role Badge */}
+                    <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#703493] to-[#8a4aad] text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap">
+                      {member.role.split(' ')[0]}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Social Icons on Hover */}
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-4 group-hover:translate-y-0">
-                  <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-[#703493] hover:bg-[#D4B37A] hover:text-white transition-colors">
-                    <Linkedin className="w-5 h-5" />
+                <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                  <button className="w-9 h-9 bg-white/95 rounded-full flex items-center justify-center text-[#703493] hover:bg-[#703493] hover:text-white transition-colors shadow-lg">
+                    <Linkedin className="w-4 h-4" />
                   </button>
-                  <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-[#703493] hover:bg-[#D4B37A] hover:text-white transition-colors">
-                    <Mail className="w-5 h-5" />
+                  <button className="w-9 h-9 bg-white/95 rounded-full flex items-center justify-center text-[#703493] hover:bg-[#703493] hover:text-white transition-colors shadow-lg">
+                    <Mail className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="p-6 text-center">
+              <div className="p-6 text-center bg-white">
                 <h3 className="text-[#703493] text-xl font-bold mb-1">{member.name}</h3>
                 <p className="text-[#D4B37A] font-semibold text-sm uppercase tracking-wider mb-3">{member.role}</p>
                 <p className="text-gray-600 text-sm leading-relaxed">{member.description}</p>
               </div>
 
               {/* Bottom Accent Line */}
-              <div className="h-1 bg-gradient-to-r from-[#703493] to-[#D4B37A] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+              <div className="h-1.5 bg-gradient-to-r from-[#703493] via-[#D4B37A] to-[#703493] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-center" />
             </div>
           ))}
         </div>
