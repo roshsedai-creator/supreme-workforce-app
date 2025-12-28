@@ -36,7 +36,7 @@ const LeadershipTeam = () => {
     {
       name: "Sarah Thompson",
       role: "Business Development Manager",
-      image: "https://api.dicebear.com/7.x/personas/svg?seed=SarahBD&backgroundColor=b6e3f4&radius=50",
+      image: "https://randomuser.me/api/portraits/women/68.jpg",
       description: "Drives strategic partnerships and expands Supreme's presence across Australia's hospitality sector."
     }
   ];
