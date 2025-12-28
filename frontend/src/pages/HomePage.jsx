@@ -1,7 +1,6 @@
 import React from 'react';
 import Header from '../components/Header';
 import Hero from '../components/Hero';
-import UrgencyBanner from '../components/UrgencyBanner';
 import Certifications from '../components/Certifications';
 import About from '../components/About';
 import Services from '../components/Services';
@@ -20,7 +19,6 @@ import Footer from '../components/Footer';
 import Chatbot from '../components/Chatbot';
 import ScrollProgress from '../components/ScrollProgress';
 import PageLoader from '../components/PageLoader';
-import StickyCTA from '../components/StickyCTA';
 import SocialProof from '../components/SocialProof';
 
 const HomePage = () => {
@@ -31,7 +29,6 @@ const HomePage = () => {
       <Header />
       <main>
         <Hero />
-        <UrgencyBanner />
         <Certifications />
         <About />
         <Services />
