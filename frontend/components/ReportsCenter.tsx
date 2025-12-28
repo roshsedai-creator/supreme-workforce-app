@@ -22,7 +22,7 @@ interface ReportsCenterProps {
   onClose: () => void;
 }
 
-type ReportType = 'payroll' | 'roster' | 'availability' | 'timesheets' | 'abn';
+type ReportType = 'payroll' | 'timesheets' | 'abn';
 
 export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) {
   const [selectedReport, setSelectedReport] = useState<ReportType>('payroll');
