@@ -19,6 +19,30 @@ import { colors } from '../../constants/colors';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
+// Helper function to format time input (1200 → 12:00, 900 → 09:00)
+const formatTimeInput = (value: string): string => {
+  // Remove any non-numeric characters except colon
+  const cleaned = value.replace(/[^0-9:]/g, '');
+  
+  // If already has colon, just return cleaned
+  if (cleaned.includes(':')) {
+    return cleaned.substring(0, 5);
+  }
+  
+  // Auto-format based on length
+  if (cleaned.length === 0) return '';
+  if (cleaned.length <= 2) return cleaned;
+  if (cleaned.length === 3) {
+    // 900 → 09:00, 130 → 01:30
+    return `0${cleaned[0]}:${cleaned.substring(1)}`;
+  }
+  if (cleaned.length >= 4) {
+    // 1200 → 12:00, 1300 → 13:00
+    return `${cleaned.substring(0, 2)}:${cleaned.substring(2, 4)}`;
+  }
+  return cleaned;
+};
+
 interface ExistingEntry {
   id: string;
   date: string;
