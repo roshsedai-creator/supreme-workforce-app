@@ -217,15 +217,6 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
     };
   };
 
-  const calculateRosterSummary = (data: any[]) => {
-    return {
-      total_shifts: data.length,
-      scheduled: data.filter((s) => s.status === 'scheduled').length,
-      completed: data.filter((s) => s.status === 'completed').length,
-      unique_employees: [...new Set(data.map((s) => s.employee_id))].length,
-    };
-  };
-
   const calculateTimesheetSummary = (data: any[]) => {
     return {
       total_entries: data.length,
@@ -519,27 +510,6 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                               <Text style={styles.recordDetail}>Hours: {record.total_hours || 0}</Text>
                               <Text style={styles.recordDetail}>Pay: ${record.total_pay || 0}</Text>
                               <Text style={styles.recordDetail}>Date: {new Date(record.clock_in || record.created_at).toLocaleDateString()}</Text>
-                            </>
-                          )}
-                          {selectedReport === 'roster' && (
-                            <>
-                              <Text style={styles.recordTitle}>{record.employee_name}</Text>
-                              <Text style={styles.recordDetail}>Site: {record.site_name}</Text>
-                              <Text style={styles.recordDetail}>Role: {record.role}</Text>
-                              <Text style={styles.recordDetail}>
-                                {new Date(record.start_time).toLocaleString()} - {new Date(record.end_time).toLocaleTimeString()}
-                              </Text>
-                              <Text style={[styles.recordDetail, { color: colors.success }]}>
-                                Status: {record.status}
-                              </Text>
-                            </>
-                          )}
-                          {selectedReport === 'availability' && (
-                            <>
-                              <Text style={styles.recordTitle}>{record.first_name} {record.last_name}</Text>
-                              <Text style={styles.recordDetail}>Job: {record.job_title}</Text>
-                              <Text style={styles.recordDetail}>Phone: {record.phone}</Text>
-                              <Text style={styles.recordDetail}>Email: {record.email || 'N/A'}</Text>
                             </>
                           )}
                           {selectedReport === 'timesheets' && (
