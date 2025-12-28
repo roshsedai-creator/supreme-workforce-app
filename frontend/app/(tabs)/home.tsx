@@ -481,9 +481,10 @@ export default function HomeScreen() {
                     <TextInput
                       style={styles.input}
                       value={dailyStartTime}
-                      onChangeText={setDailyStartTime}
-                      placeholder="09:00"
+                      onChangeText={(val) => setDailyStartTime(formatTimeInput(val))}
+                      placeholder="0900 or 09:00"
                       placeholderTextColor={colors.gray[400]}
+                      keyboardType="numeric"
                     />
                   </View>
                   <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
@@ -491,9 +492,10 @@ export default function HomeScreen() {
                     <TextInput
                       style={styles.input}
                       value={dailyEndTime}
-                      onChangeText={setDailyEndTime}
-                      placeholder="17:00"
+                      onChangeText={(val) => setDailyEndTime(formatTimeInput(val))}
+                      placeholder="1700 or 17:00"
                       placeholderTextColor={colors.gray[400]}
+                      keyboardType="numeric"
                     />
                   </View>
                 </View>
