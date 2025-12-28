@@ -114,59 +114,6 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
           }
           break;
 
-        case 'roster':
-          reportTitle = 'Roster Schedule';
-          try {
-            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/roster/shifts`, { 
-              params: {
-                ...params,
-                start_date: startDate.toISOString(),
-                end_date: endDate.toISOString(),
-              }
-            });
-            summary = calculateRosterSummary(response.data);
-            setReportData({
-              title: reportTitle,
-              data: response.data,
-              summary: summary,
-            });
-          } catch (error) {
-            console.error('Roster API error:', error);
-            Alert.alert('Note', 'No roster shifts found for this period');
-            setReportData({
-              title: reportTitle,
-              data: [],
-              summary: { total_shifts: 0, scheduled: 0, completed: 0, unique_employees: 0 },
-            });
-          }
-          break;
-
-        case 'availability':
-          reportTitle = 'Availability Report';
-          try {
-            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users?role=employee`);
-            const employees = response.data;
-            
-            // Filter by site if needed
-            const filteredEmployees = selectedSite !== 'all' 
-              ? employees.filter((e: any) => e.site_id === selectedSite)
-              : employees;
-            
-            setReportData({
-              title: reportTitle,
-              data: filteredEmployees,
-              summary: { 
-                total_employees: filteredEmployees.length,
-                with_availability: filteredEmployees.length,
-                sites: [...new Set(filteredEmployees.map((e: any) => e.site_id))].length
-              },
-            });
-          } catch (error) {
-            console.error('Availability API error:', error);
-            Alert.alert('Error', 'Failed to load availability data');
-          }
-          break;
-
         case 'timesheets':
           reportTitle = 'Timesheet Summary';
           try {
