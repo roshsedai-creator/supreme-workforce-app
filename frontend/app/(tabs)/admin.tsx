@@ -153,10 +153,9 @@ export default function AdminScreen() {
     if (type === 'rejected') {
       confirmMessage = 'Delete ALL rejected timesheets? This cannot be undone.';
       endpoint = '/api/timesheets/bulk-delete?status=rejected';
-    } else if (type === 'out_of_bounds') {
-      confirmMessage = 'Delete ALL out-of-bounds timesheets? This cannot be undone.';
-      endpoint = '/api/timesheets/bulk-delete-out-of-bounds';
     }
+    
+    if (!endpoint) return;
     
     Alert.alert(
       'Confirm Delete',
