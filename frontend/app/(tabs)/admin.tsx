@@ -100,13 +100,17 @@ export default function AdminScreen() {
     manage_permissions: false,
   });
 
-  // Security check - only admins can access
+  // Security check - admins and managers can access
+  const userRole = user?.role?.toLowerCase() || '';
+  const hasAdminAccess = userRole === 'admin' || userRole === 'manager' || 
+    user?.permissions?.manage_users === true || user?.permissions?.manage_sites === true;
+
   useEffect(() => {
-    if (user?.role !== 'admin') {
+    if (!hasAdminAccess) {
       Alert.alert('Access Denied', 'You do not have permission to access this page');
       router.replace('/home');
     }
-  }, [user]);
+  }, [user, hasAdminAccess]);
 
   // Define fetchData BEFORE using it in useEffect
   const fetchData = useCallback(async () => {
