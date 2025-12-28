@@ -466,9 +466,11 @@ export default function HomeScreen() {
                       style={styles.timeInput}
                       value={dailyStartTime}
                       onChangeText={(val) => setDailyStartTime(formatTimeInput(val))}
-                      placeholder="09:00"
+                      onBlur={() => setDailyStartTime(completeTime(dailyStartTime))}
+                      placeholder="0900"
                       keyboardType="numeric"
                       placeholderTextColor="#9ca3af"
+                      maxLength={5}
                     />
                   </View>
                   <View style={styles.timeGroup}>
@@ -477,9 +479,11 @@ export default function HomeScreen() {
                       style={styles.timeInput}
                       value={dailyEndTime}
                       onChangeText={(val) => setDailyEndTime(formatTimeInput(val))}
-                      placeholder="17:00"
+                      onBlur={() => setDailyEndTime(completeTime(dailyEndTime))}
+                      placeholder="1700"
                       keyboardType="numeric"
                       placeholderTextColor="#9ca3af"
+                      maxLength={5}
                     />
                   </View>
                   <View style={styles.breakGroup}>
