@@ -14,8 +14,7 @@ export default function TabsLayout() {
   
   // Check permissions ONLY - no role fallbacks
   const permissions = user?.permissions || {};
-  const canViewRoster = permissions.view_roster === true || permissions.manage_roster === true;
-  const canAccessSupervisor = permissions.view_all_timesheets === true || permissions.edit_timesheets === true || permissions.approve_timesheets === true || permissions.manage_roster === true;
+  const canAccessSupervisor = permissions.view_all_timesheets === true || permissions.edit_timesheets === true || permissions.approve_timesheets === true;
   const canAccessAdmin = permissions.manage_users === true || permissions.manage_sites === true;
 
   useEffect(() => {
@@ -39,8 +38,8 @@ export default function TabsLayout() {
           backgroundColor: colors.white,
           borderTopWidth: 1,
           borderTopColor: colors.gray[200],
-          height: 70 + insets.bottom, // Add safe area bottom
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 12, // Use safe area or default
+          height: 70 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
           paddingTop: 8,
         },
         headerStyle: {
@@ -52,12 +51,11 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="leave"
-        options={{
-          href: null, // Hide from tabs
-        }}
-      />
+      {/* Hidden screens */}
+      <Tabs.Screen name="leave" options={{ href: null }} />
+      <Tabs.Screen name="roster" options={{ href: null }} />
+      <Tabs.Screen name="payroll" options={{ href: null }} />
+      
       <Tabs.Screen
         name="home"
         options={{
@@ -76,23 +74,13 @@ export default function TabsLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="roster"
-        options={{
-          title: 'Roster',
-          href: canViewRoster ? undefined : null, // Hide if no permission
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
-        }}
-      />
       {canAccessSupervisor && (
         <Tabs.Screen
           name="supervisor"
           options={{
-            title: 'Supervisor',
+            title: 'Approve',
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="clipboard" size={size} color={color} />
+              <Ionicons name="checkmark-circle" size={size} color={color} />
             ),
           }}
         />
@@ -104,17 +92,6 @@ export default function TabsLayout() {
             title: 'Admin',
             tabBarIcon: ({ color, size}) => (
               <Ionicons name="settings" size={size} color={color} />
-            ),
-          }}
-        />
-      )}
-      {canAccessAdmin && (
-        <Tabs.Screen
-          name="payroll"
-          options={{
-            title: 'Pay',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="cash" size={size} color={color} />
             ),
           }}
         />
