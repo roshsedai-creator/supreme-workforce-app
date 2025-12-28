@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { heroImages, heroVideos } from '../data/mock';
-import { Play, Volume2, VolumeX, ArrowRight, Sparkles } from 'lucide-react';
+import { Play, Volume2, VolumeX, ArrowRight, Sparkles, ChevronRight, Phone } from 'lucide-react';
 
 const Hero = () => {
   const [isPlaying, setIsPlaying] = useState(true);
@@ -80,20 +80,21 @@ const Hero = () => {
               Delivering exceptional housekeeping and facility management services that transform guest experiences across Australia's finest properties.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/services">
-                <Button 
-                  className="bg-[#D4B37A] hover:bg-[#c9a86c] text-[#703493] rounded-md px-8 py-6 text-base font-semibold w-full sm:w-auto"
-                >
-                  Explore Our Services
-                </Button>
+              {/* Premium Primary Button */}
+              <Link to="/services" className="group">
+                <button className="premium-btn premium-btn-primary flex items-center justify-center gap-3 text-[#703493] rounded-full px-8 py-4 text-base font-bold w-full sm:w-auto">
+                  <Sparkles className="w-5 h-5 btn-sparkle" />
+                  <span>Explore Our Services</span>
+                  <ArrowRight className="w-5 h-5 btn-arrow" />
+                </button>
               </Link>
-              <Link to="/contact">
-                <Button 
-                  variant="outline"
-                  className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-[#703493] rounded-md px-8 py-6 text-base font-semibold w-full sm:w-auto"
-                >
-                  Get in Touch
-                </Button>
+              {/* Premium Outline Button */}
+              <Link to="/contact" className="group">
+                <button className="premium-btn premium-btn-outline flex items-center justify-center gap-3 text-white hover:text-[#703493] rounded-full px-8 py-4 text-base font-bold w-full sm:w-auto">
+                  <Phone className="w-5 h-5" />
+                  <span>Get in Touch</span>
+                  <ChevronRight className="w-5 h-5 btn-arrow" />
+                </button>
               </Link>
             </div>
           </div>
