@@ -21,7 +21,8 @@ const AboutPage = () => {
     { year: "2021", title: "Growing Together", description: "Expanded to Sydney and Brisbane, welcoming 200+ new team members into the Supreme family." },
     { year: "2022", title: "Building Trust", description: "Partnered with Accor Hotels and Quest Apartments, proving that quality service opens doors." },
     { year: "2023", title: "Investing in Our People", description: "Launched our comprehensive training academy, ensuring every team member has the skills to excel." },
-    { year: "2024", title: "Leading the Industry", description: "Now 500+ strong, serving 20+ prestigious clients and delivering 700+ service hours—and we're just getting started." }
+    { year: "2024", title: "Leading the Industry", description: "Reached 500+ team members strong, serving 20+ prestigious clients across Australia." },
+    { year: "2025", title: "Expanding Excellence", description: "Delivering 700+ service hours, pioneering sustainable practices, and setting new benchmarks in hospitality service excellence." }
   ];
 
   const stats = [
