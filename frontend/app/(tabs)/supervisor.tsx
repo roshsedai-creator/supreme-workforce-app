@@ -1,341 +1,225 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
+  ScrollView,
   Modal,
   TextInput,
   Alert,
-  ScrollView,
   Image,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../store/authStore';
-import axios from 'axios';
-import { getSupervisorDashboard, approveTimesheet, updateTimesheet, deleteTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
-import { format } from 'date-fns';
-import SignaturePad, { SignaturePadRef } from '../../components/SignaturePad';
+import axios from 'axios';
+
+interface Employee {
+  id: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  job_title?: string;
+}
+
+interface Timesheet {
+  id: string;
+  employee_id: string;
+  employee_name?: string;
+  date: string;
+  clock_in: string;
+  clock_out: string;
+  total_hours: number;
+  break_minutes: number;
+  notes: string;
+  image?: string;
+  approval_status: 'pending' | 'approved' | 'rejected';
+}
 
 export default function SupervisorScreen() {
   const { user } = useAuthStore();
-  const [dashboard, setDashboard] = useState<any>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [showActiveModal, setShowActiveModal] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
-  const [showSignature, setShowSignature] = useState(false);
-  const [signatureData, setSignatureData] = useState<string | null>(null);
-  const signatureRef = useRef<SignaturePadRef>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   
-  // Edit modal states
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editDate, setEditDate] = useState('');
-  const [editStartTime, setEditStartTime] = useState('');
-  const [editEndTime, setEditEndTime] = useState('');
-  const [editBreakMinutes, setEditBreakMinutes] = useState('');
-  const [supervisorNotes, setSupervisorNotes] = useState('');
+  // Filter by status
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  
+  // Employee picker modal
+  const [showEmployeePicker, setShowEmployeePicker] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  
+  // Image modal
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
-  // Check permissions - deny access if user doesn't have supervisor permissions
-  const permissions = user?.permissions || {};
-  const canAccessSupervisor = permissions.view_all_timesheets === true || 
-                               permissions.edit_timesheets === true || 
-                               permissions.approve_timesheets === true || 
-                               permissions.manage_roster === true;
-
-  useEffect(() => {
-    // Only fetch if user has supervisor access
-    if (canAccessSupervisor) {
-      fetchDashboard();
-    }
-  }, [canAccessSupervisor]);
-
-  // If no supervisor permissions, show access denied message (AFTER all hooks)
-  if (!canAccessSupervisor) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.accessDeniedContainer}>
-          <Ionicons name="lock-closed" size={64} color={colors.error} />
-          <Text style={styles.accessDeniedTitle}>Access Denied</Text>
-          <Text style={styles.accessDeniedText}>
-            You don't have permission to access the Supervisor panel.
-          </Text>
-          <Text style={styles.accessDeniedText}>
-            Please contact your administrator if you need access.
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
-  const fetchDashboard = async () => {
+  // Fetch employees
+  const fetchEmployees = useCallback(async () => {
     try {
-      // Don't filter by site - show all pending timesheets for supervisors/admins
-      const data = await getSupervisorDashboard();
-      setDashboard(data);
+      const response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users`);
+      setEmployees(response.data || []);
     } catch (error) {
-      console.error('Failed to fetch dashboard:', error);
+      console.error('Failed to fetch employees:', error);
+    }
+  }, []);
+
+  // Fetch all timesheets (for supervisors)
+  const fetchTimesheets = useCallback(async () => {
+    try {
+      const params: any = {};
+      if (selectedEmployee) {
+        params.employee_id = selectedEmployee.id;
+      }
+      
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`,
+        { params }
+      );
+      
+      let data = response.data || [];
+      
+      // Add employee names
+      const employeeMap = new Map(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]));
+      data = data.map((ts: Timesheet) => ({
+        ...ts,
+        employee_name: employeeMap.get(ts.employee_id) || 'Unknown'
+      }));
+      
+      // Sort by date descending
+      data.sort((a: any, b: any) => new Date(b.clock_in || b.date).getTime() - new Date(a.clock_in || a.date).getTime());
+      
+      setTimesheets(data);
+    } catch (error) {
+      console.error('Failed to fetch timesheets:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [selectedEmployee, employees]);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      fetchTimesheets();
+    }
+  }, [employees, fetchTimesheets]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchDashboard();
+    fetchTimesheets();
   };
 
-  const handleApproval = async (status: 'approved' | 'rejected') => {
-    if (!selectedTimesheet) return;
-
-    // Require signature for approvals
-    if (status === 'approved' && !signatureData) {
-      Alert.alert('Signature Required', 'Please provide your signature to approve this timesheet.');
-      setShowSignature(true);
-      return;
-    }
-
-    setActionLoading(true);
+  // Approve timesheet
+  const approveTimesheet = async (timesheetId: string) => {
+    setActionLoading(timesheetId);
     try {
-      await approveTimesheet(
-        selectedTimesheet.id, 
-        user?.id || '', 
-        status, 
-        notes,
-        status === 'approved' ? signatureData || undefined : undefined
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheetId}/approve`,
+        { status: 'approved', approved_by: user?.id }
       );
-      Alert.alert('Success', `Timesheet ${status}!`);
-      setShowModal(false);
-      setNotes('');
-      setSignatureData(null);
-      setShowSignature(false);
-      fetchDashboard();
+      Alert.alert('Success', 'Timesheet approved');
+      fetchTimesheets();
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || `Failed to ${status} timesheet`);
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to approve timesheet');
     } finally {
-      setActionLoading(false);
+      setActionLoading(null);
     }
   };
 
-  // Signature handlers
-  const handleSignatureOK = (signature: string) => {
-    setSignatureData(signature);
-    setShowSignature(false);
-  };
-
-  const handleSignatureClear = () => {
-    signatureRef.current?.clearSignature();
-  };
-
-  const handleSignatureEmpty = () => {
-    Alert.alert('Error', 'Please provide a signature');
-  };
-
-  const handleEdit = (timesheet: any) => {
-    setSelectedTimesheet(timesheet);
-    
-    try {
-      const clockIn = new Date(timesheet.clock_in);
-      const clockOut = timesheet.clock_out ? new Date(timesheet.clock_out) : new Date();
-      
-      setEditDate(format(clockIn, 'yyyy-MM-dd'));
-      setEditStartTime(format(clockIn, 'HH:mm'));
-      setEditEndTime(timesheet.clock_out ? format(clockOut, 'HH:mm') : '');
-    } catch (error) {
-      console.error('Error parsing dates:', error);
-      const now = new Date();
-      setEditDate(format(now, 'yyyy-MM-dd'));
-      setEditStartTime('09:00');
-      setEditEndTime('17:00');
-    }
-    
-    setEditBreakMinutes(timesheet.break_minutes?.toString() || '0');
-    setSupervisorNotes(timesheet.supervisor_notes || '');
-    setShowEditModal(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!selectedTimesheet) return;
-
-    if (!editDate || !editStartTime || !editEndTime) {
-      Alert.alert('Error', 'Please fill in date, start time, and end time');
-      return;
-    }
-
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(editStartTime) || !timeRegex.test(editEndTime)) {
-      Alert.alert('Error', 'Please use HH:MM format (e.g., 09:00, 17:30)');
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      const clockInISO = `${editDate}T${editStartTime}:00.000Z`;
-      const clockOutISO = `${editDate}T${editEndTime}:00.000Z`;
-      
-      await updateTimesheet(selectedTimesheet.id, {
-        manual_clock_in: clockInISO,
-        manual_clock_out: clockOutISO,
-        manual_break_minutes: parseInt(editBreakMinutes) || 0,
-        employee_notes: supervisorNotes,
-      });
-
-      Alert.alert('Success', 'Timesheet updated by supervisor');
-      setShowEditModal(false);
-      fetchDashboard();
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to update timesheet');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDeleteTimesheet = async (timesheet: any) => {
-    // Add confirmation dialog
-    Alert.alert(
-      'Delete Timesheet',
-      `Are you sure you want to delete this timesheet?\n\nEmployee: ${timesheet.employee_name || 'Unknown'}\nDate: ${format(new Date(timesheet.clock_in), 'MMM dd, yyyy')}`,
+  // Reject timesheet
+  const rejectTimesheet = async (timesheetId: string) => {
+    Alert.prompt(
+      'Reject Timesheet',
+      'Please provide a reason for rejection:',
       [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Delete',
+          text: 'Reject',
           style: 'destructive',
-          onPress: async () => {
+          onPress: async (reason) => {
+            setActionLoading(timesheetId);
             try {
-              setActionLoading(true);
-              console.log('Deleting timesheet:', timesheet.id);
-              const result = await deleteTimesheet(timesheet.id);
-              console.log('Delete result:', result);
-              Alert.alert('✅ Deleted', 'Timesheet has been deleted successfully!');
-              await fetchDashboard();
+              await axios.put(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheetId}/approve`,
+                { status: 'rejected', approved_by: user?.id, rejection_reason: reason }
+              );
+              Alert.alert('Success', 'Timesheet rejected');
+              fetchTimesheets();
             } catch (error: any) {
-              console.error('Delete timesheet error:', error);
-              Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to delete timesheet');
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to reject timesheet');
             } finally {
-              setActionLoading(false);
+              setActionLoading(null);
             }
           }
         }
-      ]
+      ],
+      'plain-text'
     );
   };
 
-  const renderActiveEmployee = ({ item }: any) => {
-    const clockIn = new Date(item.clock_in);
-    const now = new Date();
-    const hoursWorked = ((now.getTime() - clockIn.getTime()) / (1000 * 60 * 60)).toFixed(1);
-
-    return (
-      <View style={styles.employeeCard}>
-        <View style={styles.activeIndicator} />
-        <View style={styles.cardContent}>
-          <View style={styles.cardHeader}>
-            <Ionicons name="person" size={20} color={colors.primary} />
-            <Text style={styles.employeeName}>{item.employee_name || `ID: ${item.employee_id.slice(-6)}`}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Clocked in at:</Text>
-            <Text style={styles.infoValue}>{format(clockIn, 'h:mm a')}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Hours worked:</Text>
-            <Text style={styles.infoValue}>{hoursWorked} hrs</Text>
-          </View>
-        </View>
-      </View>
-    );
+  // Format date
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
+    } catch {
+      return dateStr;
+    }
   };
 
-  const renderPendingTimesheet = ({ item }: any) => {
-    const clockIn = new Date(item.clock_in);
-    const clockOut = new Date(item.clock_out);
-
-    return (
-      <View style={styles.timesheetCard}>
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.dateText}>{format(clockIn, 'MMM dd, yyyy')}</Text>
-            <Text style={styles.employeeName}>{item.employee_name || `ID: ${item.employee_id.slice(-6)}`}</Text>
-            {item.is_manual_entry && (
-              <View style={styles.manualBadge}>
-                <Ionicons name="create-outline" size={12} color={colors.warning} />
-                <Text style={styles.manualBadgeText}>Manual Entry</Text>
-              </View>
-            )}
-          </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.gray[400]} />
-        </View>
-        
-        <View style={styles.timeRow}>
-          <View style={styles.timeColumn}>
-            <Text style={styles.timeLabel}>In</Text>
-            <Text style={styles.timeValue}>{format(clockIn, 'h:mm a')}</Text>
-          </View>
-          <Ionicons name="arrow-forward" size={16} color={colors.gray[300]} />
-          <View style={styles.timeColumn}>
-            <Text style={styles.timeLabel}>Out</Text>
-            <Text style={styles.timeValue}>{format(clockOut, 'h:mm a')}</Text>
-          </View>
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={styles.statBadge}>
-            <Ionicons name="time" size={16} color={colors.primary} />
-            <Text style={styles.statText}>{item.total_hours.toFixed(2)} hrs</Text>
-          </View>
-          {item.break_minutes > 0 && (
-            <View style={styles.statBadge}>
-              <Ionicons name="cafe" size={16} color={colors.warning} />
-              <Text style={styles.statText}>{item.break_minutes} min</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.editBtn]}
-            onPress={() => handleEdit(item)}
-          >
-            <Ionicons name="create-outline" size={18} color={colors.primary} />
-            <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.deleteBtn]}
-            onPress={() => handleDeleteTimesheet(item)}
-          >
-            <Ionicons name="trash-outline" size={18} color={colors.error} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.reviewBtn]}
-            onPress={() => {
-              setSelectedTimesheet(item);
-              setShowModal(true);
-            }}
-          >
-            <Ionicons name="checkmark-circle-outline" size={18} color={colors.white} />
-            <Text style={styles.reviewBtnText}>Review & Approve</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
+  // Format time
+  const formatTime = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    } catch {
+      return '--:--';
+    }
   };
+
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return colors.success;
+      case 'rejected': return colors.error;
+      default: return colors.warning;
+    }
+  };
+
+  // Filtered employees by search
+  const filteredEmployees = employees.filter(e => 
+    `${e.first_name} ${e.last_name}`.toLowerCase().includes(employeeSearch.toLowerCase())
+  );
+
+  // Filtered timesheets
+  const filteredTimesheets = filterStatus === 'all' 
+    ? timesheets 
+    : timesheets.filter(t => t.approval_status === filterStatus);
+
+  // Calculate pay (simplified - $25/hr base rate)
+  const calculatePay = (hours: number) => {
+    return (hours * 25).toFixed(2);
+  };
+
+  // Stats
+  const totalHours = filteredTimesheets.reduce((sum, t) => sum + (t.total_hours || 0), 0);
+  const totalPay = parseFloat(calculatePay(totalHours));
+  const pendingCount = timesheets.filter(t => t.approval_status === 'pending').length;
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -343,399 +227,241 @@ export default function SupervisorScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
-        style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
-        }
+      {/* Employee Filter */}
+      <TouchableOpacity 
+        style={styles.employeeFilter}
+        onPress={() => setShowEmployeePicker(true)}
       >
-      <View style={styles.statsHeader}>
-        <TouchableOpacity 
-          style={styles.statCard}
-          onPress={() => setShowActiveModal(true)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="people" size={32} color={colors.success} />
-          <Text style={styles.statValue}>{dashboard?.active_employees || 0}</Text>
-          <Text style={styles.statLabel}>Active Now</Text>
-          <Text style={styles.tapHint}>Tap to view</Text>
-        </TouchableOpacity>
+        <Ionicons name="person" size={20} color={colors.primary} />
+        <Text style={styles.employeeFilterText}>
+          {selectedEmployee ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}` : 'All Employees'}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color={colors.gray[400]} />
+      </TouchableOpacity>
+
+      {/* Summary Stats */}
+      <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Ionicons name="clipboard" size={32} color={colors.warning} />
-          <Text style={styles.statValue}>{dashboard?.pending_approvals || 0}</Text>
+          <Text style={styles.statValue}>{filteredTimesheets.length}</Text>
+          <Text style={styles.statLabel}>Timesheets</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statValue}>{totalHours.toFixed(1)}h</Text>
+          <Text style={styles.statLabel}>Total Hours</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: colors.success + '15' }]}>
+          <Text style={[styles.statValue, { color: colors.success }]}>${totalPay}</Text>
+          <Text style={styles.statLabel}>Est. Pay</Text>
+        </View>
+        <View style={[styles.statCard, { backgroundColor: colors.warning + '15' }]}>
+          <Text style={[styles.statValue, { color: colors.warning }]}>{pendingCount}</Text>
           <Text style={styles.statLabel}>Pending</Text>
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Currently Clocked In</Text>
-        {dashboard?.active_timesheets?.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalList}
+      {/* Status Filter */}
+      <View style={styles.filterTabs}>
+        {(['pending', 'approved', 'rejected', 'all'] as const).map(status => (
+          <TouchableOpacity
+            key={status}
+            style={[styles.filterTab, filterStatus === status && styles.filterTabActive]}
+            onPress={() => setFilterStatus(status)}
           >
-            {dashboard.active_timesheets.map((item: any) => (
-              <View key={item.id}>
-                {renderActiveEmployee({ item })}
-              </View>
-            ))}
-          </ScrollView>
-        ) : (
-          <View style={styles.emptySection}>
-            <Ionicons name="time-outline" size={48} color={colors.gray[300]} />
-            <Text style={styles.emptyText}>No active employees</Text>
-          </View>
-        )}
+            <Text style={[styles.filterTabText, filterStatus === status && styles.filterTabTextActive]}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Pending Approvals ({dashboard?.pending_timesheets?.length || 0})</Text>
-        {dashboard?.pending_timesheets && dashboard.pending_timesheets.length > 0 ? (
-          dashboard.pending_timesheets.map((item: any) => (
-            <View key={item.id}>
-              {renderPendingTimesheet({ item })}
-            </View>
-          ))
-        ) : (
-          <View style={styles.emptySection}>
-            <Ionicons name="checkmark-done-outline" size={48} color={colors.gray[300]} />
-            <Text style={styles.emptyText}>All caught up!</Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
-
-    {/* Approval Modal */}
-    <Modal
-        visible={showModal}
-        animationType="slide"
-        transparent
-        onRequestClose={() => {
-          setShowModal(false);
-          setShowSignature(false);
-          setSignatureData(null);
-        }}
+      {/* Timesheets List */}
+      <ScrollView
+        style={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
+        }
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {showSignature ? 'Sign to Approve' : 'Review Timesheet'}
-              </Text>
-              <TouchableOpacity onPress={() => {
-                setShowModal(false);
-                setShowSignature(false);
-                setSignatureData(null);
-              }}>
-                <Ionicons name="close" size={28} color={colors.gray[600]} />
-              </TouchableOpacity>
-            </View>
-
-            {selectedTimesheet && !showSignature && (
-              <View style={styles.modalBody}>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Employee ID:</Text>
-                  <Text style={styles.detailValue}>{selectedTimesheet.employee_id.slice(-6)}</Text>
+        {filteredTimesheets.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={48} color={colors.gray[400]} />
+            <Text style={styles.emptyText}>No timesheets found</Text>
+          </View>
+        ) : (
+          filteredTimesheets.map((timesheet) => (
+            <View key={timesheet.id} style={styles.timesheetCard}>
+              <View style={styles.cardHeader}>
+                <View>
+                  <Text style={styles.employeeName}>{timesheet.employee_name}</Text>
+                  <Text style={styles.dateText}>{formatDate(timesheet.clock_in)}</Text>
                 </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Date:</Text>
-                  <Text style={styles.detailValue}>
-                    {format(new Date(selectedTimesheet.clock_in), 'MMM dd, yyyy')}
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(timesheet.approval_status) + '20' }]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(timesheet.approval_status) }]}>
+                    {timesheet.approval_status}
                   </Text>
                 </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Hours:</Text>
-                  <Text style={styles.detailValue}>{selectedTimesheet.total_hours.toFixed(2)} hrs</Text>
-                </View>
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Break:</Text>
-                  <Text style={styles.detailValue}>{selectedTimesheet.break_minutes} min</Text>
+              </View>
+              
+              <View style={styles.cardBody}>
+                <View style={styles.timeInfo}>
+                  <View style={styles.timeBlock}>
+                    <Text style={styles.timeLabel}>Start</Text>
+                    <Text style={styles.timeValue}>{formatTime(timesheet.clock_in)}</Text>
+                  </View>
+                  <Ionicons name="arrow-forward" size={16} color={colors.gray[400]} />
+                  <View style={styles.timeBlock}>
+                    <Text style={styles.timeLabel}>End</Text>
+                    <Text style={styles.timeValue}>{formatTime(timesheet.clock_out)}</Text>
+                  </View>
+                  <View style={styles.hoursBlock}>
+                    <Text style={styles.hoursValue}>{(timesheet.total_hours || 0).toFixed(1)}h</Text>
+                    <Text style={styles.payValue}>${calculatePay(timesheet.total_hours || 0)}</Text>
+                  </View>
                 </View>
 
-                <TextInput
-                  style={styles.notesInput}
-                  placeholder="Add notes (optional)"
-                  placeholderTextColor={colors.gray[400]}
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  numberOfLines={3}
-                  textAlignVertical="top"
-                />
-
-                {/* Signature Preview */}
-                {signatureData && (
-                  <View style={styles.signaturePreviewContainer}>
-                    <Text style={styles.signatureLabel}>Your Signature:</Text>
-                    <Image 
-                      source={{ uri: signatureData }} 
-                      style={styles.signaturePreview}
-                      resizeMode="contain"
-                    />
-                    <TouchableOpacity 
-                      style={styles.changeSignatureBtn}
-                      onPress={() => {
-                        setSignatureData(null);
-                        setShowSignature(true);
-                      }}
-                    >
-                      <Ionicons name="create-outline" size={16} color={colors.primary} />
-                      <Text style={styles.changeSignatureText}>Change Signature</Text>
-                    </TouchableOpacity>
+                {timesheet.notes && (
+                  <View style={styles.notesRow}>
+                    <Ionicons name="document-text" size={14} color={colors.text.secondary} />
+                    <Text style={styles.notesText} numberOfLines={2}>{timesheet.notes}</Text>
                   </View>
                 )}
 
-                <View style={styles.modalActions}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.rejectButton, actionLoading && styles.buttonDisabled]}
-                    onPress={() => handleApproval('rejected')}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? (
-                      <ActivityIndicator color={colors.white} />
-                    ) : (
-                      <>
-                        <Ionicons name="close-circle" size={20} color={colors.white} />
-                        <Text style={styles.actionButtonText}>Reject</Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.approveButton, actionLoading && styles.buttonDisabled]}
-                    onPress={() => handleApproval('approved')}
-                    disabled={actionLoading}
-                  >
-                    {actionLoading ? (
-                      <ActivityIndicator color={colors.white} />
-                    ) : (
-                      <>
-                        <Ionicons name="checkmark-circle" size={20} color={colors.white} />
-                        <Text style={styles.actionButtonText}>
-                          {signatureData ? 'Approve' : 'Sign & Approve'}
-                        </Text>
-                      </>
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* Signature Capture Screen */}
-            {showSignature && (
-              <View style={styles.signatureContainer}>
-                <Text style={styles.signatureInstructions}>
-                  Please sign below to approve this timesheet
-                </Text>
-                
-                <SignaturePad
-                  ref={signatureRef}
-                  onOK={handleSignatureOK}
-                  onClear={() => {}}
-                />
-                
-                {/* Custom buttons for signature */}
-                <View style={styles.signatureButtons}>
-                  <TouchableOpacity 
-                    style={styles.clearSignatureBtn}
-                    onPress={() => signatureRef.current?.clearSignature()}
-                  >
-                    <Ionicons name="refresh" size={20} color={colors.text.primary} />
-                    <Text style={styles.clearSignatureText}>Clear</Text>
-                  </TouchableOpacity>
+                {/* Action Buttons */}
+                <View style={styles.actionRow}>
+                  {timesheet.image && (
+                    <TouchableOpacity 
+                      style={styles.viewImageBtn}
+                      onPress={() => {
+                        setViewingImage(timesheet.image!);
+                        setShowImageModal(true);
+                      }}
+                    >
+                      <Ionicons name="image" size={18} color={colors.primary} />
+                      <Text style={styles.viewImageText}>View Image</Text>
+                    </TouchableOpacity>
+                  )}
                   
-                  <TouchableOpacity 
-                    style={styles.confirmSignatureBtn}
-                    onPress={() => signatureRef.current?.readSignature()}
-                  >
-                    <Ionicons name="checkmark" size={20} color={colors.white} />
-                    <Text style={styles.confirmSignatureText}>Confirm Signature</Text>
-                  </TouchableOpacity>
+                  {timesheet.approval_status === 'pending' && (
+                    <View style={styles.approvalButtons}>
+                      <TouchableOpacity 
+                        style={[styles.approveBtn, actionLoading === timesheet.id && styles.btnDisabled]}
+                        onPress={() => approveTimesheet(timesheet.id)}
+                        disabled={actionLoading === timesheet.id}
+                      >
+                        {actionLoading === timesheet.id ? (
+                          <ActivityIndicator size="small" color={colors.white} />
+                        ) : (
+                          <>
+                            <Ionicons name="checkmark" size={18} color={colors.white} />
+                            <Text style={styles.approveBtnText}>Approve</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.rejectBtn, actionLoading === timesheet.id && styles.btnDisabled]}
+                        onPress={() => rejectTimesheet(timesheet.id)}
+                        disabled={actionLoading === timesheet.id}
+                      >
+                        <Ionicons name="close" size={18} color={colors.error} />
+                        <Text style={styles.rejectBtnText}>Reject</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
-                
-                <TouchableOpacity 
-                  style={styles.backToReviewBtn}
-                  onPress={() => setShowSignature(false)}
-                >
-                  <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                  <Text style={styles.backToReviewText}>Back to Review</Text>
-                </TouchableOpacity>
               </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Edit Modal */}
-      <Modal
-        visible={showEditModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Timesheet</Text>
-              <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
-              </TouchableOpacity>
             </View>
+          ))
+        )}
+        <View style={{ height: 20 }} />
+      </ScrollView>
 
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Date</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editDate}
-                  onChangeText={setEditDate}
-                  placeholder="YYYY-MM-DD (e.g., 2024-12-09)"
-                />
+      {/* Employee Picker Modal */}
+      <Modal
+        visible={showEmployeePicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEmployeePicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowEmployeePicker(false)}>
+              <Ionicons name="close" size={24} color={colors.text.primary} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Employee</Text>
+            <View style={{ width: 24 }} />
+          </View>
+
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={20} color={colors.gray[400]} />
+            <TextInput
+              style={styles.searchInput}
+              value={employeeSearch}
+              onChangeText={setEmployeeSearch}
+              placeholder="Search by name..."
+              placeholderTextColor={colors.gray[400]}
+            />
+          </View>
+
+          <ScrollView style={styles.employeeList}>
+            <TouchableOpacity 
+              style={styles.employeeItem}
+              onPress={() => {
+                setSelectedEmployee(null);
+                setShowEmployeePicker(false);
+                setEmployeeSearch('');
+              }}
+            >
+              <View style={styles.employeeAvatar}>
+                <Ionicons name="people" size={20} color={colors.primary} />
               </View>
+              <Text style={styles.employeeItemName}>All Employees</Text>
+              {!selectedEmployee && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+            </TouchableOpacity>
 
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>Start Time</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editStartTime}
-                    onChangeText={setEditStartTime}
-                    placeholder="HH:MM"
-                  />
-                </View>
-
-                <View style={{ width: 16 }} />
-
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>End Time</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={editEndTime}
-                    onChangeText={setEditEndTime}
-                    placeholder="HH:MM"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Break (minutes)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editBreakMinutes}
-                  onChangeText={setEditBreakMinutes}
-                  keyboardType="number-pad"
-                  placeholder="30"
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Supervisor Notes</Text>
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  value={supervisorNotes}
-                  onChangeText={setSupervisorNotes}
-                  placeholder="Reason for edit..."
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-
-              <View style={styles.helpBox}>
-                <Ionicons name="information-circle" size={20} color={colors.primary} />
-                <Text style={styles.helpText}>
-                  Use 24-hour format. Example: 09:00, 17:30. This edit will be recorded.
-                </Text>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
-                onPress={() => setShowEditModal(false)}
+            {filteredEmployees.map(employee => (
+              <TouchableOpacity 
+                key={employee.id}
+                style={styles.employeeItem}
+                onPress={() => {
+                  setSelectedEmployee(employee);
+                  setShowEmployeePicker(false);
+                  setEmployeeSearch('');
+                }}
               >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.saveBtn]}
-                onPress={handleSaveEdit}
-                disabled={actionLoading}
-              >
-                {actionLoading ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.saveBtnText}>Save Changes</Text>
+                <View style={styles.employeeAvatar}>
+                  <Text style={styles.avatarText}>
+                    {employee.first_name[0]}{employee.last_name[0]}
+                  </Text>
+                </View>
+                <View style={styles.employeeInfo}>
+                  <Text style={styles.employeeItemName}>
+                    {employee.first_name} {employee.last_name}
+                  </Text>
+                  <Text style={styles.employeeItemRole}>{employee.job_title || 'Employee'}</Text>
+                </View>
+                {selectedEmployee?.id === employee.id && (
+                  <Ionicons name="checkmark" size={20} color={colors.primary} />
                 )}
               </TouchableOpacity>
-            </View>
-          </View>
+            ))}
+          </ScrollView>
         </View>
       </Modal>
 
-      {/* Active Employees Modal */}
+      {/* Image View Modal */}
       <Modal
-        visible={showActiveModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowActiveModal(false)}
+        visible={showImageModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowImageModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                🟢 Active Employees ({dashboard?.active_employees || 0})
-              </Text>
-              <TouchableOpacity onPress={() => setShowActiveModal(false)}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              {dashboard?.active_timesheets?.length > 0 ? (
-                dashboard.active_timesheets.map((item: any) => {
-                  const clockIn = new Date(item.clock_in);
-                  const now = new Date();
-                  const hoursWorked = ((now.getTime() - clockIn.getTime()) / (1000 * 60 * 60)).toFixed(1);
-                  
-                  return (
-                    <View key={item.id} style={styles.activeEmployeeItem}>
-                      <View style={styles.activeEmployeeHeader}>
-                        <View style={styles.activeIndicatorSmall} />
-                        <Text style={styles.activeEmployeeName}>
-                          {item.employee_name || 'Unknown Employee'}
-                        </Text>
-                      </View>
-                      <View style={styles.activeEmployeeDetails}>
-                        <View style={styles.activeDetailRow}>
-                          <Ionicons name="time-outline" size={16} color={colors.text.secondary} />
-                          <Text style={styles.activeDetailText}>
-                            Clocked in: {format(clockIn, 'h:mm a')}
-                          </Text>
-                        </View>
-                        <View style={styles.activeDetailRow}>
-                          <Ionicons name="hourglass-outline" size={16} color={colors.text.secondary} />
-                          <Text style={styles.activeDetailText}>
-                            Working: {hoursWorked} hours
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  );
-                })
-              ) : (
-                <View style={styles.emptySection}>
-                  <Ionicons name="people-outline" size={48} color={colors.gray[300]} />
-                  <Text style={styles.emptyText}>No employees currently active</Text>
-                </View>
-              )}
-            </ScrollView>
-
-            <TouchableOpacity
-              style={styles.closeModalBtn}
-              onPress={() => setShowActiveModal(false)}
-            >
-              <Text style={styles.closeModalBtnText}>Close</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.imageModalContainer}>
+          <TouchableOpacity style={styles.imageModalClose} onPress={() => setShowImageModal(false)}>
+            <Ionicons name="close-circle" size={36} color={colors.white} />
+          </TouchableOpacity>
+          {viewingImage && (
+            <Image source={{ uri: viewingImage }} style={styles.fullImage} resizeMode="contain" />
+          )}
         </View>
       </Modal>
     </View>
@@ -747,550 +473,326 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollView: {
+  loadingContainer: {
     flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
+    alignItems: 'center',
   },
-  statsHeader: {
+  employeeFilter: {
     flexDirection: 'row',
-    padding: 16,
-    gap: 16,
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    margin: 16,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 12,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  employeeFilterText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    gap: 8,
+    marginBottom: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: colors.white,
-    padding: 20,
-    borderRadius: 16,
+    padding: 12,
+    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  tapHint: {
-    fontSize: 10,
-    color: colors.primary,
-    marginTop: 4,
   },
   statValue: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.text.primary,
-    marginTop: 8,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.text.secondary,
-    marginTop: 4,
+    marginTop: 2,
   },
-  section: {
-    marginTop: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.primary,
-    paddingHorizontal: 16,
+  filterTabs: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 4,
     marginBottom: 12,
   },
-  horizontalList: {
-    paddingHorizontal: 16,
-  },
-  employeeCard: {
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginRight: 12,
-    width: 220,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.success,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.success,
-  },
-  cardContent: {
-    gap: 8,
-  },
-  cardHeader: {
-    flexDirection: 'row',
+  filterTab: {
+    flex: 1,
+    paddingVertical: 10,
     alignItems: 'center',
-    marginBottom: 8,
-    gap: 8,
+    borderRadius: 10,
   },
-  employeeId: {
-    fontSize: 12,
+  filterTabActive: {
+    backgroundColor: colors.primary,
+  },
+  filterTabText: {
+    fontSize: 13,
     color: colors.text.secondary,
     fontWeight: '500',
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 4,
-  },
-  infoLabel: {
-    fontSize: 13,
-    color: colors.text.secondary,
-  },
-  infoValue: {
-    fontSize: 14,
+  filterTabTextActive: {
+    color: colors.white,
     fontWeight: '600',
-    color: colors.text.primary,
+  },
+  list: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    marginTop: 12,
   },
   timesheetCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 16,
+    borderRadius: 14,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
   },
-  dateText: {
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
+  },
+  employeeName: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  timeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    marginVertical: 12,
-    paddingVertical: 12,
-    backgroundColor: colors.gray[50],
+  dateText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 2,
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
   },
-  timeColumn: {
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  cardBody: {
+    padding: 14,
+  },
+  timeInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
+  },
+  timeBlock: {
+    alignItems: 'center',
+    paddingHorizontal: 16,
   },
   timeLabel: {
     fontSize: 11,
     color: colors.text.secondary,
-    marginBottom: 4,
   },
   timeValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  statBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.gray[50],
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 6,
-  },
-  statText: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    fontWeight: '500',
-  },
-  emptySection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-  },
-  emptyText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    marginTop: 12,
-  },
-  activeEmployeeItem: {
-    backgroundColor: colors.gray[50],
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.success,
-  },
-  activeEmployeeHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  activeIndicatorSmall: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.success,
-    marginRight: 10,
-  },
-  activeEmployeeName: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  activeEmployeeDetails: {
-    marginLeft: 20,
+  hoursBlock: {
+    marginLeft: 'auto',
+    alignItems: 'flex-end',
   },
-  activeDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-    gap: 8,
-  },
-  activeDetailText: {
-    fontSize: 14,
-    color: colors.text.secondary,
-  },
-  closeModalBtn: {
-    backgroundColor: colors.primary,
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  closeModalBtnText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 32,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  modalBody: {
-    padding: 24,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: colors.text.secondary,
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  notesInput: {
-    backgroundColor: colors.gray[50],
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 16,
-    fontSize: 14,
-    color: colors.text.primary,
-    minHeight: 100,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  approveButton: {
-    backgroundColor: colors.success,
-  },
-  rejectButton: {
-    backgroundColor: colors.error,
-  },
-  actionButtonText: {
-    color: colors.white,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    marginTop: 12,
-    gap: 8,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 12,
-    borderRadius: 10,
-    gap: 6,
-  },
-  editBtn: {
-    flex: 1,
-    backgroundColor: colors.primary + '15',
-  },
-  editBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
+  hoursValue: {
+    fontSize: 18,
+    fontWeight: '700',
     color: colors.primary,
   },
-  deleteBtn: {
-    backgroundColor: colors.error + '15',
-    paddingHorizontal: 12,
-    minWidth: 48,
-  },
-  reviewBtn: {
-    flex: 2,
-    backgroundColor: colors.primary,
-  },
-  reviewBtnText: {
-    fontSize: 14,
+  payValue: {
+    fontSize: 13,
+    color: colors.success,
     fontWeight: '600',
-    color: colors.white,
   },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputRow: {
+  notesRow: {
     flexDirection: 'row',
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    color: colors.text.primary,
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  helpBox: {
-    flexDirection: 'row',
-    backgroundColor: colors.primary + '10',
-    padding: 12,
-    borderRadius: 8,
+    alignItems: 'flex-start',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[100],
     gap: 8,
-    marginTop: 8,
   },
-  helpText: {
+  notesText: {
     flex: 1,
     fontSize: 13,
     color: colors.text.secondary,
     lineHeight: 18,
   },
-  modalFooter: {
+  actionRow: {
     flexDirection: 'row',
-    padding: 20,
+    alignItems: 'center',
+    marginTop: 14,
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
   },
-  modalBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelBtn: {
-    backgroundColor: colors.gray[100],
-  },
-  cancelBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  saveBtn: {
-    backgroundColor: colors.primary,
-  },
-  saveBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.white,
-  },
-  accessDeniedContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  accessDeniedTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.error,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  accessDeniedText: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 24,
-  },
-  employeeName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  manualBadge: {
+  viewImageBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.warning + '20',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    marginTop: 4,
-    gap: 4,
-    alignSelf: 'flex-start',
-  },
-  manualBadgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.warning,
-  },
-  // Signature styles
-  signatureContainer: {
-    padding: 20,
-  },
-  signatureInstructions: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  signaturePadWrapper: {
-    height: 250,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: colors.white,
-  },
-  signaturePreviewContainer: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: colors.gray[50],
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  signatureLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 8,
-  },
-  signaturePreview: {
-    width: '100%',
-    height: 80,
-    backgroundColor: colors.white,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: colors.primary + '10',
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.gray[200],
   },
-  changeSignatureBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-    padding: 8,
-    gap: 4,
-  },
-  changeSignatureText: {
-    fontSize: 14,
+  viewImageText: {
+    fontSize: 13,
     color: colors.primary,
     fontWeight: '500',
   },
-  backToReviewBtn: {
+  approvalButtons: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 16,
-    padding: 12,
+    marginLeft: 'auto',
     gap: 8,
   },
-  backToReviewText: {
-    fontSize: 16,
-    color: colors.primary,
-    fontWeight: '500',
+  approveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: colors.success,
+    borderRadius: 8,
   },
-  signatureButtons: {
+  approveBtnText: {
+    fontSize: 13,
+    color: colors.white,
+    fontWeight: '600',
+  },
+  rejectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: colors.error + '15',
+    borderRadius: 8,
+  },
+  rejectBtnText: {
+    fontSize: 13,
+    color: colors.error,
+    fontWeight: '600',
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 12,
-  },
-  clearSignatureBtn: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    backgroundColor: colors.gray[200],
-    borderRadius: 10,
-    gap: 8,
+    padding: 16,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
   },
-  clearSignatureText: {
-    fontSize: 16,
+  modalTitle: {
+    fontSize: 17,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  confirmSignatureBtn: {
-    flex: 2,
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    backgroundColor: colors.success,
+    backgroundColor: colors.white,
+    margin: 16,
+    paddingHorizontal: 14,
     borderRadius: 10,
-    gap: 8,
+    gap: 10,
   },
-  confirmSignatureText: {
+  searchInput: {
+    flex: 1,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: colors.text.primary,
+  },
+  employeeList: {
+    flex: 1,
+  },
+  employeeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
+  },
+  employeeAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primary + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.white,
+    color: colors.primary,
+  },
+  employeeInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  employeeItemName: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: colors.text.primary,
+    flex: 1,
+    marginLeft: 12,
+  },
+  employeeItemRole: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    marginTop: 1,
+  },
+  // Image modal
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+  },
+  fullImage: {
+    width: '100%',
+    height: '80%',
   },
 });
