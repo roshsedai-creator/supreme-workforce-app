@@ -3,7 +3,7 @@ import { MessageCircle, X } from 'lucide-react';
 
 const WhatsAppButton = () => {
   const [isHovered, setIsHovered] = useState(false);
-  const phoneNumber = "61392216236"; // Australian format without + 
+  const phoneNumber = "61457802302"; // Australian format without + 
   const message = "Hi! I'm interested in Supreme Hospitality Services. Can you help me?";
   
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
