@@ -20,6 +20,17 @@ import { colors } from '../../constants/colors';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
+// Helper function to format time input (1200 → 12:00, 900 → 09:00)
+const formatTimeInput = (value: string): string => {
+  const cleaned = value.replace(/[^0-9:]/g, '');
+  if (cleaned.includes(':')) return cleaned.substring(0, 5);
+  if (cleaned.length === 0) return '';
+  if (cleaned.length <= 2) return cleaned;
+  if (cleaned.length === 3) return `0${cleaned[0]}:${cleaned.substring(1)}`;
+  if (cleaned.length >= 4) return `${cleaned.substring(0, 2)}:${cleaned.substring(2, 4)}`;
+  return cleaned;
+};
+
 interface Timesheet {
   id: string;
   date: string;
