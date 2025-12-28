@@ -5,6 +5,7 @@ import Certifications from '../components/Certifications';
 import About from '../components/About';
 import Services from '../components/Services';
 import WhyChooseUs from '../components/WhyChooseUs';
+import LeadershipTeam from '../components/LeadershipTeam';
 import SavingsCalculator from '../components/SavingsCalculator';
 import CorporateSupport from '../components/CorporateSupport';
 import SuccessMetrics from '../components/SuccessMetrics';
@@ -33,6 +34,7 @@ const HomePage = () => {
         <About />
         <Services />
         <WhyChooseUs />
+        <LeadershipTeam />
         <SavingsCalculator />
         <CorporateSupport />
         <SuccessMetrics />
