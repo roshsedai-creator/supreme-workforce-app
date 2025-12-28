@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
-  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
@@ -25,9 +24,11 @@ interface ReportsCenterProps {
 type ReportType = 'payroll' | 'timesheets' | 'abn';
 
 export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) {
-  const [selectedReport, setSelectedReport] = useState<ReportType>('payroll');
+  const [selectedReport, setSelectedReport] = useState<ReportType>('timesheets');
   const [sites, setSites] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState('all');
+  const [selectedEmployee, setSelectedEmployee] = useState('all');
   
   // Set default dates: last 30 days
   const getDefaultStartDate = () => {
@@ -45,28 +46,32 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
   const [showDetailedView, setShowDetailedView] = useState(false);
 
   const reportTypes = [
-    { id: 'payroll', name: 'Payroll Report', icon: 'cash', description: 'Employee earnings and pay details' },
-    { id: 'timesheets', name: 'Timesheet Summary', icon: 'time', description: 'Timesheet records and hours' },
-    { id: 'abn', name: 'ABN Contractor Report', icon: 'document-text', description: 'Contractor details and invoices' },
+    { id: 'timesheets', name: 'Timesheets', icon: 'time-outline', description: 'Hours & status' },
+    { id: 'payroll', name: 'Payroll', icon: 'wallet-outline', description: 'Earnings' },
+    { id: 'abn', name: 'Contractors', icon: 'briefcase-outline', description: 'ABN details' },
   ];
 
   useEffect(() => {
     if (visible) {
-      loadSites();
-      // Reset dates when modal opens
+      loadData();
       setStartDate(getDefaultStartDate());
       setEndDate(new Date());
       setReportData(null);
+      setSelectedEmployee('all');
+      setSelectedSite('all');
     }
   }, [visible]);
 
-  const loadSites = async () => {
+  const loadData = async () => {
     try {
-      const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/sites`);
-      setSites(res.data);
+      const [sitesRes, employeesRes] = await Promise.all([
+        axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/sites`),
+        axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users`)
+      ]);
+      setSites(sitesRes.data);
+      setEmployees(employeesRes.data.filter((u: any) => u.role !== 'admin'));
     } catch (error) {
-      console.error('Failed to load sites:', error);
-      Alert.alert('Error', 'Failed to load sites');
+      console.error('Failed to load data:', error);
     }
   };
 
@@ -75,18 +80,13 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
       setLoading(true);
       setReportData(null);
 
-      console.log('Generating report:', selectedReport);
-      console.log('Date range:', startDate.toISOString(), 'to', endDate.toISOString());
-      console.log('Site:', selectedSite);
-
       const params: any = {
-        start_date: startDate.toISOString().split('T')[0], // Just date part
+        start_date: startDate.toISOString().split('T')[0],
         end_date: endDate.toISOString().split('T')[0],
       };
 
-      if (selectedSite !== 'all') {
-        params.site_id = selectedSite;
-      }
+      if (selectedSite !== 'all') params.site_id = selectedSite;
+      if (selectedEmployee !== 'all') params.employee_id = selectedEmployee;
 
       let response;
       let reportTitle = '';
@@ -98,18 +98,12 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
           try {
             response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/approved`, { params });
             summary = calculatePayrollSummary(response.data);
-            setReportData({
-              title: reportTitle,
-              data: response.data,
-              summary: summary,
-            });
+            setReportData({ title: reportTitle, data: response.data, summary });
           } catch (error) {
-            console.error('Payroll API error:', error);
-            Alert.alert('Note', 'No approved timesheets found for this period');
             setReportData({
               title: reportTitle,
               data: [],
-              summary: { total_timesheets: 0, total_hours: '0.00', total_pay: '0.00', employees: 0 },
+              summary: { total_timesheets: 0, total_hours: '0.00', total_pay: '$0.00', employees: 0 },
             });
           }
           break;
@@ -117,21 +111,10 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
         case 'timesheets':
           reportTitle = 'Timesheet Summary';
           try {
-            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { 
-              params: {
-                ...params,
-                site_id: selectedSite !== 'all' ? selectedSite : undefined
-              }
-            });
+            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { params });
             summary = calculateTimesheetSummary(response.data);
-            setReportData({
-              title: reportTitle,
-              data: response.data,
-              summary: summary,
-            });
+            setReportData({ title: reportTitle, data: response.data, summary });
           } catch (error) {
-            console.error('Timesheets API error:', error);
-            Alert.alert('Note', 'No timesheets found for this period');
             setReportData({
               title: reportTitle,
               data: [],
@@ -145,190 +128,172 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
           try {
             response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users`);
             const contractors = response.data.filter((u: any) => u.is_contractor && u.abn);
-            
-            // Filter by site if needed
             const filteredContractors = selectedSite !== 'all'
               ? contractors.filter((c: any) => c.site_id === selectedSite)
               : contractors;
-            
             setReportData({
               title: reportTitle,
               data: filteredContractors,
-              summary: { 
-                total_contractors: filteredContractors.length,
-                active: filteredContractors.length,
-              },
+              summary: { total_contractors: filteredContractors.length, active: filteredContractors.length },
             });
           } catch (error) {
-            console.error('ABN API error:', error);
             Alert.alert('Error', 'Failed to load contractor data');
           }
           break;
       }
-
-      if (reportData || response) {
-        Alert.alert('Success', `Report generated successfully!\n\nFound ${reportData?.data?.length || response?.data?.length || 0} records`);
-      }
     } catch (error: any) {
-      console.error('Report generation error:', error);
-      Alert.alert('Error', error.response?.data?.detail || error.message || 'Failed to generate report');
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to generate report');
     } finally {
       setLoading(false);
     }
   };
 
-  const exportToExcel = async () => {
-    if (!reportData) return;
+  const calculatePayrollSummary = (data: any[]) => ({
+    total_timesheets: data.length,
+    total_hours: data.reduce((sum, t) => sum + (t.total_hours || 0), 0).toFixed(1),
+    total_pay: '$' + data.reduce((sum, t) => sum + (t.total_pay || 0), 0).toFixed(2),
+    employees: [...new Set(data.map((t) => t.employee_id))].length,
+  });
 
-    try {
-      setLoading(true);
-      
-      if (selectedReport === 'payroll') {
-        const params = {
-          start_date: startDate.toISOString().split('T')[0],
-          end_date: endDate.toISOString().split('T')[0],
-          site_id: selectedSite !== 'all' ? selectedSite : null,
-        };
-        
-        const response = await axios.post(
-          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/export-excel`,
-          params,
-          { responseType: 'blob' }
-        );
+  const calculateTimesheetSummary = (data: any[]) => ({
+    total_entries: data.length,
+    pending: data.filter((t) => t.approval_status === 'pending').length,
+    approved: data.filter((t) => t.approval_status === 'approved').length,
+    rejected: data.filter((t) => t.approval_status === 'rejected').length,
+  });
 
-        Alert.alert('Success', 'Excel file will be downloaded!');
-      } else {
-        Alert.alert('Export', `Export feature coming soon for ${selectedReport} reports.\n\nCurrently available for Payroll only.`);
-      }
-    } catch (error: any) {
-      console.error('Export error:', error);
-      Alert.alert('Error', 'Failed to export report');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const calculatePayrollSummary = (data: any[]) => {
-    return {
-      total_timesheets: data.length,
-      total_hours: data.reduce((sum, t) => sum + (t.total_hours || 0), 0).toFixed(2),
-      total_pay: '$' + data.reduce((sum, t) => sum + (t.total_pay || 0), 0).toFixed(2),
-      employees: [...new Set(data.map((t) => t.employee_id))].length,
-    };
-  };
-
-  const calculateTimesheetSummary = (data: any[]) => {
-    return {
-      total_entries: data.length,
-      pending: data.filter((t) => t.approval_status === 'pending').length,
-      approved: data.filter((t) => t.approval_status === 'approved').length,
-      rejected: data.filter((t) => t.approval_status === 'rejected').length,
-    };
+  const formatDate = (date: Date) => {
+    const day = date.getDate();
+    const month = date.toLocaleString('default', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
   };
 
   const handleStartDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || startDate;
-    // Close picker on Android and Web after selection
-    if (Platform.OS !== 'ios') {
-      setShowStartPicker(false);
-    }
-    setStartDate(currentDate);
+    if (Platform.OS !== 'ios') setShowStartPicker(false);
+    if (selectedDate) setStartDate(selectedDate);
   };
 
   const handleEndDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || endDate;
-    // Close picker on Android and Web after selection
-    if (Platform.OS !== 'ios') {
-      setShowEndPicker(false);
-    }
-    setEndDate(currentDate);
+    if (Platform.OS !== 'ios') setShowEndPicker(false);
+    if (selectedDate) setEndDate(selectedDate);
   };
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
+      <View style={styles.overlay}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
             <View>
-              <Text style={styles.modalTitle}>Reports Center</Text>
-              <Text style={styles.modalSubtitle}>Generate comprehensive business reports</Text>
+              <Text style={styles.headerTitle}>Reports Center</Text>
+              <Text style={styles.headerSubtitle}>Generate detailed reports</Text>
             </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={28} color={colors.text.primary} />
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+              <Ionicons name="close" size={24} color="#374151" />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
+          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
             {/* Report Type Selection */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Select Report Type</Text>
-              <View style={styles.reportGrid}>
-                {reportTypes.map((report) => (
-                  <TouchableOpacity
-                    key={report.id}
-                    style={[
-                      styles.reportCard,
-                      selectedReport === report.id && styles.reportCardSelected,
-                    ]}
-                    onPress={() => setSelectedReport(report.id as ReportType)}
-                  >
+            <Text style={styles.sectionLabel}>Report Type</Text>
+            <View style={styles.reportTypeRow}>
+              {reportTypes.map((report) => (
+                <TouchableOpacity
+                  key={report.id}
+                  style={[
+                    styles.reportTypeCard,
+                    selectedReport === report.id && styles.reportTypeCardActive,
+                  ]}
+                  onPress={() => setSelectedReport(report.id as ReportType)}
+                >
+                  <View style={[
+                    styles.reportIconCircle,
+                    selectedReport === report.id && styles.reportIconCircleActive
+                  ]}>
                     <Ionicons
                       name={report.icon as any}
-                      size={32}
-                      color={selectedReport === report.id ? colors.primary : colors.gray[400]}
+                      size={20}
+                      color={selectedReport === report.id ? '#fff' : '#6366f1'}
                     />
-                    <Text
-                      style={[
-                        styles.reportCardTitle,
-                        selectedReport === report.id && styles.reportCardTitleSelected,
-                      ]}
-                    >
-                      {report.name}
-                    </Text>
-                    <Text style={styles.reportCardDesc}>{report.description}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                  </View>
+                  <Text style={[
+                    styles.reportTypeName,
+                    selectedReport === report.id && styles.reportTypeNameActive
+                  ]}>
+                    {report.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            {/* Filters */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Report Filters</Text>
+            {/* Filters Section */}
+            <Text style={styles.sectionLabel}>Filters</Text>
+            <View style={styles.filtersCard}>
+              {/* Employee Filter */}
+              <View style={styles.filterRow}>
+                <View style={styles.filterIconBox}>
+                  <Ionicons name="person-outline" size={18} color="#6366f1" />
+                </View>
+                <View style={styles.filterContent}>
+                  <Text style={styles.filterLabel}>Employee</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={selectedEmployee}
+                      onValueChange={setSelectedEmployee}
+                      style={styles.picker}
+                      dropdownIconColor="#6b7280"
+                    >
+                      <Picker.Item label="All Employees" value="all" />
+                      {employees.map((emp) => (
+                        <Picker.Item 
+                          key={emp.id} 
+                          label={`${emp.first_name} ${emp.last_name}`} 
+                          value={emp.id} 
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              </View>
 
               {/* Site Filter */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Site</Text>
-                <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={selectedSite}
-                    onValueChange={setSelectedSite}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="All Sites" value="all" />
-                    {sites.map((site) => (
-                      <Picker.Item key={site.id} label={site.name} value={site.id} />
-                    ))}
-                  </Picker>
+              <View style={styles.filterRow}>
+                <View style={styles.filterIconBox}>
+                  <Ionicons name="location-outline" size={18} color="#6366f1" />
+                </View>
+                <View style={styles.filterContent}>
+                  <Text style={styles.filterLabel}>Site</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={selectedSite}
+                      onValueChange={setSelectedSite}
+                      style={styles.picker}
+                      dropdownIconColor="#6b7280"
+                    >
+                      <Picker.Item label="All Sites" value="all" />
+                      {sites.map((site) => (
+                        <Picker.Item key={site.id} label={site.name} value={site.id} />
+                      ))}
+                    </Picker>
+                  </View>
                 </View>
               </View>
 
               {/* Date Range */}
-              <View style={styles.dateRow}>
-                <View style={styles.dateGroup}>
-                  <Text style={styles.inputLabel}>Start Date</Text>
+              <View style={styles.dateRangeRow}>
+                <View style={styles.dateBox}>
+                  <Text style={styles.dateLabel}>From</Text>
                   {Platform.OS === 'web' ? (
-                    <View style={styles.dateButton}>
-                      <Ionicons name="calendar" size={20} color={colors.primary} />
+                    <View style={styles.dateInput}>
+                      <Ionicons name="calendar-outline" size={16} color="#6366f1" />
                       <input
                         type="date"
                         value={startDate.toISOString().split('T')[0]}
                         onChange={(e) => {
                           const newDate = new Date(e.target.value);
-                          if (!isNaN(newDate.getTime())) {
-                            setStartDate(newDate);
-                          }
+                          if (!isNaN(newDate.getTime())) setStartDate(newDate);
                         }}
-                        max={new Date().toISOString().split('T')[0]}
                         style={{
                           border: 'none',
                           background: 'transparent',
@@ -336,24 +301,15 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                           color: '#1f2937',
                           outline: 'none',
                           flex: 1,
-                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                          fontWeight: '500',
                         }}
                       />
                     </View>
                   ) : (
                     <>
-                      <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowStartPicker(true)}
-                      >
-                        <Ionicons name="calendar" size={20} color={colors.primary} />
-                        <Text style={styles.dateButtonText}>
-                          {startDate.toLocaleDateString('en-US', { 
-                            year: 'numeric',
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                        </Text>
+                      <TouchableOpacity style={styles.dateInput} onPress={() => setShowStartPicker(true)}>
+                        <Ionicons name="calendar-outline" size={16} color="#6366f1" />
+                        <Text style={styles.dateText}>{formatDate(startDate)}</Text>
                       </TouchableOpacity>
                       {showStartPicker && (
                         <DateTimePicker
@@ -368,21 +324,18 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                   )}
                 </View>
 
-                <View style={styles.dateGroup}>
-                  <Text style={styles.inputLabel}>End Date</Text>
+                <View style={styles.dateBox}>
+                  <Text style={styles.dateLabel}>To</Text>
                   {Platform.OS === 'web' ? (
-                    <View style={styles.dateButton}>
-                      <Ionicons name="calendar" size={20} color={colors.primary} />
+                    <View style={styles.dateInput}>
+                      <Ionicons name="calendar-outline" size={16} color="#6366f1" />
                       <input
                         type="date"
                         value={endDate.toISOString().split('T')[0]}
                         onChange={(e) => {
                           const newDate = new Date(e.target.value);
-                          if (!isNaN(newDate.getTime())) {
-                            setEndDate(newDate);
-                          }
+                          if (!isNaN(newDate.getTime())) setEndDate(newDate);
                         }}
-                        max={new Date().toISOString().split('T')[0]}
                         style={{
                           border: 'none',
                           background: 'transparent',
@@ -390,24 +343,15 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
                           color: '#1f2937',
                           outline: 'none',
                           flex: 1,
-                          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                          fontWeight: '500',
                         }}
                       />
                     </View>
                   ) : (
                     <>
-                      <TouchableOpacity
-                        style={styles.dateButton}
-                        onPress={() => setShowEndPicker(true)}
-                      >
-                        <Ionicons name="calendar" size={20} color={colors.primary} />
-                        <Text style={styles.dateButtonText}>
-                          {endDate.toLocaleDateString('en-US', { 
-                            year: 'numeric',
-                            month: 'short', 
-                            day: 'numeric' 
-                          })}
-                        </Text>
+                      <TouchableOpacity style={styles.dateInput} onPress={() => setShowEndPicker(true)}>
+                        <Ionicons name="calendar-outline" size={16} color="#6366f1" />
+                        <Text style={styles.dateText}>{formatDate(endDate)}</Text>
                       </TouchableOpacity>
                       {showEndPicker && (
                         <DateTimePicker
@@ -426,128 +370,135 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
 
             {/* Generate Button */}
             <TouchableOpacity
-              style={[styles.generateButton, loading && styles.buttonDisabled]}
+              style={[styles.generateBtn, loading && styles.generateBtnDisabled]}
               onPress={generateReport}
               disabled={loading}
             >
               {loading ? (
-                <ActivityIndicator color={colors.white} />
+                <ActivityIndicator color="#fff" size="small" />
               ) : (
                 <>
-                  <Ionicons name="document-text" size={20} color={colors.white} />
-                  <Text style={styles.generateButtonText}>Generate Report</Text>
+                  <Ionicons name="analytics-outline" size={20} color="#fff" />
+                  <Text style={styles.generateBtnText}>Generate Report</Text>
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Report Summary */}
+            {/* Results Section */}
             {reportData && (
-              <View style={styles.summarySection}>
-                <View style={styles.summaryHeader}>
-                  <Text style={styles.summaryTitle}>{reportData.title}</Text>
-                  {selectedReport === 'payroll' && (
-                    <TouchableOpacity style={styles.exportButton} onPress={exportToExcel}>
-                      <Ionicons name="download" size={18} color={colors.primary} />
-                      <Text style={styles.exportButtonText}>Export</Text>
-                    </TouchableOpacity>
-                  )}
+              <View style={styles.resultsCard}>
+                <View style={styles.resultsHeader}>
+                  <Text style={styles.resultsTitle}>{reportData.title}</Text>
+                  <View style={styles.recordsBadge}>
+                    <Text style={styles.recordsBadgeText}>{reportData.data.length} records</Text>
+                  </View>
                 </View>
 
-                <View style={styles.summaryGrid}>
+                {/* Summary Stats */}
+                <View style={styles.statsGrid}>
                   {Object.entries(reportData.summary).map(([key, value]) => (
-                    <View key={key} style={styles.summaryCard}>
-                      <Text style={styles.summaryValue}>{String(value)}</Text>
-                      <Text style={styles.summaryLabel}>
+                    <View key={key} style={styles.statCard}>
+                      <Text style={styles.statValue}>{String(value)}</Text>
+                      <Text style={styles.statLabel}>
                         {key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
                       </Text>
                     </View>
                   ))}
                 </View>
 
-                <View style={styles.recordsInfo}>
-                  <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                  <Text style={styles.recordsText}>
-                    {reportData.data.length} records found
+                {/* Period Info */}
+                <View style={styles.periodInfo}>
+                  <Ionicons name="time-outline" size={14} color="#6b7280" />
+                  <Text style={styles.periodText}>
+                    {formatDate(startDate)} — {formatDate(endDate)}
                   </Text>
                 </View>
 
-                <View style={styles.dateRangeInfo}>
-                  <Text style={styles.dateRangeText}>
-                    Period: {startDate.toLocaleDateString()} - {endDate.toLocaleDateString()}
-                  </Text>
-                  {selectedSite !== 'all' && (
-                    <Text style={styles.dateRangeText}>
-                      Site: {sites.find(s => s.id === selectedSite)?.name || 'Selected Site'}
-                    </Text>
-                  )}
-                </View>
-
-                {/* View Details Button */}
+                {/* View Details */}
                 <TouchableOpacity
-                  style={styles.viewDetailsButton}
+                  style={styles.detailsBtn}
                   onPress={() => setShowDetailedView(!showDetailedView)}
                 >
-                  <Ionicons 
-                    name={showDetailedView ? "chevron-up" : "chevron-down"} 
-                    size={20} 
-                    color={colors.primary} 
-                  />
-                  <Text style={styles.viewDetailsText}>
-                    {showDetailedView ? 'Hide Details' : 'View Detailed Records'}
+                  <Text style={styles.detailsBtnText}>
+                    {showDetailedView ? 'Hide Details' : 'View Details'}
                   </Text>
+                  <Ionicons 
+                    name={showDetailedView ? 'chevron-up' : 'chevron-down'} 
+                    size={18} 
+                    color="#6366f1" 
+                  />
                 </TouchableOpacity>
 
-                {/* Detailed View */}
+                {/* Detailed Records */}
                 {showDetailedView && (
-                  <View style={styles.detailedView}>
-                    <Text style={styles.detailedTitle}>Detailed Records</Text>
-                    <ScrollView style={styles.detailedScroll} nestedScrollEnabled>
-                      {reportData.data.slice(0, 50).map((record: any, index: number) => (
-                        <View key={index} style={styles.recordCard}>
-                          {selectedReport === 'payroll' && (
-                            <>
-                              <Text style={styles.recordTitle}>{record.employee_name || record.first_name + ' ' + record.last_name}</Text>
-                              <Text style={styles.recordDetail}>Hours: {record.total_hours || 0}</Text>
-                              <Text style={styles.recordDetail}>Pay: ${record.total_pay || 0}</Text>
-                              <Text style={styles.recordDetail}>Date: {new Date(record.clock_in || record.created_at).toLocaleDateString()}</Text>
-                            </>
-                          )}
-                          {selectedReport === 'timesheets' && (
-                            <>
-                              <Text style={styles.recordTitle}>{record.employee_name || 'Employee'}</Text>
-                              <Text style={styles.recordDetail}>Clock In: {new Date(record.clock_in).toLocaleString()}</Text>
-                              {record.clock_out && (
-                                <Text style={styles.recordDetail}>Clock Out: {new Date(record.clock_out).toLocaleString()}</Text>
-                              )}
-                              <Text style={styles.recordDetail}>Hours: {record.total_hours || 0}</Text>
-                              <Text style={[styles.recordDetail, { 
-                                color: record.approval_status === 'approved' ? colors.success : 
-                                       record.approval_status === 'rejected' ? colors.error : colors.warning 
-                              }]}>
-                                Status: {record.approval_status}
+                  <View style={styles.detailsList}>
+                    {reportData.data.slice(0, 20).map((record: any, index: number) => (
+                      <View key={index} style={styles.recordRow}>
+                        {selectedReport === 'payroll' && (
+                          <>
+                            <View style={styles.recordMain}>
+                              <Text style={styles.recordName}>
+                                {record.employee_name || `${record.first_name} ${record.last_name}`}
                               </Text>
-                            </>
-                          )}
-                          {selectedReport === 'abn' && (
-                            <>
-                              <Text style={styles.recordTitle}>{record.first_name} {record.last_name}</Text>
-                              <Text style={styles.recordDetail}>ABN: {record.abn}</Text>
-                              <Text style={styles.recordDetail}>Job: {record.job_title}</Text>
-                              <Text style={styles.recordDetail}>Phone: {record.phone}</Text>
-                            </>
-                          )}
-                        </View>
-                      ))}
-                      {reportData.data.length > 50 && (
-                        <Text style={styles.moreRecordsText}>
-                          Showing first 50 of {reportData.data.length} records
-                        </Text>
-                      )}
-                    </ScrollView>
+                              <Text style={styles.recordSub}>
+                                {new Date(record.clock_in || record.created_at).toLocaleDateString()}
+                              </Text>
+                            </View>
+                            <View style={styles.recordStats}>
+                              <Text style={styles.recordHours}>{record.total_hours || 0}h</Text>
+                              <Text style={styles.recordPay}>${record.total_pay || 0}</Text>
+                            </View>
+                          </>
+                        )}
+                        {selectedReport === 'timesheets' && (
+                          <>
+                            <View style={styles.recordMain}>
+                              <Text style={styles.recordName}>{record.employee_name || 'Employee'}</Text>
+                              <Text style={styles.recordSub}>
+                                {new Date(record.clock_in).toLocaleDateString()} • {record.total_hours || 0}h
+                              </Text>
+                            </View>
+                            <View style={[
+                              styles.statusBadge,
+                              { backgroundColor: 
+                                record.approval_status === 'approved' ? '#dcfce7' : 
+                                record.approval_status === 'rejected' ? '#fee2e2' : '#fef3c7' 
+                              }
+                            ]}>
+                              <Text style={[
+                                styles.statusText,
+                                { color: 
+                                  record.approval_status === 'approved' ? '#15803d' : 
+                                  record.approval_status === 'rejected' ? '#dc2626' : '#d97706' 
+                                }
+                              ]}>
+                                {record.approval_status}
+                              </Text>
+                            </View>
+                          </>
+                        )}
+                        {selectedReport === 'abn' && (
+                          <>
+                            <View style={styles.recordMain}>
+                              <Text style={styles.recordName}>{record.first_name} {record.last_name}</Text>
+                              <Text style={styles.recordSub}>ABN: {record.abn}</Text>
+                            </View>
+                            <Text style={styles.recordJob}>{record.job_title}</Text>
+                          </>
+                        )}
+                      </View>
+                    ))}
+                    {reportData.data.length > 20 && (
+                      <Text style={styles.moreText}>
+                        Showing 20 of {reportData.data.length} records
+                      </Text>
+                    )}
                   </View>
                 )}
               </View>
             )}
+
+            <View style={{ height: 40 }} />
           </ScrollView>
         </View>
       </View>
@@ -556,279 +507,339 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
 }
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  overlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  container: {
+    backgroundColor: '#f8fafc',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '92%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 16,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+    letterSpacing: -0.3,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginTop: 2,
+  },
+  closeBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  content: {
     padding: 20,
   },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderRadius: 24,
-    maxHeight: '90%',
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
-  modalSubtitle: {
-    fontSize: 14,
-    color: colors.text.secondary,
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 12,
     marginTop: 4,
   },
-  modalBody: {
-    padding: 20,
-  },
-  section: {
+  reportTypeRow: {
+    flexDirection: 'row',
+    gap: 10,
     marginBottom: 24,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 12,
-  },
-  reportGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  reportCard: {
-    width: '48%',
-    backgroundColor: colors.gray[50],
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.gray[200],
+  reportTypeCard: {
+    flex: 1,
     alignItems: 'center',
+    padding: 14,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
   },
-  reportCardSelected: {
-    backgroundColor: colors.primary + '10',
-    borderColor: colors.primary,
+  reportTypeCardActive: {
+    borderColor: '#6366f1',
+    backgroundColor: '#eef2ff',
   },
-  reportCardTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  reportCardTitleSelected: {
-    color: colors.primary,
-  },
-  reportCardDesc: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
+  reportIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#eef2ff',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 8,
   },
-  pickerWrapper: {
-    backgroundColor: colors.gray[50],
-    borderRadius: 12,
+  reportIconCircleActive: {
+    backgroundColor: '#6366f1',
+  },
+  reportTypeName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  reportTypeNameActive: {
+    color: '#4f46e5',
+  },
+  filtersCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  filterIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#eef2ff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  filterContent: {
+    flex: 1,
+  },
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  pickerContainer: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.gray[200],
+    borderColor: '#e5e7eb',
     overflow: 'hidden',
   },
   picker: {
-    height: 50,
-    color: colors.text.primary,
+    height: 44,
+    color: '#1f2937',
+    fontSize: 15,
   },
-  dateRow: {
+  dateRangeRow: {
     flexDirection: 'row',
     gap: 12,
+    marginTop: 4,
   },
-  dateGroup: {
+  dateBox: {
     flex: 1,
   },
-  dateButton: {
+  dateLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6b7280',
+    marginBottom: 6,
+  },
+  dateInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.gray[50],
-    padding: 14,
-    borderRadius: 12,
+    backgroundColor: '#f9fafb',
+    padding: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: colors.gray[200],
-    gap: 10,
+    borderColor: '#e5e7eb',
+    gap: 8,
   },
-  dateButtonText: {
-    fontSize: 13,
-    color: colors.text.primary,
+  dateText: {
+    fontSize: 15,
+    color: '#1f2937',
     fontWeight: '500',
   },
-  generateButton: {
+  generateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.success,
+    backgroundColor: '#6366f1',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     gap: 8,
-    marginBottom: 24,
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  generateButtonText: {
-    color: colors.white,
+  generateBtnDisabled: {
+    opacity: 0.7,
+  },
+  generateBtnText: {
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  summarySection: {
-    backgroundColor: colors.gray[50],
-    padding: 20,
+  resultsCard: {
+    backgroundColor: '#fff',
     borderRadius: 16,
+    padding: 20,
+    marginTop: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  summaryHeader: {
+  resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
   },
-  summaryTitle: {
+  resultsTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text.primary,
+    fontWeight: '700',
+    color: '#111827',
   },
-  exportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 6,
+  recordsBadge: {
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
-  exportButtonText: {
-    color: colors.primary,
-    fontSize: 14,
+  recordsBadgeText: {
+    fontSize: 12,
     fontWeight: '600',
+    color: '#15803d',
   },
-  summaryGrid: {
+  statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
     marginBottom: 16,
   },
-  summaryCard: {
+  statCard: {
     flex: 1,
     minWidth: '45%',
-    backgroundColor: colors.white,
-    padding: 16,
+    backgroundColor: '#f8fafc',
+    padding: 14,
     borderRadius: 12,
     alignItems: 'center',
   },
-  summaryValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.primary,
+  statValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#6366f1',
   },
-  summaryLabel: {
-    fontSize: 12,
-    color: colors.text.secondary,
+  statLabel: {
+    fontSize: 11,
+    color: '#6b7280',
     marginTop: 4,
     textAlign: 'center',
+    textTransform: 'capitalize',
   },
-  recordsInfo: {
+  periodInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  recordsText: {
-    fontSize: 14,
-    color: colors.success,
-    fontWeight: '600',
-  },
-  dateRangeInfo: {
-    alignItems: 'center',
+    gap: 6,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
+    borderTopColor: '#f3f4f6',
   },
-  dateRangeText: {
+  periodText: {
     fontSize: 13,
-    color: colors.text.secondary,
-    marginTop: 4,
+    color: '#6b7280',
   },
-  viewDetailsButton: {
+  detailsBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    gap: 8,
+    paddingVertical: 14,
+    marginTop: 12,
+    backgroundColor: '#eef2ff',
+    borderRadius: 10,
+    gap: 6,
   },
-  viewDetailsText: {
-    color: colors.primary,
+  detailsBtnText: {
     fontSize: 14,
     fontWeight: '600',
+    color: '#6366f1',
   },
-  detailedView: {
+  detailsList: {
     marginTop: 16,
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 16,
-    maxHeight: 400,
   },
-  detailedTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    marginBottom: 12,
+  recordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
   },
-  detailedScroll: {
-    maxHeight: 350,
+  recordMain: {
+    flex: 1,
   },
-  recordCard: {
-    backgroundColor: colors.gray[50],
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
-  },
-  recordTitle: {
+  recordName: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 6,
+    color: '#111827',
   },
-  recordDetail: {
+  recordSub: {
     fontSize: 13,
-    color: colors.text.secondary,
-    marginTop: 3,
+    color: '#6b7280',
+    marginTop: 2,
   },
-  moreRecordsText: {
+  recordStats: {
+    alignItems: 'flex-end',
+  },
+  recordHours: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  recordPay: {
     fontSize: 13,
-    color: colors.text.secondary,
+    color: '#10b981',
+    fontWeight: '500',
+  },
+  recordJob: {
+    fontSize: 13,
+    color: '#6b7280',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  moreText: {
     textAlign: 'center',
+    fontSize: 13,
+    color: '#6b7280',
     fontStyle: 'italic',
-    marginTop: 12,
-    marginBottom: 8,
+    paddingVertical: 12,
   },
 });
