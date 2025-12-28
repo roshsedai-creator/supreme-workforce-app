@@ -58,6 +58,11 @@ export default function SupervisorScreen() {
   // Image modal
   const [showImageModal, setShowImageModal] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+  
+  // Rejection modal (replaces Alert.prompt which doesn't work on Android)
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectingTimesheetId, setRejectingTimesheetId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   // Fetch employees
   const fetchEmployees = useCallback(async () => {
@@ -69,7 +74,7 @@ export default function SupervisorScreen() {
     }
   }, []);
 
-  // Fetch all timesheets (for supervisors)
+  // Fetch timesheets based on selected employee
   const fetchTimesheets = useCallback(async () => {
     try {
       const params: any = {};
@@ -111,7 +116,7 @@ export default function SupervisorScreen() {
     if (employees.length > 0) {
       fetchTimesheets();
     }
-  }, [employees, fetchTimesheets]);
+  }, [employees, selectedEmployee, fetchTimesheets]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -135,35 +140,33 @@ export default function SupervisorScreen() {
     }
   };
 
-  // Reject timesheet
-  const rejectTimesheet = async (timesheetId: string) => {
-    Alert.prompt(
-      'Reject Timesheet',
-      'Please provide a reason for rejection:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: async (reason) => {
-            setActionLoading(timesheetId);
-            try {
-              await axios.put(
-                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheetId}/approve`,
-                { status: 'rejected', approved_by: user?.id, rejection_reason: reason }
-              );
-              Alert.alert('Success', 'Timesheet rejected');
-              fetchTimesheets();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.detail || 'Failed to reject timesheet');
-            } finally {
-              setActionLoading(null);
-            }
-          }
-        }
-      ],
-      'plain-text'
-    );
+  // Open rejection modal
+  const openRejectModal = (timesheetId: string) => {
+    setRejectingTimesheetId(timesheetId);
+    setRejectionReason('');
+    setShowRejectModal(true);
+  };
+
+  // Submit rejection
+  const submitRejection = async () => {
+    if (!rejectingTimesheetId) return;
+    
+    setActionLoading(rejectingTimesheetId);
+    setShowRejectModal(false);
+    
+    try {
+      await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${rejectingTimesheetId}/approve`,
+        { status: 'rejected', approved_by: user?.id, rejection_reason: rejectionReason }
+      );
+      Alert.alert('Success', 'Timesheet rejected');
+      fetchTimesheets();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to reject timesheet');
+    } finally {
+      setActionLoading(null);
+      setRejectingTimesheetId(null);
+    }
   };
 
   // Format date
@@ -227,16 +230,21 @@ export default function SupervisorScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Employee Filter */}
+      {/* Employee Dropdown */}
       <TouchableOpacity 
-        style={styles.employeeFilter}
+        style={styles.employeeDropdown}
         onPress={() => setShowEmployeePicker(true)}
       >
-        <Ionicons name="person" size={20} color={colors.primary} />
-        <Text style={styles.employeeFilterText}>
-          {selectedEmployee ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}` : 'All Employees'}
-        </Text>
-        <Ionicons name="chevron-down" size={20} color={colors.gray[400]} />
+        <View style={styles.dropdownLeft}>
+          <Ionicons name="person" size={20} color={colors.primary} />
+          <View style={styles.dropdownTextContainer}>
+            <Text style={styles.dropdownLabel}>Employee</Text>
+            <Text style={styles.dropdownValue}>
+              {selectedEmployee ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}` : 'All Employees'}
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-down" size={22} color={colors.gray[400]} />
       </TouchableOpacity>
 
       {/* Summary Stats */}
@@ -285,7 +293,11 @@ export default function SupervisorScreen() {
         {filteredTimesheets.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="document-text-outline" size={48} color={colors.gray[400]} />
-            <Text style={styles.emptyText}>No timesheets found</Text>
+            <Text style={styles.emptyText}>
+              {selectedEmployee 
+                ? `No ${filterStatus === 'all' ? '' : filterStatus} timesheets for ${selectedEmployee.first_name}`
+                : `No ${filterStatus === 'all' ? '' : filterStatus} timesheets found`}
+            </Text>
           </View>
         ) : (
           filteredTimesheets.map((timesheet) => (
@@ -359,7 +371,7 @@ export default function SupervisorScreen() {
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={[styles.rejectBtn, actionLoading === timesheet.id && styles.btnDisabled]}
-                        onPress={() => rejectTimesheet(timesheet.id)}
+                        onPress={() => openRejectModal(timesheet.id)}
                         disabled={actionLoading === timesheet.id}
                       >
                         <Ionicons name="close" size={18} color={colors.error} />
@@ -400,11 +412,16 @@ export default function SupervisorScreen() {
               placeholder="Search by name..."
               placeholderTextColor={colors.gray[400]}
             />
+            {employeeSearch.length > 0 && (
+              <TouchableOpacity onPress={() => setEmployeeSearch('')}>
+                <Ionicons name="close-circle" size={20} color={colors.gray[400]} />
+              </TouchableOpacity>
+            )}
           </View>
 
           <ScrollView style={styles.employeeList}>
             <TouchableOpacity 
-              style={styles.employeeItem}
+              style={[styles.employeeItem, !selectedEmployee && styles.employeeItemSelected]}
               onPress={() => {
                 setSelectedEmployee(null);
                 setShowEmployeePicker(false);
@@ -415,13 +432,13 @@ export default function SupervisorScreen() {
                 <Ionicons name="people" size={20} color={colors.primary} />
               </View>
               <Text style={styles.employeeItemName}>All Employees</Text>
-              {!selectedEmployee && <Ionicons name="checkmark" size={20} color={colors.primary} />}
+              {!selectedEmployee && <Ionicons name="checkmark-circle" size={22} color={colors.primary} />}
             </TouchableOpacity>
 
             {filteredEmployees.map(employee => (
               <TouchableOpacity 
                 key={employee.id}
-                style={styles.employeeItem}
+                style={[styles.employeeItem, selectedEmployee?.id === employee.id && styles.employeeItemSelected]}
                 onPress={() => {
                   setSelectedEmployee(employee);
                   setShowEmployeePicker(false);
@@ -440,11 +457,51 @@ export default function SupervisorScreen() {
                   <Text style={styles.employeeItemRole}>{employee.job_title || 'Employee'}</Text>
                 </View>
                 {selectedEmployee?.id === employee.id && (
-                  <Ionicons name="checkmark" size={20} color={colors.primary} />
+                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
                 )}
               </TouchableOpacity>
             ))}
           </ScrollView>
+        </View>
+      </Modal>
+
+      {/* Rejection Reason Modal */}
+      <Modal
+        visible={showRejectModal}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowRejectModal(false)}
+      >
+        <View style={styles.rejectModalOverlay}>
+          <View style={styles.rejectModalContent}>
+            <Text style={styles.rejectModalTitle}>Reject Timesheet</Text>
+            <Text style={styles.rejectModalSubtitle}>Please provide a reason for rejection:</Text>
+            
+            <TextInput
+              style={styles.rejectReasonInput}
+              value={rejectionReason}
+              onChangeText={setRejectionReason}
+              placeholder="Enter reason..."
+              placeholderTextColor={colors.gray[400]}
+              multiline
+              numberOfLines={3}
+            />
+            
+            <View style={styles.rejectModalButtons}>
+              <TouchableOpacity 
+                style={styles.rejectModalCancelBtn}
+                onPress={() => setShowRejectModal(false)}
+              >
+                <Text style={styles.rejectModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.rejectModalSubmitBtn}
+                onPress={submitRejection}
+              >
+                <Text style={styles.rejectModalSubmitText}>Reject</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
 
@@ -478,23 +535,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  employeeFilter: {
+  employeeDropdown: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.white,
     margin: 16,
     marginBottom: 12,
     padding: 14,
     borderRadius: 12,
-    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 2,
   },
-  employeeFilterText: {
-    flex: 1,
+  dropdownLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  dropdownTextContainer: {
+    gap: 2,
+  },
+  dropdownLabel: {
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+  dropdownValue: {
     fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
@@ -557,9 +627,10 @@ const styles = StyleSheet.create({
     paddingVertical: 48,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.text.secondary,
     marginTop: 12,
+    textAlign: 'center',
   },
   timesheetCard: {
     backgroundColor: colors.white,
@@ -731,6 +802,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 10,
     gap: 10,
+    borderWidth: 1,
+    borderColor: colors.gray[200],
   },
   searchInput: {
     flex: 1,
@@ -748,6 +821,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[100],
+  },
+  employeeItemSelected: {
+    backgroundColor: colors.primary + '08',
   },
   employeeAvatar: {
     width: 44,
@@ -777,6 +853,70 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.secondary,
     marginTop: 1,
+  },
+  // Rejection modal
+  rejectModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  rejectModalContent: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 360,
+  },
+  rejectModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  rejectModalSubtitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    marginBottom: 16,
+  },
+  rejectReasonInput: {
+    backgroundColor: colors.gray[100],
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 15,
+    color: colors.text.primary,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  rejectModalButtons: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 12,
+  },
+  rejectModalCancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: colors.gray[200],
+  },
+  rejectModalCancelText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  rejectModalSubmitBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 10,
+    backgroundColor: colors.error,
+  },
+  rejectModalSubmitText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.white,
   },
   // Image modal
   imageModalContainer: {
