@@ -10,12 +10,6 @@ const LeadershipTeam = () => {
       description: "Founder and visionary leader driving Supreme's mission to revolutionize hospitality services across Australia."
     },
     {
-      name: "Ashish Poudel",
-      role: "Operations Manager",
-      image: "https://customer-assets.emergentagent.com/job_hosp-supreme/artifacts/453as5w2_file_00000000da4c7206898c266e3facce0f%20%281%29.png",
-      description: "Ensures seamless day-to-day operations and exceptional service delivery across all client properties."
-    },
-    {
       name: "Happy Kafle",
       role: "Senior Operations Manager",
       image: "https://customer-assets.emergentagent.com/job_hosp-supreme/artifacts/4q36gvgh_file_00000000810c72069613d9ef46561cc6.png",
@@ -28,6 +22,12 @@ const LeadershipTeam = () => {
       description: "Cultivates our people-first culture and ensures every team member thrives in the Supreme family."
     },
     {
+      name: "Ashish Poudel",
+      role: "Operations Manager",
+      image: "https://customer-assets.emergentagent.com/job_hosp-supreme/artifacts/453as5w2_file_00000000da4c7206898c266e3facce0f%20%281%29.png",
+      description: "Ensures seamless day-to-day operations and exceptional service delivery across all client properties."
+    },
+    {
       name: "David Mitchell",
       role: "Training Manager",
       image: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop",
@@ -36,7 +36,7 @@ const LeadershipTeam = () => {
     {
       name: "Sarah Thompson",
       role: "Business Development Manager",
-      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face&auto=format&q=80",
+      image: "https://this-person-does-not-exist.com/img/avatar-gen116f8c8b8a4b14ea7e42a5c7f0a6e7b2.jpg",
       description: "Drives strategic partnerships and expands Supreme's presence across Australia's hospitality sector."
     }
   ];
