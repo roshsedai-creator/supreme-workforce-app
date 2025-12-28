@@ -1,56 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
+  ScrollView,
   Modal,
   TextInput,
   Alert,
   Image,
-  ScrollView,
+  ActivityIndicator,
+  RefreshControl,
+  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { useAuthStore } from '../../store/authStore';
-import { getTimesheets, updateTimesheet } from '../../utils/api';
 import { colors } from '../../constants/colors';
-import { format } from 'date-fns';
+import axios from 'axios';
+import * as ImagePicker from 'expo-image-picker';
+
+interface Timesheet {
+  id: string;
+  date: string;
+  clock_in: string;
+  clock_out: string;
+  total_hours: number;
+  break_minutes: number;
+  notes: string;
+  image?: string;
+  approval_status: 'pending' | 'approved' | 'rejected';
+  site_name?: string;
+}
 
 export default function TimesheetsScreen() {
   const { user } = useAuthStore();
-  const [timesheets, setTimesheets] = useState<any[]>([]);
+  const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
-  // Edit modal states
-  const [editModalVisible, setEditModalVisible] = useState(false);
-  const [selectedTimesheet, setSelectedTimesheet] = useState<any>(null);
-  
-  // Simple time inputs (HH:MM format)
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
   const [editDate, setEditDate] = useState('');
   const [editStartTime, setEditStartTime] = useState('');
   const [editEndTime, setEditEndTime] = useState('');
-  const [editBreakMinutes, setEditBreakMinutes] = useState('');
-  const [employeeNotes, setEmployeeNotes] = useState('');
-  const [updating, setUpdating] = useState(false);
+  const [editBreak, setEditBreak] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editImage, setEditImage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
   
-  // Photo modal states
-  const [photoModalVisible, setPhotoModalVisible] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  // Image view modal
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchTimesheets();
-  }, []);
+  // Filter
+  const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
 
-  const fetchTimesheets = async () => {
+  // Fetch timesheets
+  const fetchTimesheets = useCallback(async () => {
+    if (!user?.id) return;
     try {
-      const data = await getTimesheets(user?.id);
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`,
+        { params: { employee_id: user.id } }
+      );
+      const data = response.data || [];
+      // Sort by date descending
+      data.sort((a: any, b: any) => new Date(b.clock_in || b.date).getTime() - new Date(a.clock_in || a.date).getTime());
       setTimesheets(data);
     } catch (error) {
       console.error('Failed to fetch timesheets:', error);
@@ -58,296 +75,181 @@ export default function TimesheetsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchTimesheets();
+  }, [fetchTimesheets]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchTimesheets();
   };
 
-  const handleEditTimesheet = (timesheet: any) => {
-    setSelectedTimesheet(timesheet);
-    
-    // Parse dates to simple formats
+  // Format date for display
+  const formatDate = (dateStr: string) => {
     try {
-      const clockIn = new Date(timesheet.clock_in);
-      const clockOut = timesheet.clock_out ? new Date(timesheet.clock_out) : new Date();
-      
-      // Format as YYYY-MM-DD
-      setEditDate(format(clockIn, 'yyyy-MM-dd'));
-      
-      // Format as HH:mm (24-hour)
-      setEditStartTime(format(clockIn, 'HH:mm'));
-      setEditEndTime(timesheet.clock_out ? format(clockOut, 'HH:mm') : '');
-    } catch (error) {
-      console.error('Error parsing dates:', error);
-      const now = new Date();
-      setEditDate(format(now, 'yyyy-MM-dd'));
-      setEditStartTime('09:00');
-      setEditEndTime('17:00');
+      const date = new Date(dateStr);
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
+    } catch {
+      return dateStr;
     }
-    
-    setEditBreakMinutes(timesheet.break_minutes?.toString() || '0');
-    setEmployeeNotes(timesheet.employee_notes || '');
-    setEditModalVisible(true);
   };
 
-  const handleSaveEdit = async () => {
-    if (!selectedTimesheet) return;
-
-    // Validate inputs
-    if (!editDate || !editStartTime || !editEndTime) {
-      Alert.alert('Error', 'Please fill in date, start time, and end time');
-      return;
-    }
-
-    // Validate time format (HH:MM)
-    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!timeRegex.test(editStartTime) || !timeRegex.test(editEndTime)) {
-      Alert.alert('Error', 'Please use HH:MM format (e.g., 09:00, 17:30)');
-      return;
-    }
-
+  // Format time
+  const formatTime = (dateStr: string) => {
     try {
-      setUpdating(true);
-      
-      // Construct ISO datetime strings
-      const clockInISO = `${editDate}T${editStartTime}:00.000Z`;
-      const clockOutISO = `${editDate}T${editEndTime}:00.000Z`;
-      
-      await updateTimesheet(selectedTimesheet.id, {
-        manual_clock_in: clockInISO,
-        manual_clock_out: clockOutISO,
-        manual_break_minutes: parseInt(editBreakMinutes) || 0,
-        employee_notes: employeeNotes,
-      });
+      const date = new Date(dateStr);
+      return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    } catch {
+      return '--:--';
+    }
+  };
 
-      Alert.alert('Success', 'Timesheet updated successfully');
-      setEditModalVisible(false);
-      fetchTimesheets();
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return colors.success;
+      case 'rejected': return colors.error;
+      default: return colors.warning;
+    }
+  };
+
+  // Open edit modal
+  const openEditModal = (timesheet: Timesheet) => {
+    if (timesheet.approval_status === 'approved') {
+      Alert.alert('Cannot Edit', 'Approved timesheets cannot be modified');
+      return;
+    }
+    
+    setEditingTimesheet(timesheet);
+    const clockIn = new Date(timesheet.clock_in);
+    const clockOut = new Date(timesheet.clock_out);
+    
+    setEditDate(`${clockIn.getFullYear()}-${String(clockIn.getMonth() + 1).padStart(2, '0')}-${String(clockIn.getDate()).padStart(2, '0')}`);
+    setEditStartTime(`${String(clockIn.getHours()).padStart(2, '0')}:${String(clockIn.getMinutes()).padStart(2, '0')}`);
+    setEditEndTime(`${String(clockOut.getHours()).padStart(2, '0')}:${String(clockOut.getMinutes()).padStart(2, '0')}`);
+    setEditBreak(String(timesheet.break_minutes || 0));
+    setEditNotes(timesheet.notes || '');
+    setEditImage(timesheet.image || null);
+    setShowEditModal(true);
+  };
+
+  // Pick image
+  const pickImage = async (useCamera: boolean) => {
+    try {
+      const permission = useCamera 
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permission.status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant camera/gallery access');
+        return;
+      }
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.7,
+            base64: true,
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.7,
+            base64: true,
+          });
+
+      if (!result.canceled && result.assets[0].base64) {
+        setEditImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      }
+    } catch (error) {
+      console.error('Image picker error:', error);
+    }
+  };
+
+  // Save edit
+  const saveEdit = async () => {
+    if (!editingTimesheet) return;
+    
+    setSaving(true);
+    try {
+      const response = await axios.put(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${editingTimesheet.id}`,
+        {
+          date: editDate,
+          clock_in_time: editStartTime,
+          clock_out_time: editEndTime,
+          break_minutes: parseInt(editBreak) || 0,
+          notes: editNotes,
+          image: editImage,
+        }
+      );
+      
+      if (response.data) {
+        Alert.alert('Success', 'Timesheet updated');
+        setShowEditModal(false);
+        fetchTimesheets();
+      }
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to update timesheet');
     } finally {
-      setUpdating(false);
+      setSaving(false);
     }
   };
 
-  const handlePickImage = async (timesheet: any) => {
-    setSelectedTimesheet(timesheet);
-    
-    // Show options: Camera or Gallery
+  // Delete timesheet
+  const deleteTimesheet = (timesheet: Timesheet) => {
+    if (timesheet.approval_status === 'approved') {
+      Alert.alert('Cannot Delete', 'Approved timesheets cannot be deleted');
+      return;
+    }
+
     Alert.alert(
-      'Attach Photo',
-      'Choose photo source',
+      'Delete Timesheet',
+      'Are you sure you want to delete this timesheet?',
       [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Take Photo',
-          onPress: () => openCamera(timesheet),
-        },
-        {
-          text: 'Choose from Gallery',
-          onPress: () => openGallery(timesheet),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await axios.delete(
+                `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${timesheet.id}`
+              );
+              Alert.alert('Success', 'Timesheet deleted');
+              fetchTimesheets();
+            } catch (error: any) {
+              Alert.alert('Error', error.response?.data?.detail || 'Failed to delete timesheet');
+            }
+          },
         },
       ]
     );
   };
 
-  const openCamera = async (timesheet: any) => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need camera permissions to take photos');
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.7,
-      base64: true,
-    });
-
-    if (!result.canceled && result.assets[0].base64) {
-      setSelectedPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
-      setPhotoModalVisible(true);
-    }
+  // View image
+  const viewImage = (imageUrl: string) => {
+    setViewingImage(imageUrl);
+    setShowImageModal(true);
   };
 
-  const openGallery = async (timesheet: any) => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'We need gallery permissions to choose photos');
-      return;
-    }
+  // Filtered timesheets
+  const filteredTimesheets = filterStatus === 'all' 
+    ? timesheets 
+    : timesheets.filter(t => t.approval_status === filterStatus);
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.7,
-      base64: true,
-    });
-
-    if (!result.canceled && result.assets[0].base64) {
-      setSelectedPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
-      setPhotoModalVisible(true);
-    }
-  };
-
-  const handleUploadPhoto = async () => {
-    if (!selectedTimesheet || !selectedPhoto) return;
-
-    try {
-      setUploadingPhoto(true);
-      
-      await updateTimesheet(selectedTimesheet.id, {
-        photo_base64: selectedPhoto,
-      });
-
-      Alert.alert('Success', 'Photo attached successfully');
-      setPhotoModalVisible(false);
-      setSelectedPhoto(null);
-      fetchTimesheets();
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to upload photo');
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return colors.success;
-      case 'rejected':
-        return colors.error;
-      default:
-        return colors.warning;
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'checkmark-circle';
-      case 'rejected':
-        return 'close-circle';
-      default:
-        return 'time';
-    }
-  };
-
-  const renderTimesheet = ({ item }: any) => {
-    const clockIn = new Date(item.clock_in);
-    const clockOut = item.clock_out ? new Date(item.clock_out) : null;
-    const canEdit = item.approval_status === 'pending';
-
-    return (
-      <View style={styles.timesheetCard}>
-        {/* Header with date and status */}
-        <View style={styles.cardHeader}>
-          <View>
-            <Text style={styles.dateText}>{format(clockIn, 'EEE, MMM dd, yyyy')}</Text>
-          </View>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.approval_status) + '20' }]}>
-            <Ionicons name={getStatusIcon(item.approval_status)} size={16} color={getStatusColor(item.approval_status)} />
-            <Text style={[styles.statusText, { color: getStatusColor(item.approval_status) }]}>
-              {item.approval_status.charAt(0).toUpperCase() + item.approval_status.slice(1)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Time details - Employment Hero style */}
-        <View style={styles.timeGrid}>
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>Start</Text>
-            <Text style={styles.timeCellValue}>{format(clockIn, 'h:mm a')}</Text>
-          </View>
-          
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>End</Text>
-            <Text style={styles.timeCellValue}>
-              {clockOut ? format(clockOut, 'h:mm a') : '-'}
-            </Text>
-          </View>
-          
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>Break</Text>
-            <Text style={styles.timeCellValue}>{item.break_minutes} min</Text>
-          </View>
-          
-          <View style={styles.timeCell}>
-            <Text style={styles.timeCellLabel}>Total</Text>
-            <Text style={[styles.timeCellValue, styles.totalHours]}>{item.total_hours.toFixed(2)} hrs</Text>
-          </View>
-        </View>
-
-        {/* Badges */}
-        <View style={styles.badgesRow}>
-          {item.manually_edited && (
-            <View style={styles.badge}>
-              <Ionicons name="pencil" size={12} color={colors.warning} />
-              <Text style={styles.badgeText}>Edited</Text>
-            </View>
-          )}
-          {item.photo_base64 && (
-            <View style={styles.badge}>
-              <Ionicons name="image" size={12} color={colors.primary} />
-              <Text style={styles.badgeText}>Photo</Text>
-            </View>
-          )}
-          {item.gps_in_out_of_bounds && (
-            <View style={[styles.badge, { backgroundColor: colors.error + '15' }]}>
-              <Ionicons name="alert-circle" size={12} color={colors.error} />
-              <Text style={[styles.badgeText, { color: colors.error }]}>Out of Bounds</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Notes */}
-        {item.employee_notes && (
-          <View style={styles.notesBox}>
-            <Ionicons name="chatbox-ellipses-outline" size={16} color={colors.text.secondary} />
-            <Text style={styles.notesText}>{item.employee_notes}</Text>
-          </View>
-        )}
-
-        {/* Action buttons */}
-        {canEdit && (
-          <View style={styles.actionsRow}>
-            <TouchableOpacity 
-              style={styles.actionBtn}
-              onPress={() => handleEditTimesheet(item)}
-            >
-              <Ionicons name="time-outline" size={18} color={colors.primary} />
-              <Text style={styles.actionBtnText}>Edit Times</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.actionBtn}
-              onPress={() => handlePickImage(item)}
-            >
-              <Ionicons name="camera-outline" size={18} color={colors.primary} />
-              <Text style={styles.actionBtnText}>Add Photo</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Pay info (if approved and permission) */}
-        {item.approval_status === 'approved' && item.total_pay && user?.permissions?.view_own_pay && (
-          <View style={styles.payBox}>
-            <Ionicons name="cash" size={20} color={colors.success} />
-            <Text style={styles.payText}>Total Pay: ${item.total_pay.toFixed(2)}</Text>
-          </View>
-        )}
-      </View>
-    );
-  };
+  // Calculate totals
+  const totalHours = filteredTimesheets.reduce((sum, t) => sum + (t.total_hours || 0), 0);
+  const pendingCount = timesheets.filter(t => t.approval_status === 'pending').length;
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -355,203 +257,251 @@ export default function TimesheetsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Summary header */}
-      <View style={styles.summaryCard}>
+      {/* Summary Header */}
+      <View style={styles.summaryHeader}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>{timesheets.length}</Text>
-          <Text style={styles.summaryLabel}>Total</Text>
+          <Text style={styles.summaryValue}>{filteredTimesheets.length}</Text>
+          <Text style={styles.summaryLabel}>Entries</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>
-            {timesheets.filter(ts => ts.approval_status === 'pending').length}
-          </Text>
+          <Text style={styles.summaryValue}>{totalHours.toFixed(1)}h</Text>
+          <Text style={styles.summaryLabel}>Total Hours</Text>
+        </View>
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryItem}>
+          <Text style={[styles.summaryValue, { color: colors.warning }]}>{pendingCount}</Text>
           <Text style={styles.summaryLabel}>Pending</Text>
-        </View>
-        <View style={styles.summaryDivider} />
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryValue}>
-            {timesheets.reduce((sum, ts) => sum + ts.total_hours, 0).toFixed(1)}
-          </Text>
-          <Text style={styles.summaryLabel}>Hours</Text>
         </View>
       </View>
 
-      <FlatList
-        data={timesheets}
-        keyExtractor={(item) => item.id}
-        renderItem={renderTimesheet}
-        contentContainerStyle={styles.listContent}
+      {/* Filter Tabs */}
+      <View style={styles.filterTabs}>
+        {(['all', 'pending', 'approved', 'rejected'] as const).map(status => (
+          <TouchableOpacity
+            key={status}
+            style={[styles.filterTab, filterStatus === status && styles.filterTabActive]}
+            onPress={() => setFilterStatus(status)}
+          >
+            <Text style={[styles.filterTabText, filterStatus === status && styles.filterTabTextActive]}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* Timesheets List */}
+      <ScrollView
+        style={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />
         }
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="calendar-outline" size={64} color={colors.gray[300]} />
-            <Text style={styles.emptyText}>No timesheets yet</Text>
-            <Text style={styles.emptySubtext}>Clock in to start tracking your hours</Text>
-          </View>
-        }
-      />
-
-      {/* Edit Modal - Simple text inputs */}
-      <Modal
-        visible={editModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setEditModalVisible(false)}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Timesheet</Text>
-              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
-              </TouchableOpacity>
+        {filteredTimesheets.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Ionicons name="document-text-outline" size={48} color={colors.gray[400]} />
+            <Text style={styles.emptyText}>No timesheets found</Text>
+          </View>
+        ) : (
+          filteredTimesheets.map((timesheet) => (
+            <View key={timesheet.id} style={styles.timesheetCard}>
+              <View style={styles.cardHeader}>
+                <View style={styles.dateContainer}>
+                  <Text style={styles.dateText}>{formatDate(timesheet.clock_in)}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(timesheet.approval_status) + '20' }]}>
+                    <View style={[styles.statusDot, { backgroundColor: getStatusColor(timesheet.approval_status) }]} />
+                    <Text style={[styles.statusText, { color: getStatusColor(timesheet.approval_status) }]}>
+                      {timesheet.approval_status}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.cardActions}>
+                  {timesheet.image && (
+                    <TouchableOpacity 
+                      style={styles.actionButton}
+                      onPress={() => viewImage(timesheet.image!)}
+                    >
+                      <Ionicons name="image" size={20} color={colors.primary} />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => openEditModal(timesheet)}
+                  >
+                    <Ionicons name="create-outline" size={20} color={colors.text.secondary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => deleteTimesheet(timesheet)}
+                  >
+                    <Ionicons name="trash-outline" size={20} color={colors.error} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              <View style={styles.cardBody}>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeItem}>
+                    <Ionicons name="log-in-outline" size={18} color={colors.success} />
+                    <Text style={styles.timeLabel}>Start</Text>
+                    <Text style={styles.timeValue}>{formatTime(timesheet.clock_in)}</Text>
+                  </View>
+                  <View style={styles.timeDivider}>
+                    <Ionicons name="arrow-forward" size={16} color={colors.gray[400]} />
+                  </View>
+                  <View style={styles.timeItem}>
+                    <Ionicons name="log-out-outline" size={18} color={colors.error} />
+                    <Text style={styles.timeLabel}>End</Text>
+                    <Text style={styles.timeValue}>{formatTime(timesheet.clock_out)}</Text>
+                  </View>
+                  <View style={styles.hoursContainer}>
+                    <Text style={styles.hoursValue}>{(timesheet.total_hours || 0).toFixed(1)}h</Text>
+                    {timesheet.break_minutes > 0 && (
+                      <Text style={styles.breakText}>{timesheet.break_minutes}m break</Text>
+                    )}
+                  </View>
+                </View>
+                
+                {timesheet.notes && (
+                  <View style={styles.notesContainer}>
+                    <Ionicons name="document-text-outline" size={14} color={colors.text.secondary} />
+                    <Text style={styles.notesText} numberOfLines={2}>{timesheet.notes}</Text>
+                  </View>
+                )}
+              </View>
             </View>
+          ))
+        )}
+        <View style={{ height: 20 }} />
+      </ScrollView>
 
-            <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Date</Text>
+      {/* Edit Modal */}
+      <Modal
+        visible={showEditModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <KeyboardAvoidingView 
+          style={styles.modalContainer}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setShowEditModal(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Edit Timesheet</Text>
+            <TouchableOpacity onPress={saveEdit} disabled={saving}>
+              {saving ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Text style={styles.saveText}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <View style={styles.form}>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Date</Text>
                 <TextInput
                   style={styles.input}
                   value={editDate}
                   onChangeText={setEditDate}
-                  placeholder="YYYY-MM-DD (e.g., 2024-12-09)"
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={colors.gray[400]}
                 />
               </View>
 
-              <View style={styles.inputRow}>
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>Start Time</Text>
+              <View style={styles.row}>
+                <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
+                  <Text style={styles.label}>Start Time</Text>
                   <TextInput
                     style={styles.input}
                     value={editStartTime}
                     onChangeText={setEditStartTime}
-                    placeholder="HH:MM (e.g., 09:00)"
+                    placeholder="09:00"
+                    placeholderTextColor={colors.gray[400]}
                   />
                 </View>
-
-                <View style={{ width: 16 }} />
-
-                <View style={[styles.inputGroup, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>End Time</Text>
+                <View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
+                  <Text style={styles.label}>End Time</Text>
                   <TextInput
                     style={styles.input}
                     value={editEndTime}
                     onChangeText={setEditEndTime}
-                    placeholder="HH:MM (e.g., 17:00)"
+                    placeholder="17:00"
+                    placeholderTextColor={colors.gray[400]}
                   />
                 </View>
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Break (minutes)</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Break (minutes)</Text>
                 <TextInput
                   style={styles.input}
-                  value={editBreakMinutes}
-                  onChangeText={setEditBreakMinutes}
-                  keyboardType="number-pad"
+                  value={editBreak}
+                  onChangeText={setEditBreak}
                   placeholder="30"
+                  keyboardType="numeric"
+                  placeholderTextColor={colors.gray[400]}
                 />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Notes (optional)</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Notes</Text>
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  value={employeeNotes}
-                  onChangeText={setEmployeeNotes}
-                  placeholder="Reason for manual edit..."
+                  value={editNotes}
+                  onChangeText={setEditNotes}
+                  placeholder="Add notes..."
                   multiline
                   numberOfLines={3}
+                  placeholderTextColor={colors.gray[400]}
                 />
               </View>
 
-              <View style={styles.helpBox}>
-                <Ionicons name="bulb-outline" size={20} color={colors.primary} />
-                <Text style={styles.helpText}>
-                  Use 24-hour format. Example: 09:00 for 9am, 17:30 for 5:30pm
-                </Text>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
-                onPress={() => setEditModalVisible(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.saveBtn]}
-                onPress={handleSaveEdit}
-                disabled={updating}
-              >
-                {updating ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.saveBtnText}>Save Changes</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>Timesheet Photo</Text>
+                <View style={styles.imageButtons}>
+                  <TouchableOpacity style={styles.imageButton} onPress={() => pickImage(true)}>
+                    <Ionicons name="camera" size={20} color={colors.primary} />
+                    <Text style={styles.imageButtonText}>Camera</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.imageButton} onPress={() => pickImage(false)}>
+                    <Ionicons name="images" size={20} color={colors.primary} />
+                    <Text style={styles.imageButtonText}>Gallery</Text>
+                  </TouchableOpacity>
+                </View>
+                {editImage && (
+                  <View style={styles.imagePreview}>
+                    <Image source={{ uri: editImage }} style={styles.previewImage} />
+                    <TouchableOpacity style={styles.removeImage} onPress={() => setEditImage(null)}>
+                      <Ionicons name="close-circle" size={24} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
                 )}
-              </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
 
-      {/* Photo Modal */}
+      {/* Image View Modal */}
       <Modal
-        visible={photoModalVisible}
+        visible={showImageModal}
         animationType="fade"
-        transparent={true}
-        onRequestClose={() => {
-          setPhotoModalVisible(false);
-          setSelectedPhoto(null);
-        }}
+        transparent
+        onRequestClose={() => setShowImageModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.photoModalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Attach Photo</Text>
-              <TouchableOpacity onPress={() => {
-                setPhotoModalVisible(false);
-                setSelectedPhoto(null);
-              }}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
-              </TouchableOpacity>
-            </View>
-
-            {selectedPhoto && (
-              <Image 
-                source={{ uri: selectedPhoto }} 
-                style={styles.previewImage}
-                resizeMode="contain"
-              />
-            )}
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.cancelBtn]}
-                onPress={() => {
-                  setPhotoModalVisible(false);
-                  setSelectedPhoto(null);
-                }}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalBtn, styles.saveBtn]}
-                onPress={handleUploadPhoto}
-                disabled={uploadingPhoto}
-              >
-                {uploadingPhoto ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.saveBtnText}>Upload</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
+        <View style={styles.imageModalContainer}>
+          <TouchableOpacity style={styles.imageModalClose} onPress={() => setShowImageModal(false)}>
+            <Ionicons name="close-circle" size={36} color={colors.white} />
+          </TouchableOpacity>
+          {viewingImage && (
+            <Image source={{ uri: viewingImage }} style={styles.fullImage} resizeMode="contain" />
+          )}
         </View>
       </Modal>
     </View>
@@ -563,66 +513,101 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  centerContainer: {
+  loadingContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
+    alignItems: 'center',
   },
-  summaryCard: {
-    backgroundColor: colors.white,
-    margin: 16,
-    marginBottom: 8,
-    padding: 20,
-    borderRadius: 12,
+  summaryHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: colors.white,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
   },
   summaryItem: {
+    flex: 1,
     alignItems: 'center',
   },
   summaryValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 4,
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.text.primary,
   },
   summaryLabel: {
     fontSize: 12,
     color: colors.text.secondary,
+    marginTop: 2,
   },
   summaryDivider: {
     width: 1,
-    backgroundColor: colors.gray[200],
+    backgroundColor: colors.gray[300],
+    marginVertical: 4,
   },
-  listContent: {
+  filterTabs: {
+    flexDirection: 'row',
+    backgroundColor: colors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  filterTabActive: {
+    backgroundColor: colors.primary + '15',
+  },
+  filterTabText: {
+    fontSize: 13,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
+  filterTabTextActive: {
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  list: {
+    flex: 1,
     padding: 16,
-    paddingTop: 8,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+    marginTop: 12,
   },
   timesheetCard: {
     backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 14,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
     elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[100],
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   dateText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
   },
@@ -632,63 +617,69 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    gap: 4,
+    gap: 5,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
-    marginLeft: 4,
+    textTransform: 'capitalize',
   },
-  timeGrid: {
+  cardActions: {
     flexDirection: 'row',
-    backgroundColor: colors.gray[50],
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    gap: 4,
   },
-  timeCell: {
-    flex: 1,
+  actionButton: {
+    padding: 8,
+  },
+  cardBody: {
+    padding: 14,
+  },
+  timeRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  timeCellLabel: {
+  timeItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  timeLabel: {
     fontSize: 11,
     color: colors.text.secondary,
-    marginBottom: 4,
+    marginTop: 2,
   },
-  timeCellValue: {
-    fontSize: 14,
+  timeValue: {
+    fontSize: 16,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  totalHours: {
-    color: colors.primary,
-  },
-  badgesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
-  },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary + '15',
+  timeDivider: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '500',
+  hoursContainer: {
+    alignItems: 'flex-end',
+    marginLeft: 16,
+  },
+  hoursValue: {
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.primary,
   },
-  notesBox: {
+  breakText: {
+    fontSize: 11,
+    color: colors.text.secondary,
+  },
+  notesContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.gray[50],
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.gray[100],
     gap: 8,
   },
   notesText: {
@@ -697,158 +688,114 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     lineHeight: 18,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionBtn: {
+  // Modal styles
+  modalContainer: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primary + '10',
-    padding: 10,
-    borderRadius: 8,
-    gap: 6,
-  },
-  actionBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  payBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.success + '15',
-    padding: 10,
-    borderRadius: 8,
-    marginTop: 12,
-    gap: 8,
-  },
-  payText: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: colors.success,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 64,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    marginTop: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-  },
-  photoModalContent: {
-    backgroundColor: colors.white,
-    borderRadius: 20,
-    margin: 20,
-    maxHeight: '75%',
+    backgroundColor: colors.background,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.gray[200],
   },
+  cancelText: {
+    fontSize: 16,
+    color: colors.text.secondary,
+  },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '600',
     color: colors.text.primary,
   },
-  modalBody: {
-    padding: 20,
+  saveText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.primary,
   },
-  inputGroup: {
+  modalContent: {
+    flex: 1,
+  },
+  form: {
+    padding: 16,
+  },
+  formGroup: {
     marginBottom: 16,
   },
-  inputRow: {
-    flexDirection: 'row',
-  },
-  inputLabel: {
+  label: {
     fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
     marginBottom: 8,
   },
   input: {
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.gray[300],
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
     color: colors.text.primary,
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
-  helpBox: {
+  row: {
     flexDirection: 'row',
-    backgroundColor: colors.primary + '10',
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-    marginTop: 8,
   },
-  helpText: {
-    flex: 1,
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 18,
-  },
-  modalFooter: {
+  imageButtons: {
     flexDirection: 'row',
-    padding: 20,
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
   },
-  modalBtn: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 8,
+  imageButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: colors.primary + '10',
+    borderRadius: 10,
   },
-  cancelBtn: {
-    backgroundColor: colors.gray[100],
+  imageButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.primary,
   },
-  cancelBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  saveBtn: {
-    backgroundColor: colors.primary,
-  },
-  saveBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.white,
+  imagePreview: {
+    marginTop: 12,
+    position: 'relative',
   },
   previewImage: {
     width: '100%',
-    height: 300,
-    marginVertical: 20,
+    height: 200,
+    borderRadius: 10,
+  },
+  removeImage: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+  },
+  // Full image modal
+  imageModalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageModalClose: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    zIndex: 10,
+  },
+  fullImage: {
+    width: '100%',
+    height: '80%',
   },
 });
