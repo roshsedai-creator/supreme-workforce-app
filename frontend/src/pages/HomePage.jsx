@@ -45,7 +45,6 @@ const HomePage = () => {
       </main>
       <Footer />
       <Chatbot />
-      <StickyCTA />
       <SocialProof />
     </div>
   );
