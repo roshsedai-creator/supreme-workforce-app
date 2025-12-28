@@ -207,16 +207,15 @@ export default function TimesheetsScreen() {
     }
   };
 
-  // Delete timesheet
+  // Delete timesheet - allow deleting any timesheet
   const deleteTimesheet = (timesheet: Timesheet) => {
-    if (timesheet.approval_status === 'approved') {
-      Alert.alert('Cannot Delete', 'Approved timesheets cannot be deleted');
-      return;
-    }
+    const warningMessage = timesheet.approval_status === 'approved'
+      ? 'This timesheet is approved. Are you sure you want to delete it? This may affect payroll records.'
+      : 'Are you sure you want to delete this timesheet?';
 
     Alert.alert(
       'Delete Timesheet',
-      'Are you sure you want to delete this timesheet?',
+      warningMessage,
       [
         { text: 'Cancel', style: 'cancel' },
         {
