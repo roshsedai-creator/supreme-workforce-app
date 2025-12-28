@@ -9,7 +9,7 @@ const WhatsAppButton = () => {
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
   return (
-    <div className="fixed bottom-24 right-6 z-50">
+    <div className="fixed bottom-40 right-6 z-50">
       {/* Tooltip */}
       <div 
         className={`absolute right-16 top-1/2 -translate-y-1/2 bg-white px-4 py-2 rounded-lg shadow-lg transition-all duration-300 whitespace-nowrap ${
