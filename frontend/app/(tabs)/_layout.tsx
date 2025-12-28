@@ -1,33 +1,22 @@
 import React, { useEffect } from 'react';
-import { Tabs, useRouter, useSegments } from 'expo-router';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '../../constants/colors';
 
-// Premium Tab Bar Icon Component
-const TabIcon = ({ name, color, focused }: { name: string; color: string; focused: boolean }) => {
+// Custom Tab Bar Icon with Label
+const TabBarIcon = ({ name, label, focused }: { name: string; label: string; focused: boolean }) => {
   return (
-    <View style={styles.iconContainer}>
-      {focused && (
-        <View style={styles.activeIndicator}>
-          <LinearGradient
-            colors={['#6366f1', '#8b5cf6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.activeGradient}
-          />
-        </View>
-      )}
-      <View style={[styles.iconWrapper, focused && styles.iconWrapperActive]}>
+    <View style={styles.tabItem}>
+      <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
         <Ionicons 
-          name={focused ? name : `${name}-outline` as any} 
+          name={focused ? name as any : `${name}-outline` as any} 
           size={22} 
-          color={focused ? '#6366f1' : '#9ca3af'} 
+          color={focused ? '#ffffff' : '#64748b'} 
         />
       </View>
+      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
     </View>
   );
 };
@@ -35,10 +24,8 @@ const TabIcon = ({ name, color, focused }: { name: string; color: string; focuse
 export default function TabsLayout() {
   const { user, isAuthenticated } = useAuthStore();
   const router = useRouter();
-  const segments = useSegments();
   const insets = useSafeAreaInsets();
   
-  // Check permissions ONLY - no role fallbacks
   const permissions = user?.permissions || {};
   const canAccessSupervisor = permissions.view_all_timesheets === true || permissions.edit_timesheets === true || permissions.approve_timesheets === true;
   const canAccessAdmin = permissions.manage_users === true || permissions.manage_sites === true;
@@ -56,28 +43,20 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopWidth: 0,
-          height: 72 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-          paddingTop: 8,
+          height: 80 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
+          paddingTop: 12,
+          paddingHorizontal: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -8 },
+          shadowOpacity: 0.1,
+          shadowRadius: 16,
           elevation: 20,
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          marginTop: 4,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-        },
+        tabBarShowLabel: false,
         headerStyle: {
           backgroundColor: '#6366f1',
           shadowColor: '#6366f1',
@@ -90,7 +69,6 @@ export default function TabsLayout() {
         headerTitleStyle: {
           fontWeight: '700',
           fontSize: 18,
-          letterSpacing: 0.3,
         },
         headerTitleAlign: 'center',
       }}
@@ -104,8 +82,8 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="home" color={color} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="home" label="Home" focused={focused} />
           ),
         }}
       />
@@ -113,8 +91,8 @@ export default function TabsLayout() {
         name="timesheets"
         options={{
           title: 'Timesheets',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="time" color={color} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="time" label="Timesheets" focused={focused} />
           ),
         }}
       />
@@ -123,8 +101,8 @@ export default function TabsLayout() {
           name="supervisor"
           options={{
             title: 'Approve',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="checkmark-circle" color={color} focused={focused} />
+            tabBarIcon: ({ focused }) => (
+              <TabBarIcon name="checkmark-circle" label="Approve" focused={focused} />
             ),
           }}
         />
@@ -134,8 +112,8 @@ export default function TabsLayout() {
           name="admin"
           options={{
             title: 'Admin',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="shield" color={color} focused={focused} />
+            tabBarIcon: ({ focused }) => (
+              <TabBarIcon name="shield" label="Admin" focused={focused} />
             ),
           }}
         />
@@ -144,8 +122,8 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="person" color={color} focused={focused} />
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon name="person" label="Profile" focused={focused} />
           ),
         }}
       />
@@ -154,31 +132,28 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
   iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: 48,
-    height: 32,
-  },
-  activeIndicator: {
-    position: 'absolute',
-    top: -8,
-    width: 32,
-    height: 3,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  activeGradient: {
-    flex: 1,
-  },
-  iconWrapper: {
-    width: 40,
+    width: 44,
     height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12,
+    borderRadius: 16,
+    marginBottom: 4,
   },
-  iconWrapperActive: {
-    backgroundColor: '#eef2ff',
+  iconContainerActive: {
+    backgroundColor: '#6366f1',
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  tabLabelActive: {
+    color: '#6366f1',
   },
 });
