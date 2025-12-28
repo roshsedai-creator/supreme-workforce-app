@@ -205,11 +205,20 @@ export default function AdminScreen() {
     fetchData();
   }, []);
 
-  // Don't render anything if not admin
-  if (user?.role !== 'admin') {
+  // Don't render anything if not admin/manager
+  if (!hasAdminAccess && accessChecked) {
     return (
       <View style={styles.container}>
         <Text style={styles.errorText}>Access Denied</Text>
+      </View>
+    );
+  }
+  
+  // Show loading while checking access
+  if (!accessChecked) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
