@@ -1795,30 +1795,46 @@ async def manage_break(request: BreakRequest):
 
 class ManualTimesheetRequest(BaseModel):
     employee_id: str
-    site_id: str
-    clock_in: str  # ISO datetime string
-    clock_out: str  # ISO datetime string
+    site_id: Optional[str] = None
+    clock_in: Optional[str] = None  # ISO datetime string
+    clock_out: Optional[str] = None  # ISO datetime string
+    date: Optional[str] = None  # YYYY-MM-DD format
+    clock_in_time: Optional[str] = None  # HH:MM format
+    clock_out_time: Optional[str] = None  # HH:MM format
     break_minutes: int = 0
     notes: Optional[str] = None
+    image: Optional[str] = None  # Base64 encoded image
 
 @api_router.post("/timesheets/manual")
 async def create_manual_timesheet(request: ManualTimesheetRequest):
     """Create a manual timesheet entry (requires approval)"""
     try:
-        # Handle different datetime formats:
-        # 1. Local time: "2025-12-20T09:00:00" (no timezone - treat as-is)
-        # 2. UTC time: "2025-12-20T09:00:00Z" or with timezone offset
-        clock_in_str = request.clock_in.replace('Z', '')
-        clock_out_str = request.clock_out.replace('Z', '')
+        # Support two formats:
+        # 1. Full ISO datetime in clock_in/clock_out
+        # 2. Separate date + clock_in_time/clock_out_time
         
-        # Remove any timezone offset for simplicity - we store as naive datetime
-        if '+' in clock_in_str:
-            clock_in_str = clock_in_str.split('+')[0]
-        if '+' in clock_out_str:
-            clock_out_str = clock_out_str.split('+')[0]
+        if request.date and request.clock_in_time and request.clock_out_time:
+            # New format: date + time strings
+            clock_in = datetime.strptime(f"{request.date}T{request.clock_in_time}", "%Y-%m-%dT%H:%M")
+            clock_out = datetime.strptime(f"{request.date}T{request.clock_out_time}", "%Y-%m-%dT%H:%M")
             
-        clock_in = datetime.fromisoformat(clock_in_str)
-        clock_out = datetime.fromisoformat(clock_out_str)
+            # Handle overnight shifts
+            if clock_out <= clock_in:
+                clock_out += timedelta(days=1)
+        elif request.clock_in and request.clock_out:
+            # Legacy format: full ISO datetime strings
+            clock_in_str = request.clock_in.replace('Z', '')
+            clock_out_str = request.clock_out.replace('Z', '')
+            
+            if '+' in clock_in_str:
+                clock_in_str = clock_in_str.split('+')[0]
+            if '+' in clock_out_str:
+                clock_out_str = clock_out_str.split('+')[0]
+                
+            clock_in = datetime.fromisoformat(clock_in_str)
+            clock_out = datetime.fromisoformat(clock_out_str)
+        else:
+            raise HTTPException(status_code=400, detail="Please provide date with times or full datetime strings")
         
         logging.info(f"Manual timesheet: clock_in={clock_in}, clock_out={clock_out}")
     except Exception as e:
