@@ -396,6 +396,18 @@ backend:
         agent: "testing"
         comment: "Live Sites Status API fully functional. GET /api/sites/live-status returns real-time status of all sites with active employee counts. Returns 3 sites (Novotel Brisbane, Ibis Styles Brisbane, Hotel Grand Chancellor) with proper structure including site details, active_count, active_employees array, and GPS coordinates. Fixed routing conflict by moving endpoint before /sites/{site_id} to prevent 'live-status' being interpreted as site_id. All fields properly formatted and endpoint working correctly."
 
+  - task: "Simplified Timesheet App APIs - Complete workflow testing"
+    implemented: true
+    working: true
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "SIMPLIFIED TIMESHEET APP BACKEND TESTING COMPLETED SUCCESSFULLY! ✅ ALL 6 APIs WORKING PERFECTLY (100% success rate): 1) Login API: Employee (Nagita: 0420576508/2003) and Supervisor (John Admin: 0457802302/1234) authentication working correctly. 2) Manual Timesheet Creation: POST /api/timesheets/manual with new format (date + clock_in_time/clock_out_time) creates timesheets with proper hours calculation (7.5 hours for 8hr shift minus 30min break). 3) Get Timesheets: GET /api/timesheets?employee_id={user_id} retrieves employee timesheets correctly. 4) Update Timesheet: PUT /api/timesheets/{timesheet_id} updates times and break minutes with recalculated hours (8.25 hours for 9hr shift minus 45min break). 5) Approve Timesheet: PUT /api/timesheets/{timesheet_id}/approve allows supervisor approval with status change to 'approved'. 6) Get All Users: GET /api/users returns complete user list (17 users) for employee picker. All APIs production-ready for simplified timesheet workflow."
+
 frontend:
   - task: "Login screen with mock PIN authentication"
     implemented: true
