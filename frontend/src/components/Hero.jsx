@@ -120,12 +120,11 @@ const Hero = () => {
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">Career Opportunities</p>
             <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">Join Our Team</h2>
             <p className="text-white/90 text-sm mb-6 max-w-sm">Build a rewarding career with Australia's leading hospitality services provider</p>
-            <Link to="/careers">
-              <Button 
-                className="bg-[#D4B37A] text-[#703493] hover:bg-white rounded-full px-10 py-5 text-base font-semibold"
-              >
-                View Opportunities
-              </Button>
+            <Link to="/careers" className="group">
+              <button className="premium-btn premium-btn-gold flex items-center justify-center gap-3 text-[#703493] rounded-full px-10 py-4 text-base font-bold">
+                <span>View Opportunities</span>
+                <ArrowRight className="w-5 h-5 btn-arrow" />
+              </button>
             </Link>
           </div>
         </div>
@@ -147,12 +146,12 @@ const Hero = () => {
             <p className="text-[#D4B37A] text-sm tracking-wider uppercase mb-3 font-semibold">For Businesses</p>
             <h2 className="text-white text-3xl md:text-4xl font-bold mb-4">Partner With Us</h2>
             <p className="text-white/90 text-sm mb-6 max-w-sm">Discover tailored solutions for your hospitality or commercial facility</p>
-            <Link to="/quote">
-              <Button 
-                className="bg-white text-[#703493] hover:bg-[#D4B37A] rounded-full px-10 py-5 text-base font-semibold"
-              >
-                Request a Quote
-              </Button>
+            <Link to="/quote" className="group">
+              <button className="premium-btn premium-btn-white flex items-center justify-center gap-3 text-[#703493] rounded-full px-10 py-4 text-base font-bold">
+                <Sparkles className="w-5 h-5 btn-sparkle" />
+                <span>Request a Quote</span>
+                <ChevronRight className="w-5 h-5 btn-arrow" />
+              </button>
             </Link>
           </div>
         </div>
