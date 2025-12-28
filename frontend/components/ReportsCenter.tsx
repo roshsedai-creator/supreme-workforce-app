@@ -46,9 +46,7 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
 
   const reportTypes = [
     { id: 'payroll', name: 'Payroll Report', icon: 'cash', description: 'Employee earnings and pay details' },
-    { id: 'roster', name: 'Roster Schedule', icon: 'calendar', description: 'Upcoming shifts and assignments' },
-    { id: 'availability', name: 'Availability Report', icon: 'people', description: 'Employee availability overview' },
-    { id: 'timesheets', name: 'Timesheet Summary', icon: 'time', description: 'Clock-in/out records and hours' },
+    { id: 'timesheets', name: 'Timesheet Summary', icon: 'time', description: 'Timesheet records and hours' },
     { id: 'abn', name: 'ABN Contractor Report', icon: 'document-text', description: 'Contractor details and invoices' },
   ];
 
