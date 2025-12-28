@@ -1,35 +1,9 @@
 import React, { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
-
-// Super Premium Tab Icon
-const TabIcon = ({ name, label, focused }: { name: string; label: string; focused: boolean }) => {
-  if (focused) {
-    return (
-      <View style={styles.activeTab}>
-        <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.activeGradient}
-        >
-          <Ionicons name={name as any} size={20} color="#fff" />
-          <Text style={styles.activeLabel}>{label}</Text>
-        </LinearGradient>
-      </View>
-    );
-  }
-  
-  return (
-    <View style={styles.inactiveTab}>
-      <Ionicons name={`${name}-outline` as any} size={22} color="#9ca3af" />
-    </View>
-  );
-};
 
 export default function TabsLayout() {
   const { user, isAuthenticated } = useAuthStore();
@@ -64,31 +38,36 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarStyle: {
           backgroundColor: '#ffffff',
-          borderTopWidth: 0,
-          height: 70 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
-          paddingTop: 10,
-          paddingHorizontal: 10,
-          shadowColor: '#6366f1',
-          shadowOffset: { width: 0, height: -8 },
-          shadowOpacity: 0.15,
-          shadowRadius: 24,
-          elevation: 25,
+          borderTopWidth: 1,
+          borderTopColor: '#e5e7eb',
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
+          paddingTop: 6,
         },
-        tabBarShowLabel: false,
+        tabBarActiveTintColor: '#6366f1',
+        tabBarInactiveTintColor: '#9ca3af',
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2,
+        },
+        tabBarIconStyle: {
+          marginTop: 2,
+        },
         headerStyle: {
           backgroundColor: '#6366f1',
-          shadowColor: 'transparent',
           elevation: 0,
+          shadowOpacity: 0,
         },
         headerTintColor: '#ffffff',
         headerTitleStyle: {
           fontWeight: '700',
-          fontSize: 18,
+          fontSize: 17,
         },
         headerTitleAlign: 'center',
       }}
     >
+      {/* Hidden screens */}
       <Tabs.Screen name="leave" options={{ href: null }} />
       <Tabs.Screen name="roster" options={{ href: null }} />
       <Tabs.Screen name="payroll" options={{ href: null }} />
@@ -97,39 +76,68 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => <TabIcon name="home" label="Home" focused={focused} />,
+          tabBarLabel: 'Home',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            </View>
+          ),
         }}
       />
+      
       <Tabs.Screen
         name="timesheets"
         options={{
           title: 'Timesheets',
-          tabBarIcon: ({ focused }) => <TabIcon name="time" label="Time" focused={focused} />,
+          tabBarLabel: 'Timesheets',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+              <Ionicons name={focused ? 'time' : 'time-outline'} size={22} color={color} />
+            </View>
+          ),
         }}
       />
+      
       {canAccessSupervisor && (
         <Tabs.Screen
           name="supervisor"
           options={{
             title: 'Approve',
-            tabBarIcon: ({ focused }) => <TabIcon name="checkmark-circle" label="Approve" focused={focused} />,
+            tabBarLabel: 'Approve',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <Ionicons name={focused ? 'checkmark-circle' : 'checkmark-circle-outline'} size={22} color={color} />
+              </View>
+            ),
           }}
         />
       )}
+      
       {canAccessAdmin && (
         <Tabs.Screen
           name="admin"
           options={{
             title: 'Admin',
-            tabBarIcon: ({ focused }) => <TabIcon name="shield" label="Admin" focused={focused} />,
+            tabBarLabel: 'Admin',
+            tabBarIcon: ({ color, focused }) => (
+              <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+                <Ionicons name={focused ? 'shield' : 'shield-outline'} size={22} color={color} />
+              </View>
+            ),
           }}
         />
       )}
+      
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => <TabIcon name="person" label="Me" focused={focused} />,
+          tabBarLabel: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.iconWrap, focused && styles.iconWrapActive]}>
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            </View>
+          ),
         }}
       />
     </Tabs>
@@ -137,26 +145,14 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  activeTab: {
+  iconWrap: {
+    width: 36,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 8,
   },
-  activeGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 25,
-    gap: 6,
-  },
-  activeLabel: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  inactiveTab: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
+  iconWrapActive: {
+    backgroundColor: '#eef2ff',
   },
 });
