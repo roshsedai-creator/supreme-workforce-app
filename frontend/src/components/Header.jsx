@@ -99,37 +99,40 @@ const Header = () => {
 
           {/* Mobile Menu Toggle */}
           <button
-            className="lg:hidden text-[#703493] p-2"
+            className="lg:hidden text-[#703493] p-2 rounded-full hover:bg-[#703493]/10 transition-colors duration-300"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Premium */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white border-t border-gray-100 mt-3">
+          <div className="lg:hidden bg-white border-t border-gray-100 mt-3 shadow-xl">
             <div className="container mx-auto px-4 py-4">
-              <nav className="flex flex-col gap-2">
+              <nav className="flex flex-col gap-1">
                 {navLinks.map((link) => (
                   <Link
                     key={link.label}
                     to={link.href}
-                    className="flex items-center justify-between text-gray-700 px-4 py-3 text-sm font-medium hover:bg-gray-50 rounded-lg transition-colors"
+                    className={`flex items-center justify-between px-4 py-3.5 text-sm font-semibold rounded-xl transition-all duration-300
+                      ${isActiveLink(link.href)
+                        ? 'text-[#703493] bg-gradient-to-r from-[#703493]/10 to-[#D4B37A]/10'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-[#703493]'
+                      }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    {link.label}
+                    <span>{link.label}</span>
                     {link.hasDropdown && <ChevronDown className="w-4 h-4" />}
                   </Link>
                 ))}
               </nav>
               <div className="mt-4 pt-4 border-t border-gray-100">
-                <Link to="/contact" onClick={() => setMobileMenuOpen(false)}>
-                  <Button 
-                    className="w-full bg-[#703493] text-white hover:bg-[#5a2a76] rounded-full h-10 text-sm font-semibold"
-                  >
-                    Contact Us
-                  </Button>
+                <Link to="/contact" onClick={() => setMobileMenuOpen(false)} className="block">
+                  <button className="premium-btn w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#703493] to-[#8a4aad] text-white rounded-full py-3 text-sm font-semibold shadow-lg">
+                    <span>Contact Us</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </Link>
               </div>
             </div>
