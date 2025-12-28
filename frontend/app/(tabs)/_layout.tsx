@@ -2,21 +2,31 @@ import React, { useEffect } from 'react';
 import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuthStore } from '../../store/authStore';
 
-// Custom Tab Bar Icon with Label
-const TabBarIcon = ({ name, label, focused }: { name: string; label: string; focused: boolean }) => {
-  return (
-    <View style={styles.tabItem}>
-      <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-        <Ionicons 
-          name={focused ? name as any : `${name}-outline` as any} 
-          size={22} 
-          color={focused ? '#ffffff' : '#64748b'} 
-        />
+// Super Premium Tab Icon
+const TabIcon = ({ name, label, focused }: { name: string; label: string; focused: boolean }) => {
+  if (focused) {
+    return (
+      <View style={styles.activeTab}>
+        <LinearGradient
+          colors={['#6366f1', '#8b5cf6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.activeGradient}
+        >
+          <Ionicons name={name as any} size={20} color="#fff" />
+          <Text style={styles.activeLabel}>{label}</Text>
+        </LinearGradient>
       </View>
-      <Text style={[styles.tabLabel, focused && styles.tabLabelActive]}>{label}</Text>
+    );
+  }
+  
+  return (
+    <View style={styles.inactiveTab}>
+      <Ionicons name={`${name}-outline` as any} size={22} color="#9ca3af" />
     </View>
   );
 };
@@ -29,7 +39,6 @@ export default function TabsLayout() {
   const permissions = user?.permissions || {};
   const userRole = user?.role?.toLowerCase() || '';
   
-  // Supervisor access: check permissions OR role
   const canAccessSupervisor = permissions.view_all_timesheets === true || 
     permissions.edit_timesheets === true || 
     permissions.approve_timesheets === true ||
@@ -37,7 +46,6 @@ export default function TabsLayout() {
     userRole === 'manager' ||
     userRole === 'admin';
   
-  // Admin access: check permissions OR role (admin or manager)
   const canAccessAdmin = permissions.manage_users === true || 
     permissions.manage_sites === true ||
     userRole === 'admin' ||
@@ -49,9 +57,7 @@ export default function TabsLayout() {
     }
   }, [isAuthenticated]);
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   return (
     <Tabs
@@ -59,24 +65,21 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopWidth: 0,
-          height: 80 + insets.bottom,
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
-          paddingTop: 12,
-          paddingHorizontal: 8,
-          shadowColor: '#000',
+          height: 70 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 10,
+          paddingHorizontal: 10,
+          shadowColor: '#6366f1',
           shadowOffset: { width: 0, height: -8 },
-          shadowOpacity: 0.1,
-          shadowRadius: 16,
-          elevation: 20,
+          shadowOpacity: 0.15,
+          shadowRadius: 24,
+          elevation: 25,
         },
         tabBarShowLabel: false,
         headerStyle: {
           backgroundColor: '#6366f1',
-          shadowColor: '#6366f1',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
-          elevation: 8,
+          shadowColor: 'transparent',
+          elevation: 0,
         },
         headerTintColor: '#ffffff',
         headerTitleStyle: {
@@ -86,7 +89,6 @@ export default function TabsLayout() {
         headerTitleAlign: 'center',
       }}
     >
-      {/* Hidden screens */}
       <Tabs.Screen name="leave" options={{ href: null }} />
       <Tabs.Screen name="roster" options={{ href: null }} />
       <Tabs.Screen name="payroll" options={{ href: null }} />
@@ -95,18 +97,14 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="home" label="Home" focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="home" label="Home" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="timesheets"
         options={{
           title: 'Timesheets',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="time" label="Timesheets" focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="time" label="Time" focused={focused} />,
         }}
       />
       {canAccessSupervisor && (
@@ -114,9 +112,7 @@ export default function TabsLayout() {
           name="supervisor"
           options={{
             title: 'Approve',
-            tabBarIcon: ({ focused }) => (
-              <TabBarIcon name="checkmark-circle" label="Approve" focused={focused} />
-            ),
+            tabBarIcon: ({ focused }) => <TabIcon name="checkmark-circle" label="Approve" focused={focused} />,
           }}
         />
       )}
@@ -125,9 +121,7 @@ export default function TabsLayout() {
           name="admin"
           options={{
             title: 'Admin',
-            tabBarIcon: ({ focused }) => (
-              <TabBarIcon name="shield" label="Admin" focused={focused} />
-            ),
+            tabBarIcon: ({ focused }) => <TabIcon name="shield" label="Admin" focused={focused} />,
           }}
         />
       )}
@@ -135,9 +129,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon name="person" label="Profile" focused={focused} />
-          ),
+          tabBarIcon: ({ focused }) => <TabIcon name="person" label="Me" focused={focused} />,
         }}
       />
     </Tabs>
@@ -145,28 +137,26 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  tabItem: {
+  activeTab: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 4,
   },
-  iconContainer: {
-    width: 44,
-    height: 32,
+  activeGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    gap: 6,
+  },
+  activeLabel: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  inactiveTab: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 16,
-    marginBottom: 4,
-  },
-  iconContainerActive: {
-    backgroundColor: '#6366f1',
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#64748b',
-  },
-  tabLabelActive: {
-    color: '#6366f1',
+    paddingVertical: 8,
   },
 });
