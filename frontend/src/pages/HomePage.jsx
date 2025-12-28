@@ -76,7 +76,6 @@ const HomePage = () => {
       </main>
       <Footer />
       <Chatbot />
-      <SocialProof />
       <BackToTop />
     </div>
   );
