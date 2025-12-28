@@ -485,7 +485,7 @@ export default function AdminScreen() {
   const handleDeleteSite = async (site) => {
     Alert.alert(
       'Delete Site',
-      `Are you sure you want to delete ${site.name}?\n\nNote: You can only delete sites with no assigned employees or roster shifts.`,
+      `Are you sure you want to delete ${site.name}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
