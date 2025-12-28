@@ -20,7 +20,6 @@ import Chatbot from '../components/Chatbot';
 import ScrollProgress from '../components/ScrollProgress';
 import PageLoader from '../components/PageLoader';
 import SocialProof from '../components/SocialProof';
-import WhatsAppButton from '../components/WhatsAppButton';
 import BackToTop from '../components/BackToTop';
 
 const HomePage = () => {
