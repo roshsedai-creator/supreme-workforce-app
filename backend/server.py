@@ -1858,12 +1858,17 @@ async def create_manual_timesheet(request: ManualTimesheetRequest):
         "total_hours": total_hours,
         "approval_status": "pending",
         "employee_notes": request.notes or "Manual entry",
+        "notes": request.notes or "Manual entry",
         "manually_edited": True,
         "is_manual_entry": True,
         "gps_clock_in": None,
         "gps_clock_out": None,
         "created_at": datetime.utcnow()
     }
+    
+    # Add image if provided
+    if request.image:
+        timesheet["image"] = request.image
     
     result = await db.timesheets.insert_one(timesheet)
     
