@@ -335,34 +335,6 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>💡 Quick Guide</Text>
-            
-            <View style={styles.helpCard}>
-              <Ionicons name="help-circle" size={24} color={colors.primary} />
-              <View style={styles.helpInfo}>
-                <Text style={styles.helpTitle}>Clock In/Out</Text>
-                <Text style={styles.helpText}>Ensure GPS is enabled and you are within 100m of the site</Text>
-              </View>
-            </View>
-            
-            <View style={styles.helpCard}>
-              <Ionicons name="create" size={24} color={colors.primary} />
-              <View style={styles.helpInfo}>
-                <Text style={styles.helpTitle}>Edit Timesheets</Text>
-                <Text style={styles.helpText}>Use Edit Times on pending timesheets to correct errors</Text>
-              </View>
-            </View>
-            
-            <View style={styles.helpCard}>
-              <Ionicons name="camera" size={24} color={colors.primary} />
-              <View style={styles.helpInfo}>
-                <Text style={styles.helpTitle}>Attach Photos</Text>
-                <Text style={styles.helpText}>Add photo evidence for manual timesheet edits</Text>
-              </View>
-            </View>
-          </View>
-
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <Ionicons name="log-out" size={24} color={colors.error} />
             <Text style={styles.logoutText}>Logout</Text>
