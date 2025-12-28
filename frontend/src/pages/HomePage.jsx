@@ -9,9 +9,9 @@ import LeadershipTeam from '../components/LeadershipTeam';
 import SavingsCalculator from '../components/SavingsCalculator';
 import CorporateSupport from '../components/CorporateSupport';
 import SuccessMetrics from '../components/SuccessMetrics';
-import PremiumStats from '../components/PremiumStats';
-import Partners from '../components/Partners';
+import ClientLogoCarousel from '../components/ClientLogoCarousel';
 import Testimonials from '../components/Testimonials';
+import FAQ from '../components/FAQ';
 import BookSiteVisit from '../components/BookSiteVisit';
 import PremiumCTA from '../components/PremiumCTA';
 import Blog from '../components/Blog';
@@ -21,6 +21,8 @@ import Chatbot from '../components/Chatbot';
 import ScrollProgress from '../components/ScrollProgress';
 import PageLoader from '../components/PageLoader';
 import SocialProof from '../components/SocialProof';
+import WhatsAppButton from '../components/WhatsAppButton';
+import BackToTop from '../components/BackToTop';
 
 const HomePage = () => {
   return (
@@ -38,8 +40,9 @@ const HomePage = () => {
         <SavingsCalculator />
         <CorporateSupport />
         <SuccessMetrics />
-        <Partners />
+        <ClientLogoCarousel />
         <Testimonials />
+        <FAQ />
         <BookSiteVisit />
         <PremiumCTA />
         <Blog />
@@ -48,6 +51,8 @@ const HomePage = () => {
       <Footer />
       <Chatbot />
       <SocialProof />
+      <WhatsAppButton />
+      <BackToTop />
     </div>
   );
 };
