@@ -79,11 +79,11 @@ const BookSiteVisit = () => {
             <div className="bg-[#703493]/5 rounded-xl p-6">
               <p className="text-gray-600 mb-3">Prefer to talk? Call us directly:</p>
               <a 
-                href="tel:0392216236"
+                href="tel:0457802302"
                 className="flex items-center gap-3 text-[#703493] text-2xl font-bold hover:text-[#D4B37A] transition-colors"
               >
                 <Phone className="w-6 h-6" />
-                03 9221 6236
+                0457 802 302
               </a>
             </div>
           </div>
