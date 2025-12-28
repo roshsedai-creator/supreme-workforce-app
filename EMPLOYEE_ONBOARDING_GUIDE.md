@@ -240,7 +240,7 @@ Once deployed:
 
 **Web Version (Browser):**
 ```
-https://timewizard-12.preview.emergentagent.com
+https://workhours-14.preview.emergentagent.com
 ```
 
 **iOS App Store:**

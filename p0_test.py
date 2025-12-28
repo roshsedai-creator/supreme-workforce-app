@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 # Configuration
-BASE_URL = "https://timewizard-12.preview.emergentagent.com/api"
+BASE_URL = "https://workhours-14.preview.emergentagent.com/api"
 
 # Test accounts
 TEST_ACCOUNTS = {
