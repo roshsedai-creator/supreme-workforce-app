@@ -128,13 +128,8 @@ export default function TimesheetsScreen() {
     }
   };
 
-  // Open edit modal
+  // Open edit modal - allow editing any timesheet
   const openEditModal = (timesheet: Timesheet) => {
-    if (timesheet.approval_status === 'approved') {
-      Alert.alert('Cannot Edit', 'Approved timesheets cannot be modified');
-      return;
-    }
-    
     setEditingTimesheet(timesheet);
     const clockIn = new Date(timesheet.clock_in);
     const clockOut = new Date(timesheet.clock_out);
