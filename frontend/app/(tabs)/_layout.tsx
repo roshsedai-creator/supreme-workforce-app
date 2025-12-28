@@ -27,8 +27,21 @@ export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   
   const permissions = user?.permissions || {};
-  const canAccessSupervisor = permissions.view_all_timesheets === true || permissions.edit_timesheets === true || permissions.approve_timesheets === true;
-  const canAccessAdmin = permissions.manage_users === true || permissions.manage_sites === true;
+  const userRole = user?.role?.toLowerCase() || '';
+  
+  // Supervisor access: check permissions OR role
+  const canAccessSupervisor = permissions.view_all_timesheets === true || 
+    permissions.edit_timesheets === true || 
+    permissions.approve_timesheets === true ||
+    userRole === 'supervisor' ||
+    userRole === 'manager' ||
+    userRole === 'admin';
+  
+  // Admin access: check permissions OR role (admin or manager)
+  const canAccessAdmin = permissions.manage_users === true || 
+    permissions.manage_sites === true ||
+    userRole === 'admin' ||
+    userRole === 'manager';
 
   useEffect(() => {
     if (!isAuthenticated) {
