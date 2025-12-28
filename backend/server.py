@@ -2009,9 +2009,7 @@ async def update_timesheet(timesheet_id: str, request: dict = Body(...)):
     if not timesheet:
         raise HTTPException(status_code=404, detail="Timesheet not found")
     
-    # Don't allow editing approved timesheets
-    if timesheet.get("approval_status") == "approved":
-        raise HTTPException(status_code=400, detail="Cannot edit approved timesheets")
+    # Allow editing any timesheet (including approved for corrections)
     
     update_data = {}
     
