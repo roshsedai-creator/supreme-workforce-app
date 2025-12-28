@@ -20,13 +20,29 @@ import { useAuthStore } from '../../store/authStore';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
+// Smart time formatter - handles various input formats
 const formatTimeInput = (value: string): string => {
   const cleaned = value.replace(/[^0-9:]/g, '');
-  if (cleaned.includes(':')) return cleaned.substring(0, 5);
-  if (cleaned.length === 0) return '';
-  if (cleaned.length <= 2) return cleaned;
-  if (cleaned.length === 3) return `0${cleaned[0]}:${cleaned.substring(1)}`;
-  if (cleaned.length >= 4) return `${cleaned.substring(0, 2)}:${cleaned.substring(2, 4)}`;
+  if (cleaned.includes(':')) {
+    const parts = cleaned.split(':');
+    const hours = parts[0].substring(0, 2);
+    const mins = parts[1] ? parts[1].substring(0, 2) : '';
+    if (mins) return `${hours.padStart(2, '0')}:${mins.padStart(2, '0')}`;
+    return `${hours}:${mins}`;
+  }
+  const digits = cleaned.replace(/\D/g, '');
+  if (digits.length === 0) return '';
+  if (digits.length <= 2) return digits;
+  if (digits.length === 3) {
+    const firstTwo = parseInt(digits.substring(0, 2));
+    if (firstTwo <= 23) return `${digits.substring(0, 2)}:${digits[2]}`;
+    return `0${digits[0]}:${digits.substring(1, 3)}`;
+  }
+  if (digits.length >= 4) {
+    const hours = digits.substring(0, 2);
+    const mins = digits.substring(2, 4);
+    return `${hours}:${mins}`;
+  }
   return cleaned;
 };
 
