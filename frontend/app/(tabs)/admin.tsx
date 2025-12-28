@@ -105,10 +105,17 @@ export default function AdminScreen() {
   const hasAdminAccess = userRole === 'admin' || userRole === 'manager' || 
     user?.permissions?.manage_users === true || user?.permissions?.manage_sites === true;
 
+  // Don't show access denied until we know the user data is loaded
+  const [accessChecked, setAccessChecked] = useState(false);
+  
   useEffect(() => {
-    if (!hasAdminAccess) {
-      Alert.alert('Access Denied', 'You do not have permission to access this page');
-      router.replace('/home');
+    // Only check access after user is loaded
+    if (user && user.id) {
+      if (!hasAdminAccess) {
+        Alert.alert('Access Denied', 'You do not have permission to access this page');
+        router.replace('/home');
+      }
+      setAccessChecked(true);
     }
   }, [user, hasAdminAccess]);
 
