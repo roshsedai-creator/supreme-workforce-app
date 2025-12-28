@@ -5,15 +5,14 @@ import Certifications from '../components/Certifications';
 import About from '../components/About';
 import Services from '../components/Services';
 import WhyChooseUs from '../components/WhyChooseUs';
-import LeadershipTeam from '../components/LeadershipTeam';
-import SavingsCalculator from '../components/SavingsCalculator';
-import CorporateSupport from '../components/CorporateSupport';
 import SuccessMetrics from '../components/SuccessMetrics';
+import LeadershipTeam from '../components/LeadershipTeam';
 import ClientLogoCarousel from '../components/ClientLogoCarousel';
 import Testimonials from '../components/Testimonials';
+import SavingsCalculator from '../components/SavingsCalculator';
+import CorporateSupport from '../components/CorporateSupport';
 import FAQ from '../components/FAQ';
 import BookSiteVisit from '../components/BookSiteVisit';
-import PremiumCTA from '../components/PremiumCTA';
 import Blog from '../components/Blog';
 import JobsCTA from '../components/JobsCTA';
 import Footer from '../components/Footer';
@@ -31,21 +30,49 @@ const HomePage = () => {
       <ScrollProgress />
       <Header />
       <main>
+        {/* Hero - First Impression */}
         <Hero />
+        
+        {/* Trust Signals - Certifications */}
         <Certifications />
+        
+        {/* About Us - Who We Are */}
         <About />
+        
+        {/* Services - What We Offer */}
         <Services />
+        
+        {/* Why Choose Us - Our Differentiators */}
         <WhyChooseUs />
-        <LeadershipTeam />
-        <SavingsCalculator />
-        <CorporateSupport />
+        
+        {/* Success Metrics - Proof of Results */}
         <SuccessMetrics />
+        
+        {/* Client Logos - Social Proof */}
         <ClientLogoCarousel />
+        
+        {/* Testimonials - Customer Stories */}
         <Testimonials />
+        
+        {/* Leadership Team - Meet the Experts */}
+        <LeadershipTeam />
+        
+        {/* Savings Calculator - Value Proposition */}
+        <SavingsCalculator />
+        
+        {/* Corporate Support - Partnership */}
+        <CorporateSupport />
+        
+        {/* FAQ - Address Concerns */}
         <FAQ />
+        
+        {/* Book Site Visit - Conversion */}
         <BookSiteVisit />
-        <PremiumCTA />
+        
+        {/* Blog/Insights - Thought Leadership */}
         <Blog />
+        
+        {/* Careers CTA - Recruitment */}
         <JobsCTA />
       </main>
       <Footer />
