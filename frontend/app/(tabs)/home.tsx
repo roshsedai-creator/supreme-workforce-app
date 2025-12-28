@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,13 @@ import { colors } from '../../constants/colors';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
+interface ExistingEntry {
+  id: string;
+  date: string;
+  hours: number;
+  status: string;
+}
+
 export default function HomeScreen() {
   const { user } = useAuthStore();
   
@@ -35,13 +42,24 @@ export default function HomeScreen() {
   const [dailyNotes, setDailyNotes] = useState('');
   const [dailyImage, setDailyImage] = useState<string | null>(null);
   
+  // Date picker modal
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [datePickerMode, setDatePickerMode] = useState<'daily' | 'fortnight'>('daily');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  
   // Fortnight entry form
   const [fortnightStartDate, setFortnightStartDate] = useState('');
   const [fortnightEntries, setFortnightEntries] = useState<{
     date: string;
-    hours: string;
+    startTime: string;
+    endTime: string;
     break: string;
+    existingId?: string;
+    existingStatus?: string;
+    existingHours?: number;
   }[]>([]);
+  const [loadingExisting, setLoadingExisting] = useState(false);
 
   // Get today's date in YYYY-MM-DD format
   const getTodayDate = () => {
@@ -49,17 +67,101 @@ export default function HomeScreen() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   };
 
-  // Generate fortnight dates from start date
-  const generateFortnightDates = (startDate: string) => {
+  // Fetch existing timesheets for date range
+  const fetchExistingTimesheets = async (startDate: string, endDate: string) => {
+    if (!user?.id) return [];
+    try {
+      const response = await axios.get(
+        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`,
+        { params: { employee_id: user.id } }
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error('Failed to fetch timesheets:', error);
+      return [];
+    }
+  };
+
+  // Generate fortnight dates from start date and load existing entries
+  const generateFortnightDates = async (startDate: string) => {
+    setLoadingExisting(true);
     const entries = [];
     const start = new Date(startDate);
+    const endDate = new Date(start);
+    endDate.setDate(start.getDate() + 13);
+    
+    // Fetch existing timesheets
+    const existingTimesheets = await fetchExistingTimesheets(
+      startDate,
+      `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`
+    );
+    
+    // Create a map of existing entries by date
+    const existingMap = new Map();
+    existingTimesheets.forEach((ts: any) => {
+      const tsDate = new Date(ts.clock_in);
+      const dateKey = `${tsDate.getFullYear()}-${String(tsDate.getMonth() + 1).padStart(2, '0')}-${String(tsDate.getDate()).padStart(2, '0')}`;
+      if (!existingMap.has(dateKey)) {
+        existingMap.set(dateKey, ts);
+      }
+    });
+    
     for (let i = 0; i < 14; i++) {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
       const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      entries.push({ date: dateStr, hours: '', break: '30' });
+      
+      const existing = existingMap.get(dateStr);
+      if (existing) {
+        const clockIn = new Date(existing.clock_in);
+        const clockOut = new Date(existing.clock_out);
+        entries.push({
+          date: dateStr,
+          startTime: `${String(clockIn.getHours()).padStart(2, '0')}:${String(clockIn.getMinutes()).padStart(2, '0')}`,
+          endTime: `${String(clockOut.getHours()).padStart(2, '0')}:${String(clockOut.getMinutes()).padStart(2, '0')}`,
+          break: String(existing.break_minutes || 0),
+          existingId: existing.id,
+          existingStatus: existing.approval_status,
+          existingHours: existing.total_hours,
+        });
+      } else {
+        entries.push({ date: dateStr, startTime: '', endTime: '', break: '30' });
+      }
     }
+    
     setFortnightEntries(entries);
+    setLoadingExisting(false);
+  };
+
+  // Open date picker
+  const openDatePicker = (mode: 'daily' | 'fortnight') => {
+    setDatePickerMode(mode);
+    setSelectedYear(new Date().getFullYear());
+    setSelectedMonth(new Date().getMonth());
+    setShowDatePicker(true);
+  };
+
+  // Select date from picker
+  const selectDate = (day: number) => {
+    const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    
+    if (datePickerMode === 'daily') {
+      setDailyDate(dateStr);
+    } else {
+      setFortnightStartDate(dateStr);
+      generateFortnightDates(dateStr);
+    }
+    setShowDatePicker(false);
+  };
+
+  // Get days in month
+  const getDaysInMonth = (year: number, month: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  // Get first day of month (0 = Sunday)
+  const getFirstDayOfMonth = (year: number, month: number) => {
+    return new Date(year, month, 1).getDay();
   };
 
   // Open modal for entry
@@ -77,7 +179,8 @@ export default function HomeScreen() {
       const now = new Date();
       const day = now.getDay();
       const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-      const monday = new Date(now.setDate(diff));
+      const monday = new Date(now);
+      monday.setDate(diff);
       const startDate = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
       setFortnightStartDate(startDate);
       generateFortnightDates(startDate);
@@ -155,41 +258,39 @@ export default function HomeScreen() {
 
   // Submit fortnight timesheet
   const submitFortnightTimesheet = async () => {
-    const validEntries = fortnightEntries.filter(e => e.hours && parseFloat(e.hours) > 0);
+    const newEntries = fortnightEntries.filter(e => 
+      e.startTime && e.endTime && !e.existingId
+    );
     
-    if (validEntries.length === 0) {
-      Alert.alert('Error', 'Please enter hours for at least one day');
+    if (newEntries.length === 0) {
+      Alert.alert('Info', 'No new entries to submit. All days with times already have timesheets.');
       return;
     }
 
     setLoading(true);
     try {
-      // Submit each day as separate timesheet
-      for (const entry of validEntries) {
-        const hours = parseFloat(entry.hours);
-        const breakMins = parseInt(entry.break) || 0;
-        
-        // Calculate start and end times based on hours
-        const startTime = '09:00';
-        const totalMinutes = hours * 60 + breakMins;
-        const endHour = Math.floor((9 * 60 + totalMinutes) / 60);
-        const endMin = Math.floor((9 * 60 + totalMinutes) % 60);
-        const endTime = `${String(endHour).padStart(2, '0')}:${String(endMin).padStart(2, '0')}`;
-
-        await axios.post(
-          `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`,
-          {
-            employee_id: user?.id,
-            date: entry.date,
-            clock_in_time: startTime,
-            clock_out_time: endTime,
-            break_minutes: breakMins,
-            notes: `Fortnight entry - ${hours}h`,
-          }
-        );
+      let successCount = 0;
+      
+      for (const entry of newEntries) {
+        try {
+          await axios.post(
+            `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`,
+            {
+              employee_id: user?.id,
+              date: entry.date,
+              clock_in_time: entry.startTime,
+              clock_out_time: entry.endTime,
+              break_minutes: parseInt(entry.break) || 0,
+              notes: `Fortnight entry`,
+            }
+          );
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to submit entry for ${entry.date}:`, err);
+        }
       }
 
-      Alert.alert('Success', `${validEntries.length} timesheet entries submitted for approval`);
+      Alert.alert('Success', `${successCount} new timesheet(s) submitted for approval`);
       setShowEntryModal(false);
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.detail || 'Failed to submit timesheets');
@@ -199,7 +300,13 @@ export default function HomeScreen() {
   };
 
   // Update fortnight entry
-  const updateFortnightEntry = (index: number, field: 'hours' | 'break', value: string) => {
+  const updateFortnightEntry = (index: number, field: 'startTime' | 'endTime' | 'break', value: string) => {
+    // Don't allow editing existing entries
+    if (fortnightEntries[index].existingId) {
+      Alert.alert('Cannot Edit', 'This entry already exists. Edit it from the Timesheets tab.');
+      return;
+    }
+    
     const updated = [...fortnightEntries];
     updated[index][field] = value;
     setFortnightEntries(updated);
@@ -217,6 +324,19 @@ export default function HomeScreen() {
     const date = new Date(dateStr);
     return `${date.getDate()}/${date.getMonth() + 1}`;
   };
+  
+  // Get status color
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved': return colors.success;
+      case 'rejected': return colors.error;
+      default: return colors.warning;
+    }
+  };
+
+  // Month names
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
 
   return (
     <View style={styles.container}>
@@ -320,13 +440,15 @@ export default function HomeScreen() {
               <View style={styles.form}>
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>Date *</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={dailyDate}
-                    onChangeText={setDailyDate}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.gray[400]}
-                  />
+                  <TouchableOpacity 
+                    style={styles.datePickerButton}
+                    onPress={() => openDatePicker('daily')}
+                  >
+                    <Ionicons name="calendar" size={20} color={colors.primary} />
+                    <Text style={styles.datePickerText}>
+                      {dailyDate || 'Select date'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 <View style={styles.row}>
@@ -414,62 +536,192 @@ export default function HomeScreen() {
               <View style={styles.form}>
                 <View style={styles.formGroup}>
                   <Text style={styles.label}>Fortnight Start Date</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={fortnightStartDate}
-                    onChangeText={(text) => {
-                      setFortnightStartDate(text);
-                      if (text.length === 10) {
-                        generateFortnightDates(text);
-                      }
-                    }}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor={colors.gray[400]}
-                  />
+                  <TouchableOpacity 
+                    style={styles.datePickerButton}
+                    onPress={() => openDatePicker('fortnight')}
+                  >
+                    <Ionicons name="calendar" size={20} color={colors.primary} />
+                    <Text style={styles.datePickerText}>
+                      {fortnightStartDate || 'Select start date'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
                 <Text style={styles.fortnightInfo}>
-                  Enter hours worked for each day. Leave blank for days not worked.
+                  Enter start and end times for each day. Existing entries are shown and cannot be edited here.
                 </Text>
 
-                {fortnightEntries.map((entry, index) => (
-                  <View key={entry.date} style={styles.fortnightRow}>
-                    <View style={styles.fortnightDate}>
-                      <Text style={styles.dayName}>{getDayName(entry.date)}</Text>
-                      <Text style={styles.dateText}>{formatDisplayDate(entry.date)}</Text>
-                    </View>
-                    <View style={styles.fortnightInputs}>
-                      <TextInput
-                        style={styles.hoursInput}
-                        value={entry.hours}
-                        onChangeText={(val) => updateFortnightEntry(index, 'hours', val)}
-                        placeholder="Hours"
-                        keyboardType="decimal-pad"
-                        placeholderTextColor={colors.gray[400]}
-                      />
-                      <TextInput
-                        style={styles.breakInput}
-                        value={entry.break}
-                        onChangeText={(val) => updateFortnightEntry(index, 'break', val)}
-                        placeholder="Break"
-                        keyboardType="numeric"
-                        placeholderTextColor={colors.gray[400]}
-                      />
-                    </View>
+                {loadingExisting ? (
+                  <View style={styles.loadingExisting}>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={styles.loadingText}>Loading existing entries...</Text>
                   </View>
-                ))}
+                ) : (
+                  <>
+                    {/* Column Headers */}
+                    <View style={styles.fortnightHeader}>
+                      <Text style={styles.headerDay}>Day</Text>
+                      <Text style={styles.headerTime}>Start</Text>
+                      <Text style={styles.headerTime}>End</Text>
+                      <Text style={styles.headerBreak}>Break</Text>
+                    </View>
 
-                {/* Fortnight Summary */}
-                <View style={styles.fortnightSummary}>
-                  <Text style={styles.summaryLabel}>Total Hours:</Text>
-                  <Text style={styles.summaryValue}>
-                    {fortnightEntries.reduce((sum, e) => sum + (parseFloat(e.hours) || 0), 0).toFixed(1)}h
-                  </Text>
-                </View>
+                    {fortnightEntries.map((entry, index) => (
+                      <View 
+                        key={entry.date} 
+                        style={[
+                          styles.fortnightRow,
+                          entry.existingId && styles.fortnightRowExisting
+                        ]}
+                      >
+                        <View style={styles.fortnightDate}>
+                          <Text style={styles.dayName}>{getDayName(entry.date)}</Text>
+                          <Text style={styles.dateText}>{formatDisplayDate(entry.date)}</Text>
+                        </View>
+                        
+                        {entry.existingId ? (
+                          // Show existing entry info
+                          <View style={styles.existingEntryInfo}>
+                            <Text style={styles.existingTime}>
+                              {entry.startTime} - {entry.endTime}
+                            </Text>
+                            <View style={[styles.existingStatus, { backgroundColor: getStatusColor(entry.existingStatus || 'pending') + '20' }]}>
+                              <Text style={[styles.existingStatusText, { color: getStatusColor(entry.existingStatus || 'pending') }]}>
+                                {entry.existingHours?.toFixed(1)}h • {entry.existingStatus}
+                              </Text>
+                            </View>
+                          </View>
+                        ) : (
+                          // Show input fields for new entry
+                          <View style={styles.fortnightInputs}>
+                            <TextInput
+                              style={styles.timeInput}
+                              value={entry.startTime}
+                              onChangeText={(val) => updateFortnightEntry(index, 'startTime', val)}
+                              placeholder="09:00"
+                              placeholderTextColor={colors.gray[400]}
+                            />
+                            <TextInput
+                              style={styles.timeInput}
+                              value={entry.endTime}
+                              onChangeText={(val) => updateFortnightEntry(index, 'endTime', val)}
+                              placeholder="17:00"
+                              placeholderTextColor={colors.gray[400]}
+                            />
+                            <TextInput
+                              style={styles.breakInput}
+                              value={entry.break}
+                              onChangeText={(val) => updateFortnightEntry(index, 'break', val)}
+                              placeholder="30"
+                              keyboardType="numeric"
+                              placeholderTextColor={colors.gray[400]}
+                            />
+                          </View>
+                        )}
+                      </View>
+                    ))}
+
+                    {/* Fortnight Summary */}
+                    <View style={styles.fortnightSummary}>
+                      <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Existing entries:</Text>
+                        <Text style={styles.summaryValue}>
+                          {fortnightEntries.filter(e => e.existingId).length} days
+                        </Text>
+                      </View>
+                      <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>New entries to submit:</Text>
+                        <Text style={[styles.summaryValue, { color: colors.primary }]}>
+                          {fortnightEntries.filter(e => e.startTime && e.endTime && !e.existingId).length} days
+                        </Text>
+                      </View>
+                    </View>
+                  </>
+                )}
               </View>
             )}
           </ScrollView>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* Date Picker Modal */}
+      <Modal
+        visible={showDatePicker}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.datePickerOverlay}>
+          <View style={styles.datePickerContent}>
+            {/* Month/Year Navigator */}
+            <View style={styles.datePickerNav}>
+              <TouchableOpacity onPress={() => {
+                if (selectedMonth === 0) {
+                  setSelectedMonth(11);
+                  setSelectedYear(selectedYear - 1);
+                } else {
+                  setSelectedMonth(selectedMonth - 1);
+                }
+              }}>
+                <Ionicons name="chevron-back" size={24} color={colors.primary} />
+              </TouchableOpacity>
+              <Text style={styles.datePickerTitle}>
+                {monthNames[selectedMonth]} {selectedYear}
+              </Text>
+              <TouchableOpacity onPress={() => {
+                if (selectedMonth === 11) {
+                  setSelectedMonth(0);
+                  setSelectedYear(selectedYear + 1);
+                } else {
+                  setSelectedMonth(selectedMonth + 1);
+                }
+              }}>
+                <Ionicons name="chevron-forward" size={24} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Day Headers */}
+            <View style={styles.dayHeaders}>
+              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                <Text key={day} style={styles.dayHeader}>{day}</Text>
+              ))}
+            </View>
+
+            {/* Calendar Grid */}
+            <View style={styles.calendarGrid}>
+              {/* Empty cells for days before first of month */}
+              {Array(getFirstDayOfMonth(selectedYear, selectedMonth)).fill(null).map((_, i) => (
+                <View key={`empty-${i}`} style={styles.calendarCell} />
+              ))}
+              
+              {/* Days of month */}
+              {Array(getDaysInMonth(selectedYear, selectedMonth)).fill(null).map((_, i) => {
+                const day = i + 1;
+                const isToday = 
+                  day === new Date().getDate() && 
+                  selectedMonth === new Date().getMonth() && 
+                  selectedYear === new Date().getFullYear();
+                
+                return (
+                  <TouchableOpacity
+                    key={day}
+                    style={[styles.calendarCell, isToday && styles.todayCell]}
+                    onPress={() => selectDate(day)}
+                  >
+                    <Text style={[styles.calendarDay, isToday && styles.todayText]}>{day}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity 
+              style={styles.datePickerCancel}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Text style={styles.datePickerCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -655,6 +907,20 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
   },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: colors.gray[300],
+    borderRadius: 10,
+    padding: 14,
+    gap: 10,
+  },
+  datePickerText: {
+    fontSize: 16,
+    color: colors.text.primary,
+  },
   imageButtons: {
     flexDirection: 'row',
     gap: 12,
@@ -696,65 +962,197 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     lineHeight: 20,
   },
+  loadingExisting: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 10,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  fortnightHeader: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.gray[200],
+    marginBottom: 8,
+  },
+  headerDay: {
+    width: 60,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  headerTime: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
+  headerBreak: {
+    width: 50,
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    textAlign: 'center',
+  },
   fortnightRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
     backgroundColor: colors.white,
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
   },
+  fortnightRowExisting: {
+    backgroundColor: colors.gray[100],
+  },
   fortnightDate: {
-    width: 60,
+    width: 50,
   },
   dayName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.text.primary,
   },
   dateText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.text.secondary,
   },
   fortnightInputs: {
     flex: 1,
     flexDirection: 'row',
-    gap: 10,
-    marginLeft: 12,
+    gap: 8,
+    marginLeft: 10,
   },
-  hoursInput: {
-    flex: 2,
-    backgroundColor: colors.gray[100],
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  breakInput: {
+  timeInput: {
     flex: 1,
     backgroundColor: colors.gray[100],
     borderRadius: 8,
     padding: 10,
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
   },
-  fortnightSummary: {
+  breakInput: {
+    width: 50,
+    backgroundColor: colors.gray[100],
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  existingEntryInfo: {
+    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginLeft: 10,
+  },
+  existingTime: {
+    fontSize: 14,
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  existingStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  existingStatusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  fortnightSummary: {
     marginTop: 16,
     padding: 16,
     backgroundColor: colors.primary + '10',
     borderRadius: 12,
   },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   summaryLabel: {
-    fontSize: 16,
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  summaryValue: {
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text.primary,
   },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.primary,
+  // Date picker modal
+  datePickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  datePickerContent: {
+    backgroundColor: colors.white,
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    maxWidth: 340,
+  },
+  datePickerNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  datePickerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  dayHeaders: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  dayHeader: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text.secondary,
+  },
+  calendarGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  calendarCell: {
+    width: '14.28%',
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayCell: {
+    backgroundColor: colors.primary,
+    borderRadius: 20,
+  },
+  calendarDay: {
+    fontSize: 15,
+    color: colors.text.primary,
+  },
+  todayText: {
+    color: colors.white,
+    fontWeight: '600',
+  },
+  datePickerCancel: {
+    marginTop: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  datePickerCancelText: {
+    fontSize: 16,
+    color: colors.text.secondary,
   },
 });
