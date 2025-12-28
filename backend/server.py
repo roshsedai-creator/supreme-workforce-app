@@ -1976,6 +1976,113 @@ async def update_timesheet(timesheet_id: str, request: TimesheetUpdateRequest):
     updated = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
     return {"success": True, "timesheet": serialize_doc(updated)}
 
+@api_router.put("/timesheets/{timesheet_id}")
+async def update_timesheet(timesheet_id: str, request: dict = Body(...)):
+    """Update a timesheet entry"""
+    try:
+        object_id = ObjectId(timesheet_id)
+    except:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    timesheet = await db.timesheets.find_one({"_id": object_id})
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    # Don't allow editing approved timesheets
+    if timesheet.get("approval_status") == "approved":
+        raise HTTPException(status_code=400, detail="Cannot edit approved timesheets")
+    
+    update_data = {}
+    
+    # Update date and times if provided
+    if "date" in request and "clock_in_time" in request and "clock_out_time" in request:
+        date_str = request["date"]
+        clock_in_time = request["clock_in_time"]
+        clock_out_time = request["clock_out_time"]
+        
+        clock_in = datetime.strptime(f"{date_str}T{clock_in_time}", "%Y-%m-%dT%H:%M")
+        clock_out = datetime.strptime(f"{date_str}T{clock_out_time}", "%Y-%m-%dT%H:%M")
+        
+        # Handle overnight shifts
+        if clock_out <= clock_in:
+            clock_out += timedelta(days=1)
+        
+        break_minutes = int(request.get("break_minutes", 0))
+        total_hours = (clock_out - clock_in).total_seconds() / 3600 - (break_minutes / 60)
+        
+        update_data.update({
+            "clock_in": clock_in,
+            "clock_out": clock_out,
+            "break_minutes": break_minutes,
+            "total_hours": round(total_hours, 2),
+        })
+    
+    # Update notes if provided
+    if "notes" in request:
+        update_data["notes"] = request["notes"]
+    
+    # Update image if provided
+    if "image" in request:
+        update_data["image"] = request["image"]
+    
+    # Reset approval status when edited
+    update_data["approval_status"] = "pending"
+    
+    await db.timesheets.update_one({"_id": object_id}, {"$set": update_data})
+    
+    updated = await db.timesheets.find_one({"_id": object_id})
+    return {"success": True, "timesheet": serialize_doc(updated)}
+
+@api_router.put("/timesheets/{timesheet_id}/approve")
+async def approve_timesheet_by_id(timesheet_id: str, request: dict = Body(...)):
+    """Supervisor approves/rejects a specific timesheet"""
+    try:
+        object_id = ObjectId(timesheet_id)
+    except:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    timesheet = await db.timesheets.find_one({"_id": object_id})
+    if not timesheet:
+        raise HTTPException(status_code=404, detail="Timesheet not found")
+    
+    status = request.get("status", "approved")
+    approved_by = request.get("approved_by")
+    rejection_reason = request.get("rejection_reason", "")
+    
+    # Calculate total pay when approving
+    total_pay = 0.0
+    if status == "approved" and timesheet.get("total_hours", 0) > 0:
+        employee = await db.users.find_one({"_id": ObjectId(timesheet["employee_id"])})
+        if employee:
+            pay_rate = await db.pay_rates.find_one({"award_level": employee.get("award_level", 1)})
+            if pay_rate:
+                clock_in = timesheet["clock_in"]
+                day_of_week = clock_in.weekday() if isinstance(clock_in, datetime) else 0
+                
+                if day_of_week == 5:
+                    rate = pay_rate["saturday_rate"]
+                elif day_of_week == 6:
+                    rate = pay_rate["sunday_rate"]
+                else:
+                    rate = pay_rate["weekday_rate"]
+                
+                total_pay = timesheet.get("total_hours", 0) * rate
+    
+    update_data = {
+        "approval_status": status,
+        "supervisor_id": approved_by,
+        "total_pay": round(total_pay, 2),
+        "approved_at": datetime.utcnow()
+    }
+    
+    if status == "rejected" and rejection_reason:
+        update_data["rejection_reason"] = rejection_reason
+    
+    await db.timesheets.update_one({"_id": object_id}, {"$set": update_data})
+    
+    updated = await db.timesheets.find_one({"_id": object_id})
+    return {"success": True, "timesheet": serialize_doc(updated)}
+
 @api_router.post("/timesheets/approve")
 async def approve_timesheet(request: ApprovalRequest):
     """Supervisor approves/rejects timesheet"""
