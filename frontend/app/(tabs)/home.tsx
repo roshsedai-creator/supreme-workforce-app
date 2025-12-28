@@ -19,14 +19,93 @@ import { useAuthStore } from '../../store/authStore';
 import axios from 'axios';
 import * as ImagePicker from 'expo-image-picker';
 
+// Smart time formatter - handles various input formats
+// Examples: "9" -> "09:00", "11" -> "11:00", "930" -> "09:30", "1120" -> "11:20", "11:20" -> "11:20"
 const formatTimeInput = (value: string): string => {
+  // Remove everything except numbers and colon
   const cleaned = value.replace(/[^0-9:]/g, '');
-  if (cleaned.includes(':')) return cleaned.substring(0, 5);
-  if (cleaned.length === 0) return '';
-  if (cleaned.length <= 2) return cleaned;
-  if (cleaned.length === 3) return `0${cleaned[0]}:${cleaned.substring(1)}`;
-  if (cleaned.length >= 4) return `${cleaned.substring(0, 2)}:${cleaned.substring(2, 4)}`;
+  
+  // If already has colon, just clean it up
+  if (cleaned.includes(':')) {
+    const parts = cleaned.split(':');
+    const hours = parts[0].substring(0, 2);
+    const mins = parts[1] ? parts[1].substring(0, 2) : '';
+    if (mins) {
+      return `${hours.padStart(2, '0')}:${mins.padStart(2, '0')}`;
+    }
+    return `${hours}:${mins}`;
+  }
+  
+  // Handle pure numbers
+  const digits = cleaned.replace(/\D/g, '');
+  
+  if (digits.length === 0) return '';
+  if (digits.length === 1) return digits; // User is still typing
+  if (digits.length === 2) {
+    // Could be hours only: "09", "11", "23"
+    const num = parseInt(digits);
+    if (num <= 23) return digits; // Still typing, could add more
+    return `0${digits[0]}:${digits[1]}0`; // Invalid hour, treat as H:M0
+  }
+  if (digits.length === 3) {
+    // "930" -> "09:30", "123" -> "12:30" or "01:23"
+    const firstTwo = parseInt(digits.substring(0, 2));
+    if (firstTwo <= 23) {
+      // First two are valid hours
+      return `${digits.substring(0, 2)}:${digits[2]}`;
+    } else {
+      // First digit is hour, rest is minutes
+      return `0${digits[0]}:${digits.substring(1, 3)}`;
+    }
+  }
+  if (digits.length >= 4) {
+    // "1120" -> "11:20", "0930" -> "09:30"
+    const hours = digits.substring(0, 2);
+    const mins = digits.substring(2, 4);
+    const hoursNum = parseInt(hours);
+    const minsNum = parseInt(mins);
+    
+    // Validate hours (0-23) and minutes (0-59)
+    if (hoursNum > 23) {
+      return `0${digits[0]}:${digits.substring(1, 3)}`;
+    }
+    if (minsNum > 59) {
+      return `${hours}:59`;
+    }
+    return `${hours}:${mins}`;
+  }
+  
   return cleaned;
+};
+
+// Auto-complete time on blur (when user finishes typing)
+const completeTime = (value: string): string => {
+  if (!value) return '';
+  
+  const cleaned = value.replace(/[^0-9:]/g, '');
+  
+  // Already formatted
+  if (cleaned.includes(':') && cleaned.length === 5) {
+    return cleaned;
+  }
+  
+  const digits = cleaned.replace(/\D/g, '');
+  
+  if (digits.length === 0) return '';
+  if (digits.length === 1) return `0${digits}:00`; // "9" -> "09:00"
+  if (digits.length === 2) return `${digits.padStart(2, '0')}:00`; // "11" -> "11:00"
+  if (digits.length === 3) {
+    const firstTwo = parseInt(digits.substring(0, 2));
+    if (firstTwo <= 23) {
+      return `${digits.substring(0, 2)}:${digits[2]}0`; // "113" -> "11:30"
+    }
+    return `0${digits[0]}:${digits.substring(1, 3)}`; // "930" -> "09:30"
+  }
+  if (digits.length >= 4) {
+    return `${digits.substring(0, 2)}:${digits.substring(2, 4)}`;
+  }
+  
+  return value;
 };
 
 export default function HomeScreen() {
