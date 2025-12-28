@@ -751,7 +751,7 @@ export default function AdminScreen() {
           <Ionicons name="bar-chart" size={28} color={colors.white} />
           <View style={styles.availabilityButtonContent}>
             <Text style={styles.availabilityButtonTitle}>Reports Center</Text>
-            <Text style={styles.availabilityButtonSubtitle}>Generate payroll, roster, timesheet & ABN reports</Text>
+            <Text style={styles.availabilityButtonSubtitle}>Generate payroll and timesheet reports</Text>
           </View>
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
@@ -768,18 +768,6 @@ export default function AdminScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.availabilityButton}
-          onPress={() => setShowAvailabilityModal(true)}
-        >
-          <Ionicons name="people" size={24} color={colors.white} />
-          <View style={styles.availabilityButtonContent}>
-            <Text style={styles.availabilityButtonTitle}>Employee Availability</Text>
-            <Text style={styles.availabilityButtonSubtitle}>View weekly snapshot by site</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-
         {/* Timesheet Cleanup Section */}
         <View style={styles.cleanupSection}>
           <Text style={styles.cleanupTitle}>Timesheet Cleanup</Text>
@@ -789,14 +777,7 @@ export default function AdminScreen() {
               onPress={() => handleBulkDeleteTimesheets('rejected')}
             >
               <Ionicons name="trash-outline" size={20} color={colors.white} />
-              <Text style={styles.deleteButtonText}>Delete Rejected</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.deleteButton, { backgroundColor: colors.warning }]}
-              onPress={() => handleBulkDeleteTimesheets('out_of_bounds')}
-            >
-              <Ionicons name="location-outline" size={20} color={colors.white} />
-              <Text style={styles.deleteButtonText}>Delete Out of Bounds</Text>
+              <Text style={styles.deleteButtonText}>Delete Rejected Timesheets</Text>
             </TouchableOpacity>
           </View>
         </View>
