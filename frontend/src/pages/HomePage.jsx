@@ -19,7 +19,6 @@ import Footer from '../components/Footer';
 import Chatbot from '../components/Chatbot';
 import ScrollProgress from '../components/ScrollProgress';
 import PageLoader from '../components/PageLoader';
-import SocialProof from '../components/SocialProof';
 import BackToTop from '../components/BackToTop';
 
 const HomePage = () => {
