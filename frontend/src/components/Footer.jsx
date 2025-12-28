@@ -137,7 +137,7 @@ const Footer = () => {
       <div className="border-t border-gray-800">
         <div className="container mx-auto px-4 py-4">
           <p className="text-gray-500 text-xs text-center">
-            © 2024 Supreme Hospitality Services. All Rights Reserved. | <Link to="/privacy" className="hover:text-[#D4B37A]">Privacy Policy</Link> | <Link to="/terms" className="hover:text-[#D4B37A]">Terms of Service</Link>
+            © 2025 Supreme Hospitality Services. All Rights Reserved. | <Link to="/privacy" className="hover:text-[#D4B37A]">Privacy Policy</Link> | <Link to="/terms" className="hover:text-[#D4B37A]">Terms of Service</Link>
           </p>
         </div>
       </div>
