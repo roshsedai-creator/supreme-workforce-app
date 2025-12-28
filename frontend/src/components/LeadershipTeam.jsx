@@ -30,7 +30,7 @@ const LeadershipTeam = () => {
     {
       name: "David Mitchell",
       role: "Training Manager",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face&auto=format&q=80",
+      image: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400&h=400&fit=crop",
       description: "Develops comprehensive training programs that set industry standards for hospitality excellence."
     },
     {
