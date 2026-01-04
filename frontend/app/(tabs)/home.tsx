@@ -285,6 +285,35 @@ export default function HomeScreen() {
     }
   };
 
+  // Fortnight image picker
+  const pickFortnightImage = async (useCamera: boolean) => {
+    if (Platform.OS === 'web') {
+      pickImageWeb((base64) => setFortnightImage(base64));
+      return;
+    }
+    
+    try {
+      const permission = useCamera 
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (permission.status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant camera/gallery access');
+        return;
+      }
+
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.7, base64: true })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 0.7, base64: true });
+
+      if (!result.canceled && result.assets[0].base64) {
+        setFortnightImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
   const submitDailyTimesheet = async () => {
     if (!dailyDate || !dailyStartTime || !dailyEndTime) {
       Alert.alert('Missing Fields', 'Please fill in date and times');
