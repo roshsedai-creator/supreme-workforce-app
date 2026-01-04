@@ -157,8 +157,31 @@ export default function SupervisorScreen() {
     setEditImage(entry.image || null);
   };
 
-  // Pick image function
+  // Web file picker helper
+  const pickImageWeb = (callback: (base64: string) => void) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          callback(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
+  // Pick image function - works on web and mobile
   const pickImage = async (useCamera: boolean) => {
+    if (Platform.OS === 'web') {
+      pickImageWeb((base64) => setEditImage(base64));
+      return;
+    }
+    
     const permission = useCamera 
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -176,8 +199,13 @@ export default function SupervisorScreen() {
     }
   };
 
-  // Pick fortnight photo
+  // Pick fortnight photo - works on web and mobile
   const pickFortnightPhoto = async (useCamera: boolean) => {
+    if (Platform.OS === 'web') {
+      pickImageWeb((base64) => setFortnightImage(base64));
+      return;
+    }
+    
     const permission = useCamera 
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
