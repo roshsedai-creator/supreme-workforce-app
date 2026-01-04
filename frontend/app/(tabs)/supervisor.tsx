@@ -286,6 +286,35 @@ export default function SupervisorScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Fortnight Photo Section */}
+      <View style={styles.photoSection}>
+        <View style={styles.photoInfo}>
+          <Ionicons name="camera" size={18} color="#6366f1" />
+          <Text style={styles.photoLabel}>Timesheet Photo</Text>
+        </View>
+        <View style={styles.photoBtns}>
+          <TouchableOpacity style={styles.photoBtn} onPress={() => pickFortnightPhoto(true)}>
+            <Ionicons name="camera-outline" size={16} color="#6366f1" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.photoBtn} onPress={() => pickFortnightPhoto(false)}>
+            <Ionicons name="images-outline" size={16} color="#6366f1" />
+          </TouchableOpacity>
+          {fortnightImage && (
+            <TouchableOpacity style={styles.viewPhotoBtn} onPress={() => { setViewingImage(fortnightImage); setShowImageModal(true); }}>
+              <Ionicons name="eye-outline" size={16} color="#10b981" />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      {fortnightImage && (
+        <View style={styles.photoPreview}>
+          <Image source={{ uri: fortnightImage }} style={styles.previewThumb} />
+          <TouchableOpacity style={styles.removePhoto} onPress={() => setFortnightImage(null)}>
+            <Ionicons name="close-circle" size={20} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* Table */}
       <ScrollView 
         style={styles.tableWrap}
