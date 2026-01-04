@@ -132,6 +132,9 @@ export default function HomeScreen() {
   const [fortnightStartDate, setFortnightStartDate] = useState('');
   const [fortnightEntries, setFortnightEntries] = useState<any[]>([]);
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const [fortnightImage, setFortnightImage] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const getTodayDate = () => {
     const now = new Date();
