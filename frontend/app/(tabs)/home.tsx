@@ -753,6 +753,16 @@ export default function HomeScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Image View Modal */}
+      <Modal visible={showImageModal} animationType="fade" transparent onRequestClose={() => setShowImageModal(false)}>
+        <View style={styles.imageModalBg}>
+          <TouchableOpacity style={styles.imageModalClose} onPress={() => setShowImageModal(false)}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {viewingImage && <Image source={{ uri: viewingImage }} style={styles.fullImage} resizeMode="contain" />}
+        </View>
+      </Modal>
     </View>
   );
 }
