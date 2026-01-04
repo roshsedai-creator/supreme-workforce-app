@@ -8,7 +8,6 @@ import {
   Modal,
   TextInput,
   Alert,
-  Image,
   ActivityIndicator,
   RefreshControl,
   KeyboardAvoidingView,
@@ -19,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 
-interface Employee { id: string; first_name: string; last_name: string; job_title?: string; }
+interface Employee { id: string; first_name: string; last_name: string; }
 interface Timesheet {
   id: string;
   employee_id: string;
@@ -29,323 +28,360 @@ interface Timesheet {
   total_hours: number;
   break_minutes: number;
   notes: string;
-  image?: string;
-  approval_status: 'pending' | 'approved' | 'rejected';
+  approval_status: string;
 }
 
 export default function SupervisorScreen() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('all');
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [filterStatus, setFilterStatus] = useState<'pending' | 'all' | 'approved' | 'rejected'>('pending');
-  
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [viewingImage, setViewingImage] = useState<string | null>(null);
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [rejectingId, setRejectingId] = useState<string | null>(null);
-  const [rejectReason, setRejectReason] = useState('');
-  
-  // Edit modal states
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
-  const [editDate, setEditDate] = useState('');
-  const [editStartTime, setEditStartTime] = useState('');
-  const [editEndTime, setEditEndTime] = useState('');
-  const [editBreak, setEditBreak] = useState('');
-  const [editNotes, setEditNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  
+  // Fortnight dates
+  const [fortnightEnd, setFortnightEnd] = useState(new Date());
+  const [fortnightEntries, setFortnightEntries] = useState<any[]>([]);
+  
+  // Edit modal
+  const [editingEntry, setEditingEntry] = useState<any>(null);
+  const [editStart, setEditStart] = useState('');
+  const [editEnd, setEditEnd] = useState('');
+  const [editBreak, setEditBreak] = useState('');
 
   const fetchEmployees = useCallback(async () => {
     try {
       const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users`);
-      setEmployees(res.data || []);
-    } catch (e) {}
+      const emps = (res.data || []).filter((u: any) => u.role !== 'admin');
+      setEmployees(emps);
+      if (emps.length > 0 && !selectedEmployeeId) {
+        setSelectedEmployeeId(emps[0].id);
+      }
+    } catch (e) { console.error(e); }
   }, []);
 
   const fetchTimesheets = useCallback(async () => {
+    if (!selectedEmployeeId) return;
     try {
-      const params: any = {};
-      if (selectedEmployeeId !== 'all') params.employee_id = selectedEmployeeId;
-      const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { params });
-      let data = res.data || [];
-      const empMap = new Map(employees.map(e => [e.id, `${e.first_name} ${e.last_name}`]));
-      data = data.map((ts: Timesheet) => ({ ...ts, employee_name: empMap.get(ts.employee_id) || 'Unknown' }));
-      data.sort((a: any, b: any) => new Date(b.clock_in).getTime() - new Date(a.clock_in).getTime());
-      setTimesheets(data);
-    } catch (e) {}
+      const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { 
+        params: { employee_id: selectedEmployeeId } 
+      });
+      setTimesheets(res.data || []);
+    } catch (e) { console.error(e); }
     setLoading(false);
     setRefreshing(false);
-  }, [selectedEmployeeId, employees]);
+  }, [selectedEmployeeId]);
 
   useEffect(() => { fetchEmployees(); }, []);
-  useEffect(() => { if (employees.length) fetchTimesheets(); }, [employees, selectedEmployeeId, fetchTimesheets]);
+  useEffect(() => { 
+    if (selectedEmployeeId) {
+      setLoading(true);
+      fetchTimesheets(); 
+    }
+  }, [selectedEmployeeId, fetchTimesheets]);
+
+  // Generate fortnight entries when data changes
+  useEffect(() => {
+    generateFortnightView();
+  }, [timesheets, fortnightEnd]);
+
+  const generateFortnightView = () => {
+    const entries = [];
+    const endDate = new Date(fortnightEnd);
+    
+    // Create map of existing timesheets by date
+    const tsMap = new Map();
+    timesheets.forEach(ts => {
+      const d = new Date(ts.clock_in);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      tsMap.set(key, ts);
+    });
+
+    // Generate 14 days ending on fortnightEnd
+    for (let i = 13; i >= 0; i--) {
+      const date = new Date(endDate);
+      date.setDate(endDate.getDate() - i);
+      const dateKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+      
+      const existing = tsMap.get(dateKey);
+      if (existing) {
+        const clockIn = new Date(existing.clock_in);
+        const clockOut = new Date(existing.clock_out);
+        entries.push({
+          date: dateKey,
+          dayName: getDayName(date),
+          dayDate: `${date.getDate()} ${getMonthShort(date)}`,
+          startTime: formatTime(clockIn),
+          endTime: formatTime(clockOut),
+          totalHours: existing.total_hours,
+          breakMins: existing.break_minutes || 0,
+          status: existing.approval_status,
+          timesheetId: existing.id,
+          hasData: true,
+        });
+      } else {
+        entries.push({
+          date: dateKey,
+          dayName: getDayName(date),
+          dayDate: `${date.getDate()} ${getMonthShort(date)}`,
+          startTime: '',
+          endTime: '',
+          totalHours: 0,
+          breakMins: 0,
+          status: '',
+          timesheetId: null,
+          hasData: false,
+        });
+      }
+    }
+    setFortnightEntries(entries);
+  };
+
+  const getDayName = (d: Date) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
+  const getMonthShort = (d: Date) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
+  const formatTime = (d: Date) => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+
+  const changeWeek = (direction: number) => {
+    const newDate = new Date(fortnightEnd);
+    newDate.setDate(newDate.getDate() + (direction * 7));
+    setFortnightEnd(newDate);
+  };
 
   const onRefresh = () => { setRefreshing(true); fetchTimesheets(); };
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]}`;
+  const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
+  const totalHours = fortnightEntries.reduce((sum, e) => sum + (e.totalHours || 0), 0);
+  const entryCount = fortnightEntries.filter(e => e.hasData).length;
+
+  // Edit entry
+  const openEdit = (entry: any) => {
+    setEditingEntry(entry);
+    setEditStart(entry.startTime || '09:00');
+    setEditEnd(entry.endTime || '17:00');
+    setEditBreak(String(entry.breakMins || 30));
   };
 
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-  };
-
-  const getStatusConfig = (s: string) => {
-    if (s === 'approved') return { color: '#10b981', bg: '#dcfce7', icon: 'checkmark-circle' };
-    if (s === 'rejected') return { color: '#ef4444', bg: '#fee2e2', icon: 'close-circle' };
-    return { color: '#f59e0b', bg: '#fef3c7', icon: 'time' };
-  };
-
-  const approveTimesheet = async (id: string) => {
-    setActionLoading(id);
-    try {
-      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${id}/approve`, { action: 'approved' });
-      Alert.alert('Success', 'Approved');
-      fetchTimesheets();
-    } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.detail || 'Failed');
-    }
-    setActionLoading(null);
-  };
-
-  const openRejectModal = (id: string) => {
-    setRejectingId(id);
-    setRejectReason('');
-    setShowRejectModal(true);
-  };
-
-  const submitRejection = async () => {
-    if (!rejectingId) return;
-    setShowRejectModal(false);
-    setActionLoading(rejectingId);
-    try {
-      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${rejectingId}/approve`, { action: 'rejected', notes: rejectReason });
-      Alert.alert('Success', 'Rejected');
-      fetchTimesheets();
-    } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.detail || 'Failed');
-    }
-    setActionLoading(null);
-  };
-
-  // Edit timesheet
-  const openEditModal = (ts: Timesheet) => {
-    setEditingTimesheet(ts);
-    const clockIn = new Date(ts.clock_in);
-    const clockOut = new Date(ts.clock_out);
-    setEditDate(`${clockIn.getFullYear()}-${String(clockIn.getMonth() + 1).padStart(2, '0')}-${String(clockIn.getDate()).padStart(2, '0')}`);
-    setEditStartTime(`${String(clockIn.getHours()).padStart(2, '0')}:${String(clockIn.getMinutes()).padStart(2, '0')}`);
-    setEditEndTime(`${String(clockOut.getHours()).padStart(2, '0')}:${String(clockOut.getMinutes()).padStart(2, '0')}`);
-    setEditBreak(String(ts.break_minutes || 0));
-    setEditNotes(ts.notes || '');
-    setShowEditModal(true);
-  };
-
-  const saveEdit = async () => {
-    if (!editingTimesheet) return;
+  const saveEntry = async () => {
+    if (!editingEntry || !selectedEmployeeId) return;
     setSaving(true);
+    
     try {
-      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${editingTimesheet.id}`, {
-        date: editDate,
-        clock_in_time: editStartTime,
-        clock_out_time: editEndTime,
-        break_minutes: parseInt(editBreak) || 0,
-        notes: editNotes,
-      });
-      Alert.alert('Success', 'Updated');
-      setShowEditModal(false);
+      if (editingEntry.timesheetId) {
+        // Update existing
+        await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${editingEntry.timesheetId}`, {
+          date: editingEntry.date,
+          clock_in_time: editStart,
+          clock_out_time: editEnd,
+          break_minutes: parseInt(editBreak) || 0,
+        });
+      } else {
+        // Create new
+        await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
+          employee_id: selectedEmployeeId,
+          date: editingEntry.date,
+          clock_in_time: editStart,
+          clock_out_time: editEnd,
+          break_minutes: parseInt(editBreak) || 0,
+        });
+      }
+      Alert.alert('Success', 'Saved');
+      setEditingEntry(null);
       fetchTimesheets();
     } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.detail || 'Failed');
+      Alert.alert('Error', e.response?.data?.detail || 'Failed to save');
     }
     setSaving(false);
   };
 
-  // Delete timesheet
-  const deleteTimesheet = (ts: Timesheet) => {
-    Alert.alert('Delete', `Delete ${ts.employee_name}'s timesheet?`, [
+  // Delete entry
+  const deleteEntry = async (entry: any) => {
+    if (!entry.timesheetId) return;
+    
+    Alert.alert('Delete', `Delete timesheet for ${entry.dayName} ${entry.dayDate}?`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
-        onPress: async () => {
-          try {
-            await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${ts.id}`);
-            Alert.alert('Success', 'Deleted');
-            fetchTimesheets();
-          } catch (e: any) {
-            Alert.alert('Error', e.response?.data?.detail || 'Failed');
-          }
-        },
-      },
+      { text: 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${entry.timesheetId}`);
+          Alert.alert('Deleted', 'Timesheet removed');
+          fetchTimesheets();
+        } catch (e: any) {
+          Alert.alert('Error', e.response?.data?.detail || 'Failed to delete');
+        }
+      }}
     ]);
   };
 
-  const filteredTimesheets = filterStatus === 'all' ? timesheets : timesheets.filter(t => t.approval_status === filterStatus);
-  const pendingCount = timesheets.filter(t => t.approval_status === 'pending').length;
-  const approvedCount = timesheets.filter(t => t.approval_status === 'approved').length;
-  const totalHours = filteredTimesheets.reduce((s, t) => s + (t.total_hours || 0), 0);
+  // Approve entry
+  const approveEntry = async (entry: any) => {
+    if (!entry.timesheetId) return;
+    try {
+      await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${entry.timesheetId}/approve`, { action: 'approved' });
+      fetchTimesheets();
+    } catch (e) { Alert.alert('Error', 'Failed to approve'); }
+  };
 
-  if (loading) return <View style={styles.loading}><ActivityIndicator size="large" color="#6366f1" /></View>;
+  if (loading && !refreshing) {
+    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#6366f1" /></View>;
+  }
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <LinearGradient colors={['#6366f1', '#8b5cf6']} style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Timesheets</Text>
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}><Text style={styles.statNum}>{pendingCount}</Text><Text style={styles.statLbl}>Pending</Text></View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}><Text style={styles.statNum}>{approvedCount}</Text><Text style={styles.statLbl}>Approved</Text></View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}><Text style={styles.statNum}>{totalHours.toFixed(0)}h</Text><Text style={styles.statLbl}>Total</Text></View>
-        </View>
+        <Text style={styles.headerTitle}>Timesheet Manager</Text>
       </LinearGradient>
 
-      {/* Filters */}
-      <View style={styles.filtersSection}>
-        <View style={styles.filterRow}>
-          <Text style={styles.filterLabel}>Employee:</Text>
-          <View style={styles.pickerBox}>
-            <Picker selectedValue={selectedEmployeeId} onValueChange={setSelectedEmployeeId} style={styles.picker}>
-              <Picker.Item label="All" value="all" />
-              {employees.map(e => <Picker.Item key={e.id} label={`${e.first_name} ${e.last_name}`} value={e.id} />)}
-            </Picker>
-          </View>
+      {/* Employee Selector */}
+      <View style={styles.selectorRow}>
+        <TouchableOpacity onPress={() => {
+          const idx = employees.findIndex(e => e.id === selectedEmployeeId);
+          if (idx > 0) setSelectedEmployeeId(employees[idx - 1].id);
+        }}>
+          <Ionicons name="chevron-back" size={24} color="#6366f1" />
+        </TouchableOpacity>
+        <View style={styles.pickerWrap}>
+          <Picker selectedValue={selectedEmployeeId} onValueChange={setSelectedEmployeeId} style={styles.picker}>
+            {employees.map(e => <Picker.Item key={e.id} label={`${e.first_name} ${e.last_name}`} value={e.id} />)}
+          </Picker>
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
-          {(['pending', 'all', 'approved', 'rejected'] as const).map(s => (
-            <TouchableOpacity key={s} style={[styles.filterPill, filterStatus === s && styles.filterPillActive]} onPress={() => setFilterStatus(s)}>
-              <Text style={[styles.filterText, filterStatus === s && styles.filterTextActive]}>{s.charAt(0).toUpperCase() + s.slice(1)}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <TouchableOpacity onPress={() => {
+          const idx = employees.findIndex(e => e.id === selectedEmployeeId);
+          if (idx < employees.length - 1) setSelectedEmployeeId(employees[idx + 1].id);
+        }}>
+          <Ionicons name="chevron-forward" size={24} color="#6366f1" />
+        </TouchableOpacity>
       </View>
 
-      {/* List */}
-      <ScrollView style={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366f1']} />}>
-        {filteredTimesheets.length === 0 ? (
-          <View style={styles.empty}><Ionicons name="checkmark-done-circle" size={40} color="#9ca3af" /><Text style={styles.emptyText}>No timesheets</Text></View>
-        ) : (
-          filteredTimesheets.map(ts => {
-            const cfg = getStatusConfig(ts.approval_status);
-            return (
-              <View key={ts.id} style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <View>
-                    <Text style={styles.empName}>{ts.employee_name}</Text>
-                    <Text style={styles.cardDate}>{formatDate(ts.clock_in)}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: cfg.bg }]}>
-                    <Ionicons name={cfg.icon as any} size={10} color={cfg.color} />
-                    <Text style={[styles.statusText, { color: cfg.color }]}>{ts.approval_status}</Text>
-                  </View>
-                </View>
+      {/* Week Navigator */}
+      <View style={styles.weekNav}>
+        <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.weekBtn}>
+          <Ionicons name="chevron-back" size={20} color="#6366f1" />
+        </TouchableOpacity>
+        <Text style={styles.weekText}>
+          Fortnight ending {fortnightEnd.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+        </Text>
+        <TouchableOpacity onPress={() => changeWeek(1)} style={styles.weekBtn}>
+          <Ionicons name="chevron-forward" size={20} color="#6366f1" />
+        </TouchableOpacity>
+      </View>
 
-                <View style={styles.cardBody}>
-                  <View style={styles.timeRow}>
-                    <Text style={styles.timeText}>{formatTime(ts.clock_in)} - {formatTime(ts.clock_out)}</Text>
-                    <View style={styles.hoursBox}><Text style={styles.hoursVal}>{(ts.total_hours || 0).toFixed(1)}h</Text></View>
-                  </View>
-                  {ts.notes && <Text style={styles.notesText} numberOfLines={1}>{ts.notes}</Text>}
-                </View>
+      {/* Summary */}
+      <View style={styles.summaryRow}>
+        <View style={styles.summaryBox}>
+          <Text style={styles.summaryValue}>{entryCount}</Text>
+          <Text style={styles.summaryLabel}>timesheets</Text>
+        </View>
+        <View style={styles.summaryBox}>
+          <Text style={styles.summaryValue}>{totalHours.toFixed(1)}h</Text>
+          <Text style={styles.summaryLabel}>total</Text>
+        </View>
+      </View>
 
-                {/* Actions */}
-                <View style={styles.cardActions}>
-                  {ts.image && (
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => { setViewingImage(ts.image!); setShowImageModal(true); }}>
-                      <Ionicons name="image" size={16} color="#6366f1" />
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => openEditModal(ts)}>
-                    <Ionicons name="create-outline" size={16} color="#6b7280" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => deleteTimesheet(ts)}>
-                    <Ionicons name="trash-outline" size={16} color="#ef4444" />
-                  </TouchableOpacity>
-                  
-                  {ts.approval_status === 'pending' && (
-                    <>
-                      <TouchableOpacity style={[styles.actionBtn, styles.approveBtn]} onPress={() => approveTimesheet(ts.id)} disabled={actionLoading === ts.id}>
-                        {actionLoading === ts.id ? <ActivityIndicator size="small" color="#fff" /> : <><Ionicons name="checkmark" size={14} color="#fff" /><Text style={styles.btnText}>Approve</Text></>}
-                      </TouchableOpacity>
-                      <TouchableOpacity style={[styles.actionBtn, styles.rejectBtn]} onPress={() => openRejectModal(ts.id)}>
-                        <Ionicons name="close" size={14} color="#ef4444" /><Text style={styles.rejectBtnText}>Reject</Text>
-                      </TouchableOpacity>
-                    </>
-                  )}
+      {/* Timesheet Table */}
+      <ScrollView 
+        style={styles.tableContainer}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366f1']} />}
+      >
+        {/* Table Header */}
+        <View style={styles.tableHeader}>
+          <Text style={[styles.th, styles.thDate]}>Date</Text>
+          <Text style={[styles.th, styles.thTime]}>Start</Text>
+          <Text style={[styles.th, styles.thTime]}>End</Text>
+          <Text style={[styles.th, styles.thHours]}>Hours</Text>
+          <Text style={[styles.th, styles.thActions]}>Actions</Text>
+        </View>
+
+        {/* Table Rows */}
+        {fortnightEntries.map((entry, idx) => (
+          <View key={entry.date} style={[styles.tableRow, idx % 2 === 0 && styles.tableRowAlt]}>
+            <View style={styles.tdDate}>
+              <Text style={styles.dayName}>{entry.dayName}</Text>
+              <Text style={styles.dayDate}>{entry.dayDate}</Text>
+            </View>
+            <Text style={styles.tdTime}>{entry.startTime || '-'}</Text>
+            <Text style={styles.tdTime}>{entry.endTime || '-'}</Text>
+            <View style={styles.tdHours}>
+              {entry.hasData ? (
+                <Text style={styles.hoursText}>{entry.totalHours?.toFixed(1)}h</Text>
+              ) : (
+                <Text style={styles.noData}>-</Text>
+              )}
+            </View>
+            <View style={styles.tdActions}>
+              {entry.hasData && entry.status === 'pending' && (
+                <TouchableOpacity style={styles.approveBtn} onPress={() => approveEntry(entry)}>
+                  <Ionicons name="checkmark" size={16} color="#fff" />
+                </TouchableOpacity>
+              )}
+              {entry.hasData && entry.status === 'approved' && (
+                <View style={styles.approvedBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#10b981" />
                 </View>
-              </View>
-            );
-          })
-        )}
+              )}
+              <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(entry)}>
+                <Ionicons name="create-outline" size={16} color="#6366f1" />
+              </TouchableOpacity>
+              {entry.hasData && (
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteEntry(entry)}>
+                  <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+        ))}
+        
         <View style={{ height: 100 }} />
       </ScrollView>
 
       {/* Edit Modal */}
-      <Modal visible={showEditModal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setShowEditModal(false)}>
-        <KeyboardAvoidingView style={styles.modalContainer} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowEditModal(false)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-            <Text style={styles.modalTitle}>Edit Timesheet</Text>
-            <TouchableOpacity onPress={saveEdit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#6366f1" /> : <Text style={styles.saveText}>Save</Text>}
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.form}>
-              <Text style={styles.label}>Employee</Text>
-              <Text style={styles.readOnly}>{editingTimesheet?.employee_name}</Text>
-              
-              <Text style={styles.label}>Date</Text>
-              <TextInput style={styles.input} value={editDate} onChangeText={setEditDate} placeholder="YYYY-MM-DD" />
-              
-              <View style={styles.row}>
-                <View style={styles.col}>
-                  <Text style={styles.label}>Start</Text>
-                  <TextInput style={styles.input} value={editStartTime} onChangeText={setEditStartTime} placeholder="09:00" />
-                </View>
-                <View style={styles.col}>
-                  <Text style={styles.label}>End</Text>
-                  <TextInput style={styles.input} value={editEndTime} onChangeText={setEditEndTime} placeholder="17:00" />
-                </View>
-              </View>
-              
-              <Text style={styles.label}>Break (min)</Text>
-              <TextInput style={styles.input} value={editBreak} onChangeText={setEditBreak} keyboardType="numeric" />
-              
-              <Text style={styles.label}>Notes</Text>
-              <TextInput style={[styles.input, { height: 60 }]} value={editNotes} onChangeText={setEditNotes} multiline />
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Reject Modal */}
-      <Modal visible={showRejectModal} animationType="fade" transparent onRequestClose={() => setShowRejectModal(false)}>
+      <Modal visible={!!editingEntry} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
-          <View style={styles.rejectModalContent}>
-            <Text style={styles.rejectTitle}>Rejection Reason</Text>
-            <TextInput style={styles.rejectInput} value={rejectReason} onChangeText={setRejectReason} placeholder="Optional" multiline />
-            <View style={styles.rejectActions}>
-              <TouchableOpacity style={styles.rejectCancelBtn} onPress={() => setShowRejectModal(false)}><Text style={styles.rejectCancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.rejectConfirmBtn} onPress={submitRejection}><Text style={styles.rejectConfirmText}>Reject</Text></TouchableOpacity>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>
+              {editingEntry?.hasData ? 'Edit' : 'Add'} - {editingEntry?.dayName} {editingEntry?.dayDate}
+            </Text>
+            
+            <View style={styles.inputRow}>
+              <View style={styles.inputCol}>
+                <Text style={styles.inputLabel}>Start Time</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editStart}
+                  onChangeText={setEditStart}
+                  placeholder="09:00"
+                  keyboardType="numbers-and-punctuation"
+                />
+              </View>
+              <View style={styles.inputCol}>
+                <Text style={styles.inputLabel}>End Time</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editEnd}
+                  onChangeText={setEditEnd}
+                  placeholder="17:00"
+                  keyboardType="numbers-and-punctuation"
+                />
+              </View>
+            </View>
+            
+            <Text style={styles.inputLabel}>Break (mins)</Text>
+            <TextInput
+              style={styles.input}
+              value={editBreak}
+              onChangeText={setEditBreak}
+              placeholder="30"
+              keyboardType="numeric"
+            />
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingEntry(null)}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={saveEntry} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>Save</Text>}
+              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
-
-      {/* Image Modal */}
-      <Modal visible={showImageModal} animationType="fade" transparent onRequestClose={() => setShowImageModal(false)}>
-        <View style={styles.imageModal}>
-          <TouchableOpacity style={styles.imageClose} onPress={() => setShowImageModal(false)}><Ionicons name="close-circle" size={36} color="#fff" /></TouchableOpacity>
-          {viewingImage && <Image source={{ uri: viewingImage }} style={styles.fullImage} resizeMode="contain" />}
         </View>
       </Modal>
     </View>
@@ -354,68 +390,63 @@ export default function SupervisorScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8fafc' },
-  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { paddingTop: 12, paddingBottom: 16, paddingHorizontal: 16 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff', marginBottom: 12 },
-  statsRow: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 10, padding: 10 },
-  statBox: { flex: 1, alignItems: 'center' },
-  statNum: { fontSize: 20, fontWeight: '700', color: '#fff' },
-  statLbl: { fontSize: 10, color: 'rgba(255,255,255,0.8)' },
-  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
-  filtersSection: { backgroundColor: '#fff', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  filterRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, marginBottom: 6 },
-  filterLabel: { fontSize: 12, fontWeight: '600', color: '#6b7280', marginRight: 8 },
-  pickerBox: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 8, height: 36, justifyContent: 'center' },
-  picker: { height: 36, color: '#111827', fontSize: 13 },
-  filterScroll: { paddingHorizontal: 12 },
-  filterPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: '#f3f4f6', marginRight: 6 },
-  filterPillActive: { backgroundColor: '#6366f1' },
-  filterText: { fontSize: 11, fontWeight: '600', color: '#6b7280' },
-  filterTextActive: { color: '#fff' },
-  list: { flex: 1, padding: 12 },
-  empty: { alignItems: 'center', paddingVertical: 40 },
-  emptyText: { fontSize: 14, color: '#6b7280', marginTop: 8 },
-  card: { backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 12, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
-  empName: { fontSize: 14, fontWeight: '600', color: '#111827' },
-  cardDate: { fontSize: 11, color: '#6b7280', marginTop: 2 },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 8, gap: 3 },
-  statusText: { fontSize: 10, fontWeight: '600', textTransform: 'capitalize' },
-  cardBody: { paddingHorizontal: 12, paddingVertical: 8 },
-  timeRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  timeText: { fontSize: 13, color: '#374151', fontWeight: '500' },
-  hoursBox: { backgroundColor: '#eef2ff', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  hoursVal: { fontSize: 13, fontWeight: '700', color: '#6366f1' },
-  notesText: { fontSize: 11, color: '#9ca3af', marginTop: 4 },
-  cardActions: { flexDirection: 'row', padding: 8, gap: 6, borderTopWidth: 1, borderTopColor: '#f3f4f6', alignItems: 'center' },
-  iconBtn: { padding: 6, backgroundColor: '#f3f4f6', borderRadius: 6 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 6, gap: 4 },
-  approveBtn: { backgroundColor: '#10b981', marginLeft: 'auto' },
-  btnText: { fontSize: 12, color: '#fff', fontWeight: '600' },
-  rejectBtn: { backgroundColor: '#fee2e2' },
-  rejectBtnText: { fontSize: 12, color: '#ef4444', fontWeight: '600' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  rejectModalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20 },
-  rejectTitle: { fontSize: 16, fontWeight: '600', color: '#111827', marginBottom: 12 },
-  rejectInput: { backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, minHeight: 60, fontSize: 14, textAlignVertical: 'top' },
-  rejectActions: { flexDirection: 'row', marginTop: 12, gap: 10 },
-  rejectCancelBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#f3f4f6' },
-  rejectCancelText: { fontSize: 14, color: '#6b7280', fontWeight: '600' },
-  rejectConfirmBtn: { flex: 1, padding: 10, alignItems: 'center', borderRadius: 8, backgroundColor: '#ef4444' },
-  rejectConfirmText: { fontSize: 14, color: '#fff', fontWeight: '600' },
-  imageModal: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
-  imageClose: { position: 'absolute', top: 50, right: 20, zIndex: 10 },
-  fullImage: { width: '100%', height: '80%' },
-  modalContainer: { flex: 1, backgroundColor: '#f8fafc' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 14, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
-  cancelText: { fontSize: 15, color: '#6b7280' },
-  modalTitle: { fontSize: 16, fontWeight: '600', color: '#111827' },
-  saveText: { fontSize: 15, fontWeight: '600', color: '#6366f1' },
-  modalContent: { flex: 1 },
-  form: { padding: 16 },
-  label: { fontSize: 12, fontWeight: '600', color: '#374151', marginBottom: 6, marginTop: 12 },
-  readOnly: { fontSize: 14, color: '#6b7280', backgroundColor: '#f3f4f6', padding: 10, borderRadius: 8 },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, fontSize: 14, color: '#111827' },
-  row: { flexDirection: 'row', gap: 12 },
-  col: { flex: 1 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  
+  header: { paddingTop: 8, paddingBottom: 12, paddingHorizontal: 16 },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  
+  selectorRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  pickerWrap: { flex: 1, backgroundColor: '#f1f5f9', borderRadius: 8, marginHorizontal: 8 },
+  picker: { height: 44, color: '#1e293b' },
+  
+  weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  weekBtn: { padding: 4 },
+  weekText: { fontSize: 14, fontWeight: '600', color: '#475569' },
+  
+  summaryRow: { flexDirection: 'row', backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 16, gap: 16, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  summaryBox: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  summaryValue: { fontSize: 20, fontWeight: '800', color: '#6366f1' },
+  summaryLabel: { fontSize: 13, color: '#64748b' },
+  
+  tableContainer: { flex: 1 },
+  tableHeader: { flexDirection: 'row', backgroundColor: '#f1f5f9', paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
+  th: { fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase' },
+  thDate: { width: 80 },
+  thTime: { width: 55, textAlign: 'center' },
+  thHours: { width: 50, textAlign: 'center' },
+  thActions: { flex: 1, textAlign: 'right' },
+  
+  tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  tableRowAlt: { backgroundColor: '#fafafa' },
+  
+  tdDate: { width: 80 },
+  dayName: { fontSize: 13, fontWeight: '600', color: '#1e293b' },
+  dayDate: { fontSize: 11, color: '#64748b' },
+  
+  tdTime: { width: 55, fontSize: 13, color: '#475569', textAlign: 'center', fontWeight: '500' },
+  
+  tdHours: { width: 50, alignItems: 'center' },
+  hoursText: { fontSize: 13, fontWeight: '700', color: '#6366f1' },
+  noData: { fontSize: 13, color: '#cbd5e1' },
+  
+  tdActions: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 },
+  approveBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#10b981', alignItems: 'center', justifyContent: 'center' },
+  approvedBadge: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center' },
+  editBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#e0e7ff', alignItems: 'center', justifyContent: 'center' },
+  deleteBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 20, textAlign: 'center' },
+  
+  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  inputCol: { flex: 1 },
+  inputLabel: { fontSize: 12, fontWeight: '600', color: '#64748b', marginBottom: 6 },
+  input: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 12, fontSize: 16, color: '#1e293b', textAlign: 'center' },
+  
+  modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: '#f1f5f9', alignItems: 'center' },
+  cancelBtnText: { fontSize: 15, fontWeight: '600', color: '#64748b' },
+  saveBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: '#6366f1', alignItems: 'center' },
+  saveBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
 });
