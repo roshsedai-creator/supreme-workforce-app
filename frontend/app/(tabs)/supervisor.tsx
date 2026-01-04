@@ -417,8 +417,28 @@ export default function SupervisorScreen() {
             <Text style={styles.editLabel}>Break (mins)</Text>
             <TextInput style={styles.editInput} value={editBreak} onChangeText={setEditBreak} placeholder="30" keyboardType="numeric" />
             
+            <Text style={styles.editLabel}>Photo Evidence</Text>
+            <View style={styles.editPhotoBtns}>
+              <TouchableOpacity style={styles.editPhotoBtn} onPress={() => pickImage(true)}>
+                <Ionicons name="camera" size={18} color="#6366f1" />
+                <Text style={styles.editPhotoBtnText}>Camera</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.editPhotoBtn} onPress={() => pickImage(false)}>
+                <Ionicons name="images" size={18} color="#6366f1" />
+                <Text style={styles.editPhotoBtnText}>Gallery</Text>
+              </TouchableOpacity>
+            </View>
+            {editImage && (
+              <View style={styles.editImagePreview}>
+                <Image source={{ uri: editImage }} style={styles.editPreviewImg} />
+                <TouchableOpacity style={styles.editRemoveImg} onPress={() => setEditImage(null)}>
+                  <Ionicons name="close-circle" size={22} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
             <View style={styles.editActions}>
-              <TouchableOpacity style={styles.editCancel} onPress={() => setEditingEntry(null)}>
+              <TouchableOpacity style={styles.editCancel} onPress={() => { setEditingEntry(null); setEditImage(null); }}>
                 <Text style={styles.editCancelText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.editSave} onPress={saveEntry} disabled={saving}>
@@ -426,6 +446,16 @@ export default function SupervisorScreen() {
               </TouchableOpacity>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      {/* Image View Modal */}
+      <Modal visible={showImageModal} animationType="fade" transparent>
+        <View style={styles.imageModalBg}>
+          <TouchableOpacity style={styles.imageModalClose} onPress={() => setShowImageModal(false)}>
+            <Ionicons name="close" size={28} color="#fff" />
+          </TouchableOpacity>
+          {viewingImage && <Image source={{ uri: viewingImage }} style={styles.fullImage} resizeMode="contain" />}
         </View>
       </Modal>
     </View>
