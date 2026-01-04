@@ -50,6 +50,12 @@ export default function SupervisorScreen() {
   const [editStart, setEditStart] = useState('');
   const [editEnd, setEditEnd] = useState('');
   const [editBreak, setEditBreak] = useState('');
+  const [editImage, setEditImage] = useState<string | null>(null);
+  
+  // Fortnight photo
+  const [fortnightImage, setFortnightImage] = useState<string | null>(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
 
   const fetchEmployees = useCallback(async () => {
     try {
