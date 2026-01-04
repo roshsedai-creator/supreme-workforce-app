@@ -11,9 +11,11 @@ import {
   ActivityIndicator,
   RefreshControl,
   FlatList,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 
 interface Employee { id: string; first_name: string; last_name: string; }
