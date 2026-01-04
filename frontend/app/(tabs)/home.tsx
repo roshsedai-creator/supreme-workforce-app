@@ -234,7 +234,32 @@ export default function HomeScreen() {
     setShowEntryModal(true);
   };
 
+  // Web file picker helper
+  const pickImageWeb = (callback: (base64: string) => void) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e: any) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          callback(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+  };
+
   const pickImage = async (useCamera: boolean) => {
+    // Web browser file picker
+    if (Platform.OS === 'web') {
+      pickImageWeb((base64) => setDailyImage(base64));
+      return;
+    }
+    
+    // Mobile image picker
     try {
       const permission = useCamera 
         ? await ImagePicker.requestCameraPermissionsAsync()
