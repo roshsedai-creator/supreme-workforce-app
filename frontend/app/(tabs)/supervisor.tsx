@@ -10,19 +10,16 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  KeyboardAvoidingView,
-  Platform,
+  FlatList,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import axios from 'axios';
 
 interface Employee { id: string; first_name: string; last_name: string; }
 interface Timesheet {
   id: string;
   employee_id: string;
-  employee_name?: string;
   clock_in: string;
   clock_out: string;
   total_hours: number;
@@ -39,7 +36,10 @@ export default function SupervisorScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  // Fortnight dates
+  // Employee selector modal
+  const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+  
+  // Fortnight
   const [fortnightEnd, setFortnightEnd] = useState(new Date());
   const [fortnightEntries, setFortnightEntries] = useState<any[]>([]);
   
@@ -80,39 +80,35 @@ export default function SupervisorScreen() {
     }
   }, [selectedEmployeeId, fetchTimesheets]);
 
-  // Generate fortnight entries when data changes
-  useEffect(() => {
-    generateFortnightView();
-  }, [timesheets, fortnightEnd]);
+  useEffect(() => { generateFortnightView(); }, [timesheets, fortnightEnd]);
 
   const generateFortnightView = () => {
     const entries = [];
     const endDate = new Date(fortnightEnd);
-    
-    // Create map of existing timesheets by date
     const tsMap = new Map();
+    
     timesheets.forEach(ts => {
       const d = new Date(ts.clock_in);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       tsMap.set(key, ts);
     });
 
-    // Generate 14 days ending on fortnightEnd
     for (let i = 13; i >= 0; i--) {
       const date = new Date(endDate);
       date.setDate(endDate.getDate() - i);
       const dateKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
-      
       const existing = tsMap.get(dateKey);
+      
       if (existing) {
         const clockIn = new Date(existing.clock_in);
         const clockOut = new Date(existing.clock_out);
         entries.push({
           date: dateKey,
-          dayName: getDayName(date),
-          dayDate: `${date.getDate()} ${getMonthShort(date)}`,
-          startTime: formatTime(clockIn),
-          endTime: formatTime(clockOut),
+          dayName: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getDay()],
+          dayNum: date.getDate(),
+          month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.getMonth()],
+          startTime: `${String(clockIn.getHours()).padStart(2,'0')}:${String(clockIn.getMinutes()).padStart(2,'0')}`,
+          endTime: `${String(clockOut.getHours()).padStart(2,'0')}:${String(clockOut.getMinutes()).padStart(2,'0')}`,
           totalHours: existing.total_hours,
           breakMins: existing.break_minutes || 0,
           status: existing.approval_status,
@@ -122,38 +118,28 @@ export default function SupervisorScreen() {
       } else {
         entries.push({
           date: dateKey,
-          dayName: getDayName(date),
-          dayDate: `${date.getDate()} ${getMonthShort(date)}`,
-          startTime: '',
-          endTime: '',
-          totalHours: 0,
-          breakMins: 0,
-          status: '',
-          timesheetId: null,
-          hasData: false,
+          dayName: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][date.getDay()],
+          dayNum: date.getDate(),
+          month: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][date.getMonth()],
+          startTime: '', endTime: '', totalHours: 0, breakMins: 0, status: '', timesheetId: null, hasData: false,
         });
       }
     }
     setFortnightEntries(entries);
   };
 
-  const getDayName = (d: Date) => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()];
-  const getMonthShort = (d: Date) => ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
-  const formatTime = (d: Date) => `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-
-  const changeWeek = (direction: number) => {
-    const newDate = new Date(fortnightEnd);
-    newDate.setDate(newDate.getDate() + (direction * 7));
-    setFortnightEnd(newDate);
+  const changeWeek = (dir: number) => {
+    const d = new Date(fortnightEnd);
+    d.setDate(d.getDate() + (dir * 7));
+    setFortnightEnd(d);
   };
 
   const onRefresh = () => { setRefreshing(true); fetchTimesheets(); };
-
+  
   const selectedEmployee = employees.find(e => e.id === selectedEmployeeId);
-  const totalHours = fortnightEntries.reduce((sum, e) => sum + (e.totalHours || 0), 0);
+  const totalHours = fortnightEntries.reduce((s, e) => s + (e.totalHours || 0), 0);
   const entryCount = fortnightEntries.filter(e => e.hasData).length;
 
-  // Edit entry
   const openEdit = (entry: any) => {
     setEditingEntry(entry);
     setEditStart(entry.startTime || '09:00');
@@ -164,60 +150,42 @@ export default function SupervisorScreen() {
   const saveEntry = async () => {
     if (!editingEntry || !selectedEmployeeId) return;
     setSaving(true);
-    
     try {
       if (editingEntry.timesheetId) {
-        // Update existing
         await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${editingEntry.timesheetId}`, {
-          date: editingEntry.date,
-          clock_in_time: editStart,
-          clock_out_time: editEnd,
-          break_minutes: parseInt(editBreak) || 0,
+          date: editingEntry.date, clock_in_time: editStart, clock_out_time: editEnd, break_minutes: parseInt(editBreak) || 0,
         });
       } else {
-        // Create new
         await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
-          employee_id: selectedEmployeeId,
-          date: editingEntry.date,
-          clock_in_time: editStart,
-          clock_out_time: editEnd,
-          break_minutes: parseInt(editBreak) || 0,
+          employee_id: selectedEmployeeId, date: editingEntry.date, clock_in_time: editStart, clock_out_time: editEnd, break_minutes: parseInt(editBreak) || 0,
         });
       }
       Alert.alert('Success', 'Saved');
       setEditingEntry(null);
       fetchTimesheets();
-    } catch (e: any) {
-      Alert.alert('Error', e.response?.data?.detail || 'Failed to save');
-    }
+    } catch (e: any) { Alert.alert('Error', e.response?.data?.detail || 'Failed'); }
     setSaving(false);
   };
 
-  // Delete entry
-  const deleteEntry = async (entry: any) => {
+  const deleteEntry = (entry: any) => {
     if (!entry.timesheetId) return;
-    
-    Alert.alert('Delete', `Delete timesheet for ${entry.dayName} ${entry.dayDate}?`, [
+    Alert.alert('Delete', `Delete ${entry.dayName} ${entry.dayNum} ${entry.month}?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         try {
           await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${entry.timesheetId}`);
-          Alert.alert('Deleted', 'Timesheet removed');
           fetchTimesheets();
-        } catch (e: any) {
-          Alert.alert('Error', e.response?.data?.detail || 'Failed to delete');
-        }
+        } catch (e) { Alert.alert('Error', 'Failed to delete'); }
       }}
     ]);
   };
 
-  // Approve entry
   const approveEntry = async (entry: any) => {
     if (!entry.timesheetId) return;
     try {
       await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${entry.timesheetId}/approve`, { action: 'approved' });
       fetchTimesheets();
-    } catch (e) { Alert.alert('Error', 'Failed to approve'); }
+    } catch (e) { Alert.alert('Error', 'Failed'); }
   };
 
   if (loading && !refreshing) {
@@ -229,156 +197,155 @@ export default function SupervisorScreen() {
       {/* Header */}
       <LinearGradient colors={['#6366f1', '#8b5cf6']} style={styles.header}>
         <Text style={styles.headerTitle}>Timesheet Manager</Text>
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{entryCount}</Text>
+            <Text style={styles.statLabel}>Entries</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>{totalHours.toFixed(1)}h</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
+        </View>
       </LinearGradient>
 
-      {/* Employee Selector */}
-      <View style={styles.selectorRow}>
-        <TouchableOpacity onPress={() => {
-          const idx = employees.findIndex(e => e.id === selectedEmployeeId);
-          if (idx > 0) setSelectedEmployeeId(employees[idx - 1].id);
-        }}>
-          <Ionicons name="chevron-back" size={24} color="#6366f1" />
-        </TouchableOpacity>
-        <View style={styles.pickerWrap}>
-          <Picker selectedValue={selectedEmployeeId} onValueChange={setSelectedEmployeeId} style={styles.picker}>
-            {employees.map(e => <Picker.Item key={e.id} label={`${e.first_name} ${e.last_name}`} value={e.id} />)}
-          </Picker>
+      {/* Employee Selector - Premium Button */}
+      <TouchableOpacity style={styles.employeeSelector} onPress={() => setShowEmployeeModal(true)}>
+        <View style={styles.employeeIcon}>
+          <Ionicons name="person" size={20} color="#6366f1" />
         </View>
-        <TouchableOpacity onPress={() => {
-          const idx = employees.findIndex(e => e.id === selectedEmployeeId);
-          if (idx < employees.length - 1) setSelectedEmployeeId(employees[idx + 1].id);
-        }}>
-          <Ionicons name="chevron-forward" size={24} color="#6366f1" />
-        </TouchableOpacity>
-      </View>
+        <View style={styles.employeeInfo}>
+          <Text style={styles.employeeLabel}>Employee</Text>
+          <Text style={styles.employeeName}>
+            {selectedEmployee ? `${selectedEmployee.first_name} ${selectedEmployee.last_name}` : 'Select employee'}
+          </Text>
+        </View>
+        <Ionicons name="chevron-down" size={20} color="#6366f1" />
+      </TouchableOpacity>
 
       {/* Week Navigator */}
       <View style={styles.weekNav}>
-        <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.weekBtn}>
+        <TouchableOpacity onPress={() => changeWeek(-1)} style={styles.navBtn}>
           <Ionicons name="chevron-back" size={20} color="#6366f1" />
         </TouchableOpacity>
-        <Text style={styles.weekText}>
-          Fortnight ending {fortnightEnd.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-        </Text>
-        <TouchableOpacity onPress={() => changeWeek(1)} style={styles.weekBtn}>
+        <View style={styles.weekInfo}>
+          <Text style={styles.weekLabel}>Fortnight ending</Text>
+          <Text style={styles.weekDate}>{fortnightEnd.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}</Text>
+        </View>
+        <TouchableOpacity onPress={() => changeWeek(1)} style={styles.navBtn}>
           <Ionicons name="chevron-forward" size={20} color="#6366f1" />
         </TouchableOpacity>
       </View>
 
-      {/* Summary */}
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryValue}>{entryCount}</Text>
-          <Text style={styles.summaryLabel}>timesheets</Text>
-        </View>
-        <View style={styles.summaryBox}>
-          <Text style={styles.summaryValue}>{totalHours.toFixed(1)}h</Text>
-          <Text style={styles.summaryLabel}>total</Text>
-        </View>
-      </View>
-
-      {/* Timesheet Table */}
+      {/* Table */}
       <ScrollView 
-        style={styles.tableContainer}
+        style={styles.tableWrap}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6366f1']} />}
       >
-        {/* Table Header */}
         <View style={styles.tableHeader}>
-          <Text style={[styles.th, styles.thDate]}>Date</Text>
-          <Text style={[styles.th, styles.thTime]}>Start</Text>
-          <Text style={[styles.th, styles.thTime]}>End</Text>
-          <Text style={[styles.th, styles.thHours]}>Hours</Text>
-          <Text style={[styles.th, styles.thActions]}>Actions</Text>
+          <Text style={[styles.th, { width: 70 }]}>Date</Text>
+          <Text style={[styles.th, { width: 50 }]}>Start</Text>
+          <Text style={[styles.th, { width: 50 }]}>End</Text>
+          <Text style={[styles.th, { width: 45 }]}>Hrs</Text>
+          <Text style={[styles.th, { flex: 1, textAlign: 'right' }]}>Actions</Text>
         </View>
 
-        {/* Table Rows */}
         {fortnightEntries.map((entry, idx) => (
-          <View key={entry.date} style={[styles.tableRow, idx % 2 === 0 && styles.tableRowAlt]}>
-            <View style={styles.tdDate}>
-              <Text style={styles.dayName}>{entry.dayName}</Text>
-              <Text style={styles.dayDate}>{entry.dayDate}</Text>
+          <View key={entry.date} style={[styles.row, idx % 2 === 1 && styles.rowAlt]}>
+            <View style={{ width: 70 }}>
+              <Text style={styles.rowDay}>{entry.dayName}</Text>
+              <Text style={styles.rowDate}>{entry.dayNum} {entry.month}</Text>
             </View>
-            <Text style={styles.tdTime}>{entry.startTime || '-'}</Text>
-            <Text style={styles.tdTime}>{entry.endTime || '-'}</Text>
-            <View style={styles.tdHours}>
-              {entry.hasData ? (
-                <Text style={styles.hoursText}>{entry.totalHours?.toFixed(1)}h</Text>
-              ) : (
-                <Text style={styles.noData}>-</Text>
-              )}
-            </View>
-            <View style={styles.tdActions}>
+            <Text style={[styles.rowTime, { width: 50 }]}>{entry.startTime || '—'}</Text>
+            <Text style={[styles.rowTime, { width: 50 }]}>{entry.endTime || '—'}</Text>
+            <Text style={[styles.rowHours, { width: 45 }]}>{entry.hasData ? entry.totalHours?.toFixed(1) : '—'}</Text>
+            <View style={styles.rowActions}>
               {entry.hasData && entry.status === 'pending' && (
-                <TouchableOpacity style={styles.approveBtn} onPress={() => approveEntry(entry)}>
-                  <Ionicons name="checkmark" size={16} color="#fff" />
+                <TouchableOpacity style={styles.btnApprove} onPress={() => approveEntry(entry)}>
+                  <Ionicons name="checkmark" size={14} color="#fff" />
                 </TouchableOpacity>
               )}
               {entry.hasData && entry.status === 'approved' && (
-                <View style={styles.approvedBadge}>
-                  <Ionicons name="checkmark-circle" size={14} color="#10b981" />
-                </View>
+                <View style={styles.badgeApproved}><Ionicons name="checkmark-circle" size={14} color="#10b981" /></View>
               )}
-              <TouchableOpacity style={styles.editBtn} onPress={() => openEdit(entry)}>
-                <Ionicons name="create-outline" size={16} color="#6366f1" />
+              <TouchableOpacity style={styles.btnEdit} onPress={() => openEdit(entry)}>
+                <Ionicons name="create-outline" size={14} color="#6366f1" />
               </TouchableOpacity>
               {entry.hasData && (
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteEntry(entry)}>
-                  <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                <TouchableOpacity style={styles.btnDelete} onPress={() => deleteEntry(entry)}>
+                  <Ionicons name="trash-outline" size={14} color="#ef4444" />
                 </TouchableOpacity>
               )}
             </View>
           </View>
         ))}
-        
         <View style={{ height: 100 }} />
       </ScrollView>
 
+      {/* Employee Selection Modal */}
+      <Modal visible={showEmployeeModal} animationType="slide" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.employeeModalContent}>
+            <View style={styles.employeeModalHeader}>
+              <Text style={styles.employeeModalTitle}>Select Employee</Text>
+              <TouchableOpacity onPress={() => setShowEmployeeModal(false)}>
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={employees}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity 
+                  style={[styles.employeeItem, item.id === selectedEmployeeId && styles.employeeItemActive]}
+                  onPress={() => { setSelectedEmployeeId(item.id); setShowEmployeeModal(false); }}
+                >
+                  <View style={styles.employeeItemAvatar}>
+                    <Text style={styles.employeeItemInitials}>
+                      {item.first_name[0]}{item.last_name[0]}
+                    </Text>
+                  </View>
+                  <Text style={styles.employeeItemName}>{item.first_name} {item.last_name}</Text>
+                  {item.id === selectedEmployeeId && (
+                    <Ionicons name="checkmark-circle" size={20} color="#6366f1" />
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
+
       {/* Edit Modal */}
-      <Modal visible={!!editingEntry} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editingEntry?.hasData ? 'Edit' : 'Add'} - {editingEntry?.dayName} {editingEntry?.dayDate}
+      <Modal visible={!!editingEntry} animationType="fade" transparent>
+        <View style={styles.modalBg}>
+          <View style={styles.editModal}>
+            <Text style={styles.editModalTitle}>
+              {editingEntry?.hasData ? 'Edit' : 'Add'} Entry
             </Text>
+            <Text style={styles.editModalDate}>{editingEntry?.dayName} {editingEntry?.dayNum} {editingEntry?.month}</Text>
             
-            <View style={styles.inputRow}>
-              <View style={styles.inputCol}>
-                <Text style={styles.inputLabel}>Start Time</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editStart}
-                  onChangeText={setEditStart}
-                  placeholder="09:00"
-                  keyboardType="numbers-and-punctuation"
-                />
+            <View style={styles.editRow}>
+              <View style={styles.editCol}>
+                <Text style={styles.editLabel}>Start</Text>
+                <TextInput style={styles.editInput} value={editStart} onChangeText={setEditStart} placeholder="09:00" keyboardType="numbers-and-punctuation" />
               </View>
-              <View style={styles.inputCol}>
-                <Text style={styles.inputLabel}>End Time</Text>
-                <TextInput
-                  style={styles.input}
-                  value={editEnd}
-                  onChangeText={setEditEnd}
-                  placeholder="17:00"
-                  keyboardType="numbers-and-punctuation"
-                />
+              <View style={styles.editCol}>
+                <Text style={styles.editLabel}>End</Text>
+                <TextInput style={styles.editInput} value={editEnd} onChangeText={setEditEnd} placeholder="17:00" keyboardType="numbers-and-punctuation" />
               </View>
             </View>
             
-            <Text style={styles.inputLabel}>Break (mins)</Text>
-            <TextInput
-              style={styles.input}
-              value={editBreak}
-              onChangeText={setEditBreak}
-              placeholder="30"
-              keyboardType="numeric"
-            />
+            <Text style={styles.editLabel}>Break (mins)</Text>
+            <TextInput style={styles.editInput} value={editBreak} onChangeText={setEditBreak} placeholder="30" keyboardType="numeric" />
             
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setEditingEntry(null)}>
-                <Text style={styles.cancelBtnText}>Cancel</Text>
+            <View style={styles.editActions}>
+              <TouchableOpacity style={styles.editCancel} onPress={() => setEditingEntry(null)}>
+                <Text style={styles.editCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={saveEntry} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveBtnText}>Save</Text>}
+              <TouchableOpacity style={styles.editSave} onPress={saveEntry} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.editSaveText}>Save</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -389,64 +356,67 @@ export default function SupervisorScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8fafc' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, backgroundColor: '#f1f5f9' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f1f5f9' },
   
-  header: { paddingTop: 8, paddingBottom: 12, paddingHorizontal: 16 },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: '#fff', textAlign: 'center' },
+  header: { paddingTop: 12, paddingBottom: 16, paddingHorizontal: 20 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff', textAlign: 'center', marginBottom: 12 },
+  statsRow: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 12 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statValue: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  statLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)' },
+  statDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
   
-  selectorRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 8, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  pickerWrap: { flex: 1, backgroundColor: '#f1f5f9', borderRadius: 8, marginHorizontal: 8 },
-  picker: { height: 44, color: '#1e293b' },
+  employeeSelector: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginTop: 16, padding: 14, borderRadius: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+  employeeIcon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+  employeeInfo: { flex: 1, marginLeft: 12 },
+  employeeLabel: { fontSize: 11, color: '#64748b', fontWeight: '600', textTransform: 'uppercase' },
+  employeeName: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginTop: 2 },
   
-  weekNav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  weekBtn: { padding: 4 },
-  weekText: { fontSize: 14, fontWeight: '600', color: '#475569' },
+  weekNav: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', marginHorizontal: 16, marginTop: 12, padding: 10, borderRadius: 12 },
+  navBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+  weekInfo: { flex: 1, alignItems: 'center' },
+  weekLabel: { fontSize: 11, color: '#64748b', fontWeight: '500' },
+  weekDate: { fontSize: 15, fontWeight: '700', color: '#1e293b', marginTop: 2 },
   
-  summaryRow: { flexDirection: 'row', backgroundColor: '#fff', paddingVertical: 12, paddingHorizontal: 16, gap: 16, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  summaryBox: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
-  summaryValue: { fontSize: 20, fontWeight: '800', color: '#6366f1' },
-  summaryLabel: { fontSize: 13, color: '#64748b' },
+  tableWrap: { flex: 1, marginTop: 12 },
+  tableHeader: { flexDirection: 'row', paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#e2e8f0' },
+  th: { fontSize: 10, fontWeight: '700', color: '#64748b', textTransform: 'uppercase' },
   
-  tableContainer: { flex: 1 },
-  tableHeader: { flexDirection: 'row', backgroundColor: '#f1f5f9', paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#e2e8f0' },
-  th: { fontSize: 11, fontWeight: '700', color: '#64748b', textTransform: 'uppercase' },
-  thDate: { width: 80 },
-  thTime: { width: 55, textAlign: 'center' },
-  thHours: { width: 50, textAlign: 'center' },
-  thActions: { flex: 1, textAlign: 'right' },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  rowAlt: { backgroundColor: '#fafafa' },
+  rowDay: { fontSize: 13, fontWeight: '700', color: '#1e293b' },
+  rowDate: { fontSize: 11, color: '#64748b' },
+  rowTime: { fontSize: 14, color: '#475569', fontWeight: '600', textAlign: 'center' },
+  rowHours: { fontSize: 14, fontWeight: '800', color: '#6366f1', textAlign: 'center' },
+  rowActions: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 },
   
-  tableRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
-  tableRowAlt: { backgroundColor: '#fafafa' },
+  btnApprove: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#10b981', alignItems: 'center', justifyContent: 'center' },
+  badgeApproved: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center' },
+  btnEdit: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#e0e7ff', alignItems: 'center', justifyContent: 'center' },
+  btnDelete: { width: 28, height: 28, borderRadius: 8, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' },
   
-  tdDate: { width: 80 },
-  dayName: { fontSize: 13, fontWeight: '600', color: '#1e293b' },
-  dayDate: { fontSize: 11, color: '#64748b' },
+  modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   
-  tdTime: { width: 55, fontSize: 13, color: '#475569', textAlign: 'center', fontWeight: '500' },
+  employeeModalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '70%', paddingBottom: 30 },
+  employeeModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  employeeModalTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  employeeItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  employeeItemActive: { backgroundColor: '#eef2ff' },
+  employeeItemAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#6366f1', alignItems: 'center', justifyContent: 'center' },
+  employeeItemInitials: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  employeeItemName: { flex: 1, fontSize: 16, fontWeight: '600', color: '#1e293b', marginLeft: 12 },
   
-  tdHours: { width: 50, alignItems: 'center' },
-  hoursText: { fontSize: 13, fontWeight: '700', color: '#6366f1' },
-  noData: { fontSize: 13, color: '#cbd5e1' },
-  
-  tdActions: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: 6 },
-  approveBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#10b981', alignItems: 'center', justifyContent: 'center' },
-  approvedBadge: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center' },
-  editBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#e0e7ff', alignItems: 'center', justifyContent: 'center' },
-  deleteBtn: { width: 28, height: 28, borderRadius: 6, backgroundColor: '#fee2e2', alignItems: 'center', justifyContent: 'center' },
-  
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#fff', borderRadius: 16, padding: 20 },
-  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b', marginBottom: 20, textAlign: 'center' },
-  
-  inputRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  inputCol: { flex: 1 },
-  inputLabel: { fontSize: 12, fontWeight: '600', color: '#64748b', marginBottom: 6 },
-  input: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 10, padding: 12, fontSize: 16, color: '#1e293b', textAlign: 'center' },
-  
-  modalActions: { flexDirection: 'row', gap: 12, marginTop: 20 },
-  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: '#f1f5f9', alignItems: 'center' },
-  cancelBtnText: { fontSize: 15, fontWeight: '600', color: '#64748b' },
-  saveBtn: { flex: 1, paddingVertical: 14, borderRadius: 10, backgroundColor: '#6366f1', alignItems: 'center' },
-  saveBtnText: { fontSize: 15, fontWeight: '600', color: '#fff' },
+  editModal: { backgroundColor: '#fff', marginHorizontal: 20, marginBottom: 40, borderRadius: 20, padding: 24 },
+  editModalTitle: { fontSize: 20, fontWeight: '800', color: '#1e293b', textAlign: 'center' },
+  editModalDate: { fontSize: 15, color: '#6366f1', fontWeight: '600', textAlign: 'center', marginTop: 4, marginBottom: 20 },
+  editRow: { flexDirection: 'row', gap: 12 },
+  editCol: { flex: 1 },
+  editLabel: { fontSize: 12, fontWeight: '700', color: '#64748b', marginBottom: 6, marginTop: 12 },
+  editInput: { backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 12, padding: 14, fontSize: 17, fontWeight: '600', color: '#1e293b', textAlign: 'center' },
+  editActions: { flexDirection: 'row', gap: 12, marginTop: 24 },
+  editCancel: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#f1f5f9', alignItems: 'center' },
+  editCancelText: { fontSize: 16, fontWeight: '600', color: '#64748b' },
+  editSave: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#6366f1', alignItems: 'center' },
+  editSaveText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 });
