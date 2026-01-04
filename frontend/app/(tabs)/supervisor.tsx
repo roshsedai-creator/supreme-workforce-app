@@ -244,8 +244,24 @@ export default function SupervisorScreen() {
     setSaving(false);
   };
 
-  const deleteEntry = (entry: any) => {
+  const deleteEntry = async (entry: any) => {
     if (!entry.timesheetId) return;
+    
+    // For web, use window.confirm instead of Alert
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(`Delete timesheet for ${entry.dayName} ${entry.dayNum} ${entry.month}?`);
+      if (confirmed) {
+        try {
+          await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${entry.timesheetId}`);
+          fetchTimesheets();
+        } catch (e: any) {
+          window.alert('Failed to delete: ' + (e.response?.data?.detail || e.message));
+        }
+      }
+      return;
+    }
+    
+    // For mobile, use Alert
     Alert.alert('Delete', `Delete ${entry.dayName} ${entry.dayNum} ${entry.month}?`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
