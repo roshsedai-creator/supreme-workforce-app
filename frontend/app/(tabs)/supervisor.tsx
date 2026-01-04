@@ -153,6 +153,45 @@ export default function SupervisorScreen() {
     setEditStart(entry.startTime || '09:00');
     setEditEnd(entry.endTime || '17:00');
     setEditBreak(String(entry.breakMins || 30));
+    setEditImage(entry.image || null);
+  };
+
+  // Pick image function
+  const pickImage = async (useCamera: boolean) => {
+    const permission = useCamera 
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant camera/gallery access');
+      return;
+    }
+    
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.7, base64: true })
+      : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 0.7, base64: true });
+    
+    if (!result.canceled && result.assets[0].base64) {
+      setEditImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
+  };
+
+  // Pick fortnight photo
+  const pickFortnightPhoto = async (useCamera: boolean) => {
+    const permission = useCamera 
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permission.status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant camera/gallery access');
+      return;
+    }
+    
+    const result = useCamera
+      ? await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.7, base64: true })
+      : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, quality: 0.7, base64: true });
+    
+    if (!result.canceled && result.assets[0].base64) {
+      setFortnightImage(`data:image/jpeg;base64,${result.assets[0].base64}`);
+    }
   };
 
   const saveEntry = async () => {
