@@ -154,7 +154,22 @@ export default function TimesheetsScreen() {
     setSaving(false);
   };
 
-  const deleteTimesheet = (ts: Timesheet) => {
+  const deleteTimesheet = async (ts: Timesheet) => {
+    // For web, use window.confirm
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm('Delete this timesheet?');
+      if (confirmed) {
+        try {
+          await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${ts.id}`);
+          fetchTimesheets();
+        } catch (e: any) {
+          window.alert('Failed to delete');
+        }
+      }
+      return;
+    }
+    
+    // For mobile
     Alert.alert('Delete', 'Delete this timesheet?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
