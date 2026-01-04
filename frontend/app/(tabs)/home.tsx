@@ -671,6 +671,33 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                     </View>
+
+                    {/* Fortnight Photo Section */}
+                    <View style={styles.fortnightPhotoSection}>
+                      <Text style={styles.fortnightPhotoTitle}>📷 Timesheet Photo</Text>
+                      <Text style={styles.fortnightPhotoSubtitle}>Take a photo of your paper timesheet</Text>
+                      <View style={styles.fortnightPhotoBtns}>
+                        <TouchableOpacity style={styles.fortnightPhotoBtn} onPress={() => pickFortnightImage(true)}>
+                          <Ionicons name="camera" size={20} color="#fff" />
+                          <Text style={styles.fortnightPhotoBtnText}>Camera</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.fortnightPhotoBtn} onPress={() => pickFortnightImage(false)}>
+                          <Ionicons name="images" size={20} color="#fff" />
+                          <Text style={styles.fortnightPhotoBtnText}>Gallery</Text>
+                        </TouchableOpacity>
+                      </View>
+                      {fortnightImage && (
+                        <View style={styles.fortnightImagePreview}>
+                          <Image source={{ uri: fortnightImage }} style={styles.fortnightPreviewImg} />
+                          <TouchableOpacity style={styles.fortnightRemoveImg} onPress={() => setFortnightImage(null)}>
+                            <Ionicons name="close-circle" size={28} color="#ef4444" />
+                          </TouchableOpacity>
+                          <TouchableOpacity style={styles.fortnightViewImg} onPress={() => { setViewingImage(fortnightImage); setShowImageModal(true); }}>
+                            <Ionicons name="expand" size={20} color="#fff" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    </View>
                   </>
                 )}
               </View>
