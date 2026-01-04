@@ -200,15 +200,16 @@ export default function SupervisorScreen() {
     try {
       if (editingEntry.timesheetId) {
         await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/${editingEntry.timesheetId}`, {
-          date: editingEntry.date, clock_in_time: editStart, clock_out_time: editEnd, break_minutes: parseInt(editBreak) || 0,
+          date: editingEntry.date, clock_in_time: editStart, clock_out_time: editEnd, break_minutes: parseInt(editBreak) || 0, image: editImage,
         });
       } else {
         await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
-          employee_id: selectedEmployeeId, date: editingEntry.date, clock_in_time: editStart, clock_out_time: editEnd, break_minutes: parseInt(editBreak) || 0,
+          employee_id: selectedEmployeeId, date: editingEntry.date, clock_in_time: editStart, clock_out_time: editEnd, break_minutes: parseInt(editBreak) || 0, image: editImage,
         });
       }
       Alert.alert('Success', 'Saved');
       setEditingEntry(null);
+      setEditImage(null);
       fetchTimesheets();
     } catch (e: any) { Alert.alert('Error', e.response?.data?.detail || 'Failed'); }
     setSaving(false);
