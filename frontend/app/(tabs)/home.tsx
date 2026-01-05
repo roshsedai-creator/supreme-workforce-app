@@ -180,6 +180,11 @@ export default function HomeScreen() {
       return;
     }
 
+    // Format times before submission
+    const formattedStart = formatTimeInput(dailyStartTime);
+    const formattedEnd = formatTimeInput(dailyEndTime);
+    console.log('Formatted times - Start:', formattedStart, 'End:', formattedEnd);
+
     setLoading(true);
     try {
       const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
@@ -189,8 +194,8 @@ export default function HomeScreen() {
       const payload = {
         employee_id: user?.id,
         date: dailyDate,
-        clock_in_time: dailyStartTime,
-        clock_out_time: dailyEndTime,
+        clock_in_time: formattedStart,
+        clock_out_time: formattedEnd,
         break_minutes: parseInt(dailyBreak) || 0,
         notes: dailyNotes,
         image: dailyImage,
