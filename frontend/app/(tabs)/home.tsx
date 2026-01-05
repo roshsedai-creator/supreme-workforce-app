@@ -132,45 +132,49 @@ export default function HomeScreen() {
   };
 
   const submitDailyTimesheet = async () => {
+    console.log('Submitting daily timesheet...');
+    console.log('Date:', dailyDate, 'Start:', dailyStartTime, 'End:', dailyEndTime);
+    
     if (!dailyDate || !dailyStartTime || !dailyEndTime) {
-      if (Platform.OS === 'web') {
-        window.alert('Please fill in date, start time and end time');
-      } else {
-        Alert.alert('Missing Fields', 'Please fill in date, start time and end time');
-      }
+      const msg = 'Please fill in date, start time and end time';
+      console.log('Validation failed:', msg);
+      Alert.alert('Missing Fields', msg);
       return;
     }
 
     setLoading(true);
     try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      console.log('Backend URL:', backendUrl);
+      console.log('User ID:', user?.id);
+      
+      const payload = {
+        employee_id: user?.id,
+        date: dailyDate,
+        clock_in_time: dailyStartTime,
+        clock_out_time: dailyEndTime,
+        break_minutes: parseInt(dailyBreak) || 0,
+        notes: dailyNotes,
+        image: dailyImage,
+      };
+      console.log('Payload:', JSON.stringify(payload));
+      
       const response = await axios.post(
-        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`,
-        {
-          employee_id: user?.id,
-          date: dailyDate,
-          clock_in_time: dailyStartTime,
-          clock_out_time: dailyEndTime,
-          break_minutes: parseInt(dailyBreak) || 0,
-          notes: dailyNotes,
-          image: dailyImage,
-        }
+        `${backendUrl}/api/timesheets/manual`,
+        payload
       );
 
+      console.log('Response:', response.data);
+      
       if (response.data) {
-        if (Platform.OS === 'web') {
-          window.alert('Timesheet submitted successfully!');
-        } else {
-          Alert.alert('Success', 'Timesheet submitted');
-        }
+        Alert.alert('Success', 'Timesheet submitted successfully!');
         setShowEntryModal(false);
       }
     } catch (error: any) {
-      const msg = error.response?.data?.detail || 'Failed to submit';
-      if (Platform.OS === 'web') {
-        window.alert('Error: ' + msg);
-      } else {
-        Alert.alert('Error', msg);
-      }
+      console.error('Submit error:', error);
+      console.error('Error response:', error.response?.data);
+      const msg = error.response?.data?.detail || error.message || 'Failed to submit';
+      Alert.alert('Error', msg);
     } finally {
       setLoading(false);
     }
