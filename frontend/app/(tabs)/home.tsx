@@ -45,6 +45,44 @@ export default function HomeScreen() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   };
 
+  // Auto-format time input (e.g., "800" -> "08:00", "1430" -> "14:30")
+  const formatTimeInput = (value: string): string => {
+    // Remove any non-numeric characters except colon
+    let cleaned = value.replace(/[^0-9:]/g, '');
+    
+    // If already has colon and is valid, return as is
+    if (cleaned.includes(':')) {
+      const parts = cleaned.split(':');
+      if (parts.length === 2 && parts[0].length <= 2 && parts[1].length <= 2) {
+        return cleaned;
+      }
+    }
+    
+    // Remove colon for processing
+    cleaned = cleaned.replace(':', '');
+    
+    if (cleaned.length === 0) return '';
+    
+    // Handle different input lengths
+    if (cleaned.length <= 2) {
+      // Just hours: "8" -> "08:00", "12" -> "12:00"
+      const hour = cleaned.padStart(2, '0');
+      return `${hour}:00`;
+    } else if (cleaned.length === 3) {
+      // "800" -> "08:00", "930" -> "09:30"
+      const hour = cleaned.slice(0, 1).padStart(2, '0');
+      const min = cleaned.slice(1).padStart(2, '0');
+      return `${hour}:${min}`;
+    } else if (cleaned.length >= 4) {
+      // "0800" -> "08:00", "1430" -> "14:30"
+      const hour = cleaned.slice(0, 2);
+      const min = cleaned.slice(2, 4);
+      return `${hour}:${min}`;
+    }
+    
+    return value;
+  };
+
   const generateFortnightDates = (startDate: string) => {
     const entries = [];
     const start = new Date(startDate);
