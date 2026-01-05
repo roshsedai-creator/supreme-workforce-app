@@ -50,7 +50,7 @@ This will:
 
 ## App Configuration
 
-**Backend URL**: `https://workhours-14.preview.emergentagent.com`
+**Backend URL**: `https://timemaster-93.preview.emergentagent.com`
 
 This URL is already configured in the app. Your employees' data will automatically sync with the backend.
 

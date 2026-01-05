@@ -7,7 +7,7 @@ import requests
 import json
 import uuid
 
-BASE_URL = "https://workhours-14.preview.emergentagent.com/api"
+BASE_URL = "https://timemaster-93.preview.emergentagent.com/api"
 
 def test_delete_user_issue():
     """Test the DELETE user endpoint issue"""

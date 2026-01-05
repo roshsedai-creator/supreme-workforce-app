@@ -335,7 +335,7 @@ eas build --platform ios --profile preview
 ### **Today: Use Web App**
 Your app works perfectly at:
 ```
-https://workhours-14.preview.emergentagent.com
+https://timemaster-93.preview.emergentagent.com
 ```
 Employees can "Add to Home Screen" - works like native app.
 

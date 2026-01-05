@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // For standalone APK, use the production backend URL
 // This URL is the permanent backend for the Supreme Workforce app
-const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://workhours-14.preview.emergentagent.com';
+const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL || 'https://timemaster-93.preview.emergentagent.com';
 
 export const api = axios.create({
   baseURL: `${API_URL}/api`,

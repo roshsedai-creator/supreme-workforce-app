@@ -8,7 +8,7 @@ import json
 import uuid
 import time
 
-BASE_URL = "https://workhours-14.preview.emergentagent.com/api"
+BASE_URL = "https://timemaster-93.preview.emergentagent.com/api"
 ADMIN_CREDENTIALS = {"identifier": "0457802302", "pin": "1234"}
 
 def make_request(method, endpoint, data=None, timeout=15):
