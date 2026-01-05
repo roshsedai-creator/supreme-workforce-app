@@ -227,32 +227,37 @@ export default function HomeScreen() {
     const validEntries = fortnightEntries.filter(e => e.startTime && e.endTime);
     
     if (validEntries.length === 0) {
-      if (Platform.OS === 'web') {
-        window.alert('Please fill in at least one day with start and end time');
-      } else {
-        Alert.alert('No Entries', 'Please fill in at least one day with start and end time');
-      }
+      Alert.alert('No Entries', 'Please fill in at least one day with start and end time');
       return;
     }
+
+    console.log('Submitting fortnight timesheet...');
+    console.log('Valid entries:', validEntries.length);
 
     setLoading(true);
     let successCount = 0;
     let errorMsg = '';
+    const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
     
     for (const entry of validEntries) {
       try {
-        await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets/manual`, {
+        // Format times before submission
+        const formattedStart = formatTimeInput(entry.startTime);
+        const formattedEnd = formatTimeInput(entry.endTime);
+        console.log(`Entry ${entry.date}: ${formattedStart} - ${formattedEnd}`);
+        
+        await axios.post(`${backendUrl}/api/timesheets/manual`, {
           employee_id: user?.id,
           date: entry.date,
-          clock_in_time: entry.startTime,
-          clock_out_time: entry.endTime,
+          clock_in_time: formattedStart,
+          clock_out_time: formattedEnd,
           break_minutes: parseInt(entry.breakMins) || 0,
           notes: 'Fortnight entry',
           image: fortnightImage,
         });
         successCount++;
       } catch (err: any) {
-        errorMsg = err.response?.data?.detail || 'Error';
+        errorMsg = err.response?.data?.detail || err.message || 'Error';
         console.error('Failed to submit entry:', entry.date, err);
       }
     }
@@ -260,18 +265,10 @@ export default function HomeScreen() {
     setLoading(false);
     
     if (successCount > 0) {
-      if (Platform.OS === 'web') {
-        window.alert(`${successCount} timesheet(s) submitted successfully!`);
-      } else {
-        Alert.alert('Success', `${successCount} timesheet(s) submitted`);
-      }
+      Alert.alert('Success', `${successCount} timesheet(s) submitted successfully!`);
       setShowEntryModal(false);
     } else {
-      if (Platform.OS === 'web') {
-        window.alert('Failed to submit: ' + errorMsg);
-      } else {
-        Alert.alert('Error', 'Failed to submit: ' + errorMsg);
-      }
+      Alert.alert('Error', 'Failed to submit: ' + errorMsg);
     }
   };
 
