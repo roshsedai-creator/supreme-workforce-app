@@ -45,7 +45,17 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "name": "Supreme Workforce",
+      "shortName": "Workforce",
+      "description": "Premium Timesheet & Workforce Management App",
+      "backgroundColor": "#1a1a2e",
+      "themeColor": "#6366f1",
+      "orientation": "portrait",
+      "display": "standalone",
+      "startUrl": "/",
+      "scope": "/",
+      "prefer_related_applications": false
     },
     "plugins": [
       "expo-router",
