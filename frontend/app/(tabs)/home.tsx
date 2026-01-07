@@ -404,13 +404,18 @@ export default function HomeScreen() {
               /* DAILY ENTRY FORM */
               <View style={styles.form}>
                 <Text style={styles.label}>Date</Text>
-                <TextInput
-                  style={styles.input}
-                  value={dailyDate}
-                  onChangeText={setDailyDate}
-                  placeholder="YYYY-MM-DD (e.g. 2025-01-15)"
-                  placeholderTextColor="#9ca3af"
-                />
+                <View style={styles.dateInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.dateInput]}
+                    value={dailyDate}
+                    onChangeText={setDailyDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#9ca3af"
+                  />
+                  <TouchableOpacity style={styles.calendarBtn} onPress={() => openCalendar('daily')}>
+                    <Ionicons name="calendar" size={24} color="#6366f1" />
+                  </TouchableOpacity>
+                </View>
 
                 <View style={styles.row}>
                   <View style={styles.col}>
