@@ -684,6 +684,27 @@ const styles = StyleSheet.create({
   photoSection: { marginTop: 24, padding: 16, backgroundColor: '#fff', borderRadius: 12, borderWidth: 2, borderColor: '#6366f1' },
   photoTitle: { fontSize: 16, fontWeight: '700', color: '#1e293b', marginBottom: 12 },
   
+  // Date input with calendar button
+  dateInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dateInput: { flex: 1 },
+  calendarBtn: { width: 56, height: 56, backgroundColor: '#eef2ff', borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#c7d2fe' },
+  
+  // Calendar modal styles
+  calendarOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  calendarContainer: { backgroundColor: '#fff', borderRadius: 20, padding: 20, width: '100%', maxWidth: 360, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 10 },
+  calendarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  calendarNavBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#eef2ff', alignItems: 'center', justifyContent: 'center' },
+  calendarTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  calendarDayNames: { flexDirection: 'row', marginBottom: 10 },
+  calendarDayName: { flex: 1, textAlign: 'center', fontSize: 12, fontWeight: '600', color: '#64748b' },
+  calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  calendarDay: { width: '14.28%', aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
+  calendarDayEmpty: { opacity: 0 },
+  calendarDayActive: { },
+  calendarDayText: { fontSize: 16, color: '#1e293b', fontWeight: '500' },
+  calendarCloseBtn: { marginTop: 20, padding: 16, backgroundColor: '#f1f5f9', borderRadius: 12, alignItems: 'center' },
+  calendarCloseBtnText: { fontSize: 16, fontWeight: '600', color: '#64748b' },
+  
   imageModalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
   imageModalClose: { position: 'absolute', top: 50, right: 20, zIndex: 10 },
   fullImage: { width: '100%', height: '80%' },
