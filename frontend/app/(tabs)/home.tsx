@@ -478,16 +478,21 @@ export default function HomeScreen() {
               /* FORTNIGHT ENTRY FORM */
               <View style={styles.form}>
                 <Text style={styles.label}>Fortnight Start Date</Text>
-                <TextInput
-                  style={styles.input}
-                  value={fortnightStartDate}
-                  onChangeText={(val) => {
-                    setFortnightStartDate(val);
-                    if (val.length === 10) generateFortnightDates(val);
-                  }}
-                  placeholder="YYYY-MM-DD (e.g. 2025-01-13)"
-                  placeholderTextColor="#9ca3af"
-                />
+                <View style={styles.dateInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.dateInput]}
+                    value={fortnightStartDate}
+                    onChangeText={(val) => {
+                      setFortnightStartDate(val);
+                      if (val.length === 10) generateFortnightDates(val);
+                    }}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#9ca3af"
+                  />
+                  <TouchableOpacity style={styles.calendarBtn} onPress={() => openCalendar('fortnight')}>
+                    <Ionicons name="calendar" size={24} color="#6366f1" />
+                  </TouchableOpacity>
+                </View>
 
                 <Text style={styles.label}>Enter Times (leave blank for days off)</Text>
                 
