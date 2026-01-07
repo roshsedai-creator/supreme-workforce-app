@@ -560,6 +560,56 @@ export default function HomeScreen() {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* Calendar Modal */}
+      <Modal visible={showCalendar} animationType="fade" transparent>
+        <View style={styles.calendarOverlay}>
+          <View style={styles.calendarContainer}>
+            {/* Calendar Header */}
+            <View style={styles.calendarHeader}>
+              <TouchableOpacity onPress={() => changeMonth(-1)} style={styles.calendarNavBtn}>
+                <Ionicons name="chevron-back" size={24} color="#6366f1" />
+              </TouchableOpacity>
+              <Text style={styles.calendarTitle}>
+                {monthNames[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              </Text>
+              <TouchableOpacity onPress={() => changeMonth(1)} style={styles.calendarNavBtn}>
+                <Ionicons name="chevron-forward" size={24} color="#6366f1" />
+              </TouchableOpacity>
+            </View>
+            
+            {/* Day Names */}
+            <View style={styles.calendarDayNames}>
+              {dayNames.map(day => (
+                <Text key={day} style={styles.calendarDayName}>{day}</Text>
+              ))}
+            </View>
+            
+            {/* Calendar Grid */}
+            <View style={styles.calendarGrid}>
+              {getMonthDays(calendarMonth).map((day, index) => (
+                <TouchableOpacity 
+                  key={index} 
+                  style={[
+                    styles.calendarDay,
+                    day === null && styles.calendarDayEmpty,
+                    day !== null && styles.calendarDayActive
+                  ]}
+                  onPress={() => day !== null && handleDateSelect(day)}
+                  disabled={day === null}
+                >
+                  {day !== null && <Text style={styles.calendarDayText}>{day}</Text>}
+                </TouchableOpacity>
+              ))}
+            </View>
+            
+            {/* Close Button */}
+            <TouchableOpacity style={styles.calendarCloseBtn} onPress={() => setShowCalendar(false)}>
+              <Text style={styles.calendarCloseBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Image View Modal */}
       <Modal visible={showImageModal} animationType="fade" transparent>
         <View style={styles.imageModalBg}>
