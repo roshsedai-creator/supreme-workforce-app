@@ -24,6 +24,9 @@ export default function HomeScreen() {
   const [entryMode, setEntryMode] = useState<'daily' | 'fortnight'>('daily');
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarTarget, setCalendarTarget] = useState<'daily' | 'fortnight'>('daily');
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
   
   // Daily entry
   const [dailyDate, setDailyDate] = useState('');
