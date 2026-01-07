@@ -86,6 +86,64 @@ export default function HomeScreen() {
     return value;
   };
 
+  // Calendar helper functions
+  const getMonthDays = (date: Date) => {
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const daysInMonth = lastDay.getDate();
+    const startingDay = firstDay.getDay();
+    
+    const days: (number | null)[] = [];
+    
+    // Add empty slots for days before the first day of the month
+    for (let i = 0; i < startingDay; i++) {
+      days.push(null);
+    }
+    
+    // Add the days of the month
+    for (let i = 1; i <= daysInMonth; i++) {
+      days.push(i);
+    }
+    
+    return days;
+  };
+
+  const formatDateString = (date: Date): string => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  const handleDateSelect = (day: number) => {
+    const selectedDate = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), day);
+    const dateStr = formatDateString(selectedDate);
+    
+    if (calendarTarget === 'daily') {
+      setDailyDate(dateStr);
+    } else {
+      setFortnightStartDate(dateStr);
+      generateFortnightDates(dateStr);
+    }
+    
+    setShowCalendar(false);
+  };
+
+  const openCalendar = (target: 'daily' | 'fortnight') => {
+    setCalendarTarget(target);
+    setCalendarMonth(new Date());
+    setShowCalendar(true);
+  };
+
+  const changeMonth = (direction: number) => {
+    const newMonth = new Date(calendarMonth);
+    newMonth.setMonth(newMonth.getMonth() + direction);
+    setCalendarMonth(newMonth);
+  };
+
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   const generateFortnightDates = (startDate: string) => {
     const entries = [];
     const start = new Date(startDate);
