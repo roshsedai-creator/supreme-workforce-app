@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { LogBox, Platform } from 'react-native';
+import { LogBox, Platform, View } from 'react-native';
 import { useAuthStore } from '../store/authStore';
 import ErrorBoundary from '../components/ErrorBoundary';
+import InstallPrompt from '../components/InstallPrompt';
 
 // Ignore common warnings that don't affect functionality
 LogBox.ignoreLogs([
@@ -39,12 +40,15 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-      </Stack>
+      <View style={{ flex: 1 }}>
+        <StatusBar style="auto" />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+        </Stack>
+        <InstallPrompt />
+      </View>
     </ErrorBoundary>
   );
 }
