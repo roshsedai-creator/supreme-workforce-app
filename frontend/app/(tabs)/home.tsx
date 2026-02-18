@@ -159,9 +159,11 @@ export default function HomeScreen() {
     
     if (calendarTarget === 'daily') {
       setDailyDate(dateStr);
-    } else {
+    } else if (calendarTarget === 'fortnight') {
       setFortnightStartDate(dateStr);
       generateFortnightDates(dateStr);
+    } else if (calendarTarget === 'rooms') {
+      setRoomDate(dateStr);
     }
     
     setShowCalendar(false);
