@@ -21,11 +21,11 @@ import * as ImagePicker from 'expo-image-picker';
 
 export default function HomeScreen() {
   const { user } = useAuthStore();
-  const [entryMode, setEntryMode] = useState<'daily' | 'fortnight'>('daily');
+  const [entryMode, setEntryMode] = useState<'daily' | 'fortnight' | 'rooms'>('daily');
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const [calendarTarget, setCalendarTarget] = useState<'daily' | 'fortnight'>('daily');
+  const [calendarTarget, setCalendarTarget] = useState<'daily' | 'fortnight' | 'rooms'>('daily');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   
   // Daily entry
@@ -42,6 +42,45 @@ export default function HomeScreen() {
   const [fortnightImage, setFortnightImage] = useState<string | null>(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
+
+  // Room Cleaning
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [roomDate, setRoomDate] = useState('');
+  const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
+  const [roomStatus, setRoomStatus] = useState<'departure' | 'linen_change' | 'stayover'>('departure');
+  const [roomCount, setRoomCount] = useState('1');
+  const [roomNotes, setRoomNotes] = useState('');
+  const [todayRoomEntries, setTodayRoomEntries] = useState<any[]>([]);
+
+  // Fetch room types on mount
+  useEffect(() => {
+    fetchRoomTypes();
+    fetchTodayRoomEntries();
+  }, []);
+
+  const fetchRoomTypes = async () => {
+    try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const response = await axios.get(`${backendUrl}/api/room-types`);
+      setRoomTypes(response.data);
+      if (response.data.length > 0) {
+        setSelectedRoomType(response.data[0]);
+      }
+    } catch (error) {
+      console.log('Failed to fetch room types:', error);
+    }
+  };
+
+  const fetchTodayRoomEntries = async () => {
+    try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const today = getTodayDate();
+      const response = await axios.get(`${backendUrl}/api/room-cleaning?employee_id=${user?.id}&date=${today}`);
+      setTodayRoomEntries(response.data);
+    } catch (error) {
+      console.log('Failed to fetch room entries:', error);
+    }
+  };
 
   const getTodayDate = () => {
     const now = new Date();
