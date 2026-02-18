@@ -169,7 +169,7 @@ export default function HomeScreen() {
     setShowCalendar(false);
   };
 
-  const openCalendar = (target: 'daily' | 'fortnight') => {
+  const openCalendar = (target: 'daily' | 'fortnight' | 'rooms') => {
     setCalendarTarget(target);
     setCalendarMonth(new Date());
     setShowCalendar(true);
