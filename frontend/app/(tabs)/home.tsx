@@ -206,7 +206,7 @@ export default function HomeScreen() {
     setFortnightEntries(entries);
   };
 
-  const openEntryModal = (mode: 'daily' | 'fortnight') => {
+  const openEntryModal = (mode: 'daily' | 'fortnight' | 'rooms') => {
     setEntryMode(mode);
     if (mode === 'daily') {
       setDailyDate(getTodayDate());
@@ -215,7 +215,7 @@ export default function HomeScreen() {
       setDailyBreak('30');
       setDailyNotes('');
       setDailyImage(null);
-    } else {
+    } else if (mode === 'fortnight') {
       const today = new Date();
       const day = today.getDay();
       const diff = today.getDate() - day + (day === 0 ? -6 : 1);
@@ -225,6 +225,11 @@ export default function HomeScreen() {
       setFortnightStartDate(startDate);
       generateFortnightDates(startDate);
       setFortnightImage(null);
+    } else if (mode === 'rooms') {
+      setRoomDate(getTodayDate());
+      setRoomCount('1');
+      setRoomNotes('');
+      setRoomStatus('departure');
     }
     setShowEntryModal(true);
   };
