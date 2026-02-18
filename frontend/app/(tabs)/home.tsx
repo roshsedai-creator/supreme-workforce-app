@@ -706,7 +706,9 @@ export default function HomeScreen() {
                   )}
                 </View>
               </View>
-            ) : entryMode === 'rooms' ? (
+            )}
+            
+            {entryMode === 'rooms' && (
               /* ROOM CLEANING FORM */
               <View style={styles.form}>
                 <Text style={styles.label}>Date</Text>
