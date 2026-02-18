@@ -625,7 +625,9 @@ export default function HomeScreen() {
                   </View>
                 )}
               </View>
-            ) : entryMode === 'fortnight' ? (
+            )}
+            
+            {entryMode === 'fortnight' && (
               /* FORTNIGHT ENTRY FORM */
               <View style={styles.form}>
                 <Text style={styles.label}>Fortnight Start Date</Text>
