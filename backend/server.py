@@ -3481,28 +3481,37 @@ async def calculate_wages(
                     "pay": round(day_pay, 2)
                 })
     
-    # Get room cleaning credits for the period
+    # Get room cleaning entries for the period
     room_entries = await db.room_cleaning.find({
         "employee_id": employee_id,
         "date": {"$gte": start_date, "$lte": end_date}
     }).to_list(500)
     
-    total_credits = sum(entry.get("total_credits", 0) for entry in room_entries)
-    credit_rate = pay_rate.get("credit_rate", 0)
-    room_wages = total_credits * credit_rate
+    # Calculate room credits in hours (minutes / 60)
+    total_room_minutes = sum(entry.get("total_minutes", 0) for entry in room_entries)
+    total_room_hours = total_room_minutes / 60
+    credit_rate = pay_rate.get("credit_rate", 0)  # $ per hour of room credits
+    room_wages = total_room_hours * credit_rate
     
     room_breakdown = []
     for entry in room_entries:
+        entry_minutes = entry.get("total_minutes", 0)
         room_breakdown.append({
             "date": entry.get("date"),
             "room_type": entry.get("room_type_name"),
             "status": entry.get("status"),
             "count": entry.get("count"),
-            "credits": entry.get("total_credits", 0),
-            "pay": round(entry.get("total_credits", 0) * credit_rate, 2)
+            "minutes": entry_minutes,
+            "hours": round(entry_minutes / 60, 2),
+            "pay": round((entry_minutes / 60) * credit_rate, 2)
         })
     
     total_wages = time_wages + room_wages
+    
+    # Calculate efficiency (room credit hours vs actual hours)
+    efficiency = 0
+    if total_hours > 0:
+        efficiency = round((total_room_hours / total_hours) * 100, 1)
     
     return {
         "success": True,
@@ -3517,12 +3526,129 @@ async def calculate_wages(
             "breakdown": time_breakdown
         },
         "room_credits": {
-            "total_credits": round(total_credits, 2),
+            "total_minutes": total_room_minutes,
+            "total_hours": round(total_room_hours, 2),
             "credit_rate": credit_rate,
             "total_wages": round(room_wages, 2),
             "breakdown": room_breakdown
         },
+        "comparison": {
+            "actual_hours": round(total_hours, 2),
+            "expected_hours": round(total_room_hours, 2),
+            "difference_hours": round(total_hours - total_room_hours, 2),
+            "efficiency_percent": efficiency
+        },
         "total_wages": round(total_wages, 2)
+    }
+
+# Comparison endpoint - Room Credits vs Actual Hours
+@api_router.get("/productivity/{employee_id}")
+async def get_productivity_comparison(
+    employee_id: str,
+    date: Optional[str] = None,  # Specific date, defaults to today
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Compare room cleaning credits (expected time) vs actual timesheet hours"""
+    
+    # Determine date range
+    if date:
+        query_start = date
+        query_end = date
+    elif start_date and end_date:
+        query_start = start_date
+        query_end = end_date
+    else:
+        # Default to today
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        query_start = today
+        query_end = today
+    
+    # Get room cleaning entries
+    room_entries = await db.room_cleaning.find({
+        "employee_id": employee_id,
+        "date": {"$gte": query_start, "$lte": query_end}
+    }).to_list(500)
+    
+    # Get timesheets for the same period
+    timesheets = await db.timesheets.find({
+        "employee_id": employee_id,
+        "clock_in": {"$ne": None}
+    }).to_list(500)
+    
+    # Calculate room credit hours (expected)
+    total_room_minutes = sum(entry.get("total_minutes", 0) for entry in room_entries)
+    expected_hours = total_room_minutes / 60
+    
+    # Calculate actual timesheet hours
+    actual_hours = 0
+    daily_breakdown = {}
+    
+    for ts in timesheets:
+        if ts.get("clock_in"):
+            ts_date = ts["clock_in"].strftime("%Y-%m-%d")
+            if query_start <= ts_date <= query_end:
+                hours = ts.get("total_hours", 0)
+                actual_hours += hours
+                
+                if ts_date not in daily_breakdown:
+                    daily_breakdown[ts_date] = {"actual": 0, "expected": 0, "rooms": []}
+                daily_breakdown[ts_date]["actual"] += hours
+    
+    # Add room entries to daily breakdown
+    for entry in room_entries:
+        entry_date = entry.get("date")
+        if entry_date not in daily_breakdown:
+            daily_breakdown[entry_date] = {"actual": 0, "expected": 0, "rooms": []}
+        
+        entry_hours = entry.get("total_minutes", 0) / 60
+        daily_breakdown[entry_date]["expected"] += entry_hours
+        daily_breakdown[entry_date]["rooms"].append({
+            "room_type": entry.get("room_type_name"),
+            "status": entry.get("status"),
+            "count": entry.get("count"),
+            "minutes": entry.get("total_minutes", 0)
+        })
+    
+    # Calculate efficiency
+    efficiency = 0
+    if actual_hours > 0:
+        efficiency = round((expected_hours / actual_hours) * 100, 1)
+    
+    # Determine status
+    if efficiency >= 100:
+        status = "excellent"
+        message = "Working efficiently - exceeding room targets"
+    elif efficiency >= 80:
+        status = "good"
+        message = "Good performance"
+    elif efficiency >= 60:
+        status = "average"
+        message = "Room for improvement"
+    else:
+        status = "below_target"
+        message = "Below target - review workload"
+    
+    return {
+        "success": True,
+        "employee_id": employee_id,
+        "date_range": {"start": query_start, "end": query_end},
+        "actual_hours": round(actual_hours, 2),
+        "expected_hours_from_rooms": round(expected_hours, 2),
+        "difference": round(actual_hours - expected_hours, 2),
+        "efficiency_percent": efficiency,
+        "status": status,
+        "message": message,
+        "daily_breakdown": [
+            {
+                "date": date,
+                "actual_hours": round(data["actual"], 2),
+                "expected_hours": round(data["expected"], 2),
+                "difference": round(data["actual"] - data["expected"], 2),
+                "rooms": data["rooms"]
+            }
+            for date, data in sorted(daily_breakdown.items())
+        ]
     }
 
 # Root endpoint
