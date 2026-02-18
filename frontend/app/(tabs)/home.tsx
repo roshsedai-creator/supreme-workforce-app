@@ -470,7 +470,56 @@ export default function HomeScreen() {
             </View>
             <Ionicons name="chevron-forward" size={24} color="#9ca3af" />
           </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionCard} onPress={() => openEntryModal('rooms')}>
+            <View style={[styles.cardIcon, { backgroundColor: '#fef3c7' }]}>
+              <Ionicons name="bed" size={28} color="#f59e0b" />
+            </View>
+            <View style={styles.cardContent}>
+              <Text style={styles.cardTitle}>Room Cleaning</Text>
+              <Text style={styles.cardDesc}>Log rooms cleaned today</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#9ca3af" />
+          </TouchableOpacity>
         </View>
+
+        {/* Today's Room Summary */}
+        {todayRoomEntries.length > 0 && (
+          <View style={styles.cardsSection}>
+            <Text style={styles.sectionTitle}>Today's Room Summary</Text>
+            <View style={styles.roomSummaryCard}>
+              <View style={styles.roomSummaryRow}>
+                <Text style={styles.roomSummaryLabel}>Total Rooms</Text>
+                <Text style={styles.roomSummaryValue}>
+                  {todayRoomEntries.reduce((sum, e) => sum + e.count, 0)}
+                </Text>
+              </View>
+              <View style={styles.roomSummaryRow}>
+                <Text style={styles.roomSummaryLabel}>Total Credits</Text>
+                <Text style={styles.roomSummaryValue}>
+                  {todayRoomEntries.reduce((sum, e) => sum + e.total_credits, 0).toFixed(1)}
+                </Text>
+              </View>
+              {todayRoomEntries.map((entry, index) => (
+                <View key={entry.id || index} style={styles.roomEntryItem}>
+                  <View style={styles.roomEntryInfo}>
+                    <Text style={styles.roomEntryType}>{entry.room_type_name}</Text>
+                    <Text style={styles.roomEntryStatus}>
+                      {entry.status === 'departure' ? '🚪 Departure' : 
+                       entry.status === 'linen_change' ? '🛏️ Linen' : '🧹 Stayover'}
+                    </Text>
+                  </View>
+                  <View style={styles.roomEntryRight}>
+                    <Text style={styles.roomEntryCount}>×{entry.count}</Text>
+                    <TouchableOpacity onPress={() => deleteRoomEntry(entry.id)}>
+                      <Ionicons name="trash-outline" size={18} color="#ef4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
