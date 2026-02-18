@@ -962,4 +962,40 @@ const styles = StyleSheet.create({
   imageModalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' },
   imageModalClose: { position: 'absolute', top: 50, right: 20, zIndex: 10 },
   fullImage: { width: '100%', height: '80%' },
+
+  // Room Cleaning styles
+  roomTypeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  roomTypeOption: { paddingVertical: 12, paddingHorizontal: 16, backgroundColor: '#f1f5f9', borderRadius: 12, borderWidth: 2, borderColor: '#e2e8f0', minWidth: '30%', alignItems: 'center' },
+  roomTypeSelected: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
+  roomTypeText: { fontSize: 14, fontWeight: '600', color: '#475569' },
+  roomTypeTextSelected: { color: '#fff' },
+  roomTypeCredits: { fontSize: 12, color: '#94a3b8', marginTop: 2 },
+
+  statusRow: { flexDirection: 'row', gap: 8 },
+  statusBtn: { flex: 1, padding: 16, backgroundColor: '#f1f5f9', borderRadius: 12, alignItems: 'center', borderWidth: 2, borderColor: '#e2e8f0' },
+  statusBtnActive: { backgroundColor: '#fef3c7', borderColor: '#f59e0b' },
+  statusEmoji: { fontSize: 24 },
+  statusText: { fontSize: 12, fontWeight: '600', color: '#475569', marginTop: 4 },
+  statusTextActive: { color: '#92400e' },
+  statusMultiplier: { fontSize: 10, color: '#94a3b8', marginTop: 2 },
+
+  counterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
+  counterBtn: { width: 50, height: 50, backgroundColor: '#eef2ff', borderRadius: 25, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: '#c7d2fe' },
+  counterInput: { width: 80, fontSize: 32, fontWeight: '800', color: '#1e293b', textAlign: 'center' },
+
+  creditsPreview: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', backgroundColor: '#dcfce7', padding: 16, borderRadius: 12, marginTop: 16, gap: 8 },
+  creditsLabel: { fontSize: 16, fontWeight: '600', color: '#166534' },
+  creditsValue: { fontSize: 24, fontWeight: '800', color: '#166534' },
+
+  // Room Summary styles
+  roomSummaryCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+  roomSummaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  roomSummaryLabel: { fontSize: 14, color: '#64748b' },
+  roomSummaryValue: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
+  roomEntryItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  roomEntryInfo: { flex: 1 },
+  roomEntryType: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+  roomEntryStatus: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  roomEntryRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  roomEntryCount: { fontSize: 16, fontWeight: '700', color: '#6366f1' },
 });
