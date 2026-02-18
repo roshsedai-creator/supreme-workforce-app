@@ -818,7 +818,7 @@ export default function HomeScreen() {
                   placeholderTextColor="#9ca3af"
                 />
               </View>
-            ) : null}
+            )}
             
             <View style={{ height: 50 }} />
           </ScrollView>
