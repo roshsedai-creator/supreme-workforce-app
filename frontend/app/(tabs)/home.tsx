@@ -551,7 +551,7 @@ export default function HomeScreen() {
           </View>
 
           <ScrollView style={styles.modalBody} showsVerticalScrollIndicator={false}>
-            {entryMode === 'daily' ? (
+            {entryMode === 'daily' && (
               /* DAILY ENTRY FORM */
               <View style={styles.form}>
                 <Text style={styles.label}>Date</Text>
