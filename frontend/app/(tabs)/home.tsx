@@ -697,7 +697,117 @@ export default function HomeScreen() {
                   )}
                 </View>
               </View>
-            )}
+            ) : entryMode === 'rooms' ? (
+              /* ROOM CLEANING FORM */
+              <View style={styles.form}>
+                <Text style={styles.label}>Date</Text>
+                <View style={styles.dateInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.dateInput]}
+                    value={roomDate}
+                    onChangeText={setRoomDate}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#9ca3af"
+                  />
+                  <TouchableOpacity style={styles.calendarBtn} onPress={() => openCalendar('rooms')}>
+                    <Ionicons name="calendar" size={24} color="#6366f1" />
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.label}>Room Type</Text>
+                <View style={styles.roomTypeGrid}>
+                  {roomTypes.map((rt) => (
+                    <TouchableOpacity
+                      key={rt.id}
+                      style={[
+                        styles.roomTypeOption,
+                        selectedRoomType?.id === rt.id && styles.roomTypeSelected
+                      ]}
+                      onPress={() => setSelectedRoomType(rt)}
+                    >
+                      <Text style={[
+                        styles.roomTypeText,
+                        selectedRoomType?.id === rt.id && styles.roomTypeTextSelected
+                      ]}>{rt.name}</Text>
+                      <Text style={[
+                        styles.roomTypeCredits,
+                        selectedRoomType?.id === rt.id && styles.roomTypeTextSelected
+                      ]}>{rt.credits} cr</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.label}>Room Status</Text>
+                <View style={styles.statusRow}>
+                  <TouchableOpacity
+                    style={[styles.statusBtn, roomStatus === 'departure' && styles.statusBtnActive]}
+                    onPress={() => setRoomStatus('departure')}
+                  >
+                    <Text style={styles.statusEmoji}>🚪</Text>
+                    <Text style={[styles.statusText, roomStatus === 'departure' && styles.statusTextActive]}>Departure</Text>
+                    <Text style={styles.statusMultiplier}>×1.0</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.statusBtn, roomStatus === 'linen_change' && styles.statusBtnActive]}
+                    onPress={() => setRoomStatus('linen_change')}
+                  >
+                    <Text style={styles.statusEmoji}>🛏️</Text>
+                    <Text style={[styles.statusText, roomStatus === 'linen_change' && styles.statusTextActive]}>Linen</Text>
+                    <Text style={styles.statusMultiplier}>×0.7</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.statusBtn, roomStatus === 'stayover' && styles.statusBtnActive]}
+                    onPress={() => setRoomStatus('stayover')}
+                  >
+                    <Text style={styles.statusEmoji}>🧹</Text>
+                    <Text style={[styles.statusText, roomStatus === 'stayover' && styles.statusTextActive]}>Stayover</Text>
+                    <Text style={styles.statusMultiplier}>×0.5</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.label}>Number of Rooms</Text>
+                <View style={styles.counterRow}>
+                  <TouchableOpacity 
+                    style={styles.counterBtn}
+                    onPress={() => setRoomCount(String(Math.max(1, parseInt(roomCount) - 1)))}
+                  >
+                    <Ionicons name="remove" size={24} color="#6366f1" />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.counterInput}
+                    value={roomCount}
+                    onChangeText={setRoomCount}
+                    keyboardType="numeric"
+                  />
+                  <TouchableOpacity 
+                    style={styles.counterBtn}
+                    onPress={() => setRoomCount(String(parseInt(roomCount) + 1))}
+                  >
+                    <Ionicons name="add" size={24} color="#6366f1" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Credits Preview */}
+                {selectedRoomType && (
+                  <View style={styles.creditsPreview}>
+                    <Text style={styles.creditsLabel}>Total Credits:</Text>
+                    <Text style={styles.creditsValue}>
+                      {(selectedRoomType.credits * (roomStatus === 'departure' ? 1.0 : roomStatus === 'linen_change' ? 0.7 : 0.5) * parseInt(roomCount || '0')).toFixed(1)}
+                    </Text>
+                  </View>
+                )}
+
+                <Text style={styles.label}>Notes (optional)</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={roomNotes}
+                  onChangeText={setRoomNotes}
+                  placeholder="Add notes..."
+                  multiline
+                  placeholderTextColor="#9ca3af"
+                />
+              </View>
+            ) : null}
             
             <View style={{ height: 50 }} />
           </ScrollView>
