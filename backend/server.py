@@ -461,7 +461,10 @@ class RoomType(BaseModel):
     id: Optional[str] = None
     site_id: Optional[str] = None  # Site-specific, null for global
     name: str  # Standard, Suite, Apartment, Studio, etc.
-    credits: float = 1.0  # Credit value for this room type
+    # Time-based credits (in minutes) for each status
+    departure_minutes: int = 30  # Full checkout clean
+    linen_change_minutes: int = 20  # Linen change only
+    stayover_minutes: int = 15  # Light clean
     description: Optional[str] = None
     active: bool = True
     created_at: Optional[datetime] = None
@@ -469,7 +472,9 @@ class RoomType(BaseModel):
 class RoomTypeCreate(BaseModel):
     site_id: Optional[str] = None
     name: str
-    credits: float = 1.0
+    departure_minutes: int = 30
+    linen_change_minutes: int = 20
+    stayover_minutes: int = 15
     description: Optional[str] = None
 
 class RoomCleaningEntry(BaseModel):
@@ -482,8 +487,8 @@ class RoomCleaningEntry(BaseModel):
     room_type_name: str  # Denormalized for easy display
     status: str  # departure, linen_change, stayover
     count: int = 1  # Number of rooms cleaned
-    credits_per_room: float = 1.0
-    total_credits: float = 0.0
+    minutes_per_room: int = 30  # Time credit in minutes
+    total_minutes: int = 0  # Total time credit
     notes: Optional[str] = None
     created_at: Optional[datetime] = None
 
