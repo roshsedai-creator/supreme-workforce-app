@@ -532,8 +532,13 @@ export default function HomeScreen() {
             <TouchableOpacity onPress={() => setShowEntryModal(false)}>
               <Text style={styles.cancelBtn}>Cancel</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{entryMode === 'daily' ? 'Daily Entry' : 'Fortnight Entry'}</Text>
-            <TouchableOpacity onPress={entryMode === 'daily' ? submitDailyTimesheet : submitFortnightTimesheet} disabled={loading}>
+            <Text style={styles.modalTitle}>
+              {entryMode === 'daily' ? 'Daily Entry' : entryMode === 'fortnight' ? 'Fortnight Entry' : 'Room Cleaning'}
+            </Text>
+            <TouchableOpacity 
+              onPress={entryMode === 'daily' ? submitDailyTimesheet : entryMode === 'fortnight' ? submitFortnightTimesheet : submitRoomCleaning} 
+              disabled={loading}
+            >
               {loading ? <ActivityIndicator size="small" color="#6366f1" /> : <Text style={styles.submitBtn}>Submit</Text>}
             </TouchableOpacity>
           </View>
