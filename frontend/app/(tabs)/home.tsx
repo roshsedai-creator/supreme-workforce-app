@@ -502,9 +502,14 @@ export default function HomeScreen() {
                 </Text>
               </View>
               <View style={styles.roomSummaryRow}>
-                <Text style={styles.roomSummaryLabel}>Total Credits</Text>
+                <Text style={styles.roomSummaryLabel}>Total Time Credit</Text>
                 <Text style={styles.roomSummaryValue}>
-                  {todayRoomEntries.reduce((sum, e) => sum + e.total_credits, 0).toFixed(1)}
+                  {(() => {
+                    const totalMins = todayRoomEntries.reduce((sum, e) => sum + (e.total_minutes || 0), 0);
+                    const hours = Math.floor(totalMins / 60);
+                    const mins = totalMins % 60;
+                    return hours > 0 ? `${hours}h ${mins}m` : `${totalMins}m`;
+                  })()}
                 </Text>
               </View>
               {todayRoomEntries.map((entry, index) => (
@@ -513,7 +518,7 @@ export default function HomeScreen() {
                     <Text style={styles.roomEntryType}>{entry.room_type_name}</Text>
                     <Text style={styles.roomEntryStatus}>
                       {entry.status === 'departure' ? '🚪 Departure' : 
-                       entry.status === 'linen_change' ? '🛏️ Linen' : '🧹 Stayover'}
+                       entry.status === 'linen_change' ? '🛏️ Linen' : '🧹 Stayover'} • {entry.total_minutes || 0}m
                     </Text>
                   </View>
                   <View style={styles.roomEntryRight}>
