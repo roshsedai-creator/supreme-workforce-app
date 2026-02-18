@@ -1760,6 +1760,93 @@ export default function AdminScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Room Type Modal */}
+      <Modal
+        visible={showRoomTypeModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowRoomTypeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingRoomType ? 'Edit Room Type' : 'Add Room Type'}
+              </Text>
+              <TouchableOpacity onPress={() => setShowRoomTypeModal(false)}>
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Room Type Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={roomTypeName}
+                onChangeText={setRoomTypeName}
+                placeholder="e.g., Standard Room"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>🚪 Departure Time (minutes) *</Text>
+              <TextInput
+                style={styles.input}
+                value={departureMinutes}
+                onChangeText={setDepartureMinutes}
+                placeholder="30"
+                keyboardType="numeric"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>🛏️ Linen Change Time (minutes) *</Text>
+              <TextInput
+                style={styles.input}
+                value={linenMinutes}
+                onChangeText={setLinenMinutes}
+                placeholder="20"
+                keyboardType="numeric"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>🧹 Stayover Time (minutes) *</Text>
+              <TextInput
+                style={styles.input}
+                value={stayoverMinutes}
+                onChangeText={setStayoverMinutes}
+                placeholder="15"
+                keyboardType="numeric"
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <Text style={styles.inputLabel}>Description (optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={roomTypeDescription}
+                onChangeText={setRoomTypeDescription}
+                placeholder="Description..."
+                multiline
+                numberOfLines={3}
+                placeholderTextColor={colors.gray[400]}
+              />
+
+              <TouchableOpacity
+                style={[styles.saveButton, loading && styles.disabledButton]}
+                onPress={saveRoomType}
+                disabled={loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={styles.saveButtonText}>
+                    {editingRoomType ? 'Update Room Type' : 'Create Room Type'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
