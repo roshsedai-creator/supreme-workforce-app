@@ -743,7 +743,7 @@ export default function HomeScreen() {
                       <Text style={[
                         styles.roomTypeCredits,
                         selectedRoomType?.id === rt.id && styles.roomTypeTextSelected
-                      ]}>{rt.credits} cr</Text>
+                      ]}>{rt.departure_minutes || 30}m</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -756,7 +756,7 @@ export default function HomeScreen() {
                   >
                     <Text style={styles.statusEmoji}>🚪</Text>
                     <Text style={[styles.statusText, roomStatus === 'departure' && styles.statusTextActive]}>Departure</Text>
-                    <Text style={styles.statusMultiplier}>×1.0</Text>
+                    <Text style={styles.statusMultiplier}>{selectedRoomType?.departure_minutes || 30}m</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.statusBtn, roomStatus === 'linen_change' && styles.statusBtnActive]}
@@ -764,7 +764,7 @@ export default function HomeScreen() {
                   >
                     <Text style={styles.statusEmoji}>🛏️</Text>
                     <Text style={[styles.statusText, roomStatus === 'linen_change' && styles.statusTextActive]}>Linen</Text>
-                    <Text style={styles.statusMultiplier}>×0.7</Text>
+                    <Text style={styles.statusMultiplier}>{selectedRoomType?.linen_change_minutes || 20}m</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.statusBtn, roomStatus === 'stayover' && styles.statusBtnActive]}
@@ -772,7 +772,7 @@ export default function HomeScreen() {
                   >
                     <Text style={styles.statusEmoji}>🧹</Text>
                     <Text style={[styles.statusText, roomStatus === 'stayover' && styles.statusTextActive]}>Stayover</Text>
-                    <Text style={styles.statusMultiplier}>×0.5</Text>
+                    <Text style={styles.statusMultiplier}>{selectedRoomType?.stayover_minutes || 15}m</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -798,12 +798,22 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
 
-                {/* Credits Preview */}
+                {/* Time Preview */}
                 {selectedRoomType && (
                   <View style={styles.creditsPreview}>
-                    <Text style={styles.creditsLabel}>Total Credits:</Text>
+                    <Text style={styles.creditsLabel}>Total Time:</Text>
                     <Text style={styles.creditsValue}>
-                      {(selectedRoomType.credits * (roomStatus === 'departure' ? 1.0 : roomStatus === 'linen_change' ? 0.7 : 0.5) * parseInt(roomCount || '0')).toFixed(1)}
+                      {(() => {
+                        const mins = roomStatus === 'departure' 
+                          ? (selectedRoomType.departure_minutes || 30)
+                          : roomStatus === 'linen_change' 
+                            ? (selectedRoomType.linen_change_minutes || 20)
+                            : (selectedRoomType.stayover_minutes || 15);
+                        const totalMins = mins * parseInt(roomCount || '0');
+                        const hours = Math.floor(totalMins / 60);
+                        const remMins = totalMins % 60;
+                        return hours > 0 ? `${hours}h ${remMins}m` : `${remMins}m`;
+                      })()}
                     </Text>
                   </View>
                 )}
