@@ -454,6 +454,76 @@ class RecurringTemplateCreate(BaseModel):
     end_time: str
 
 # =====================
+# ROOM CLEANING MODELS
+# =====================
+
+class RoomType(BaseModel):
+    id: Optional[str] = None
+    site_id: Optional[str] = None  # Site-specific, null for global
+    name: str  # Standard, Suite, Apartment, Studio, etc.
+    credits: float = 1.0  # Credit value for this room type
+    description: Optional[str] = None
+    active: bool = True
+    created_at: Optional[datetime] = None
+
+class RoomTypeCreate(BaseModel):
+    site_id: Optional[str] = None
+    name: str
+    credits: float = 1.0
+    description: Optional[str] = None
+
+class RoomCleaningEntry(BaseModel):
+    id: Optional[str] = None
+    timesheet_id: Optional[str] = None  # Link to timesheet if applicable
+    employee_id: str
+    site_id: str
+    date: str  # YYYY-MM-DD
+    room_type_id: str
+    room_type_name: str  # Denormalized for easy display
+    status: str  # departure, linen_change, stayover
+    count: int = 1  # Number of rooms cleaned
+    credits_per_room: float = 1.0
+    total_credits: float = 0.0
+    notes: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+class RoomCleaningCreate(BaseModel):
+    employee_id: str
+    site_id: str
+    date: str
+    room_type_id: str
+    status: str  # departure, linen_change, stayover
+    count: int = 1
+    notes: Optional[str] = None
+
+# =====================
+# EMPLOYEE PAY RATES MODELS
+# =====================
+
+class EmployeePayRate(BaseModel):
+    id: Optional[str] = None
+    employee_id: str
+    employee_type: str = "cash"  # abn, cash
+    abn_number: Optional[str] = None  # For ABN contractors
+    weekday_rate: float = 0.0  # Per hour
+    saturday_rate: float = 0.0
+    sunday_rate: float = 0.0
+    public_holiday_rate: float = 0.0
+    credit_rate: float = 0.0  # $ per room credit
+    effective_from: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+class EmployeePayRateUpdate(BaseModel):
+    employee_type: str = "cash"
+    abn_number: Optional[str] = None
+    weekday_rate: float = 0.0
+    saturday_rate: float = 0.0
+    sunday_rate: float = 0.0
+    public_holiday_rate: float = 0.0
+    credit_rate: float = 0.0
+
+# =====================
 # AUTH ENDPOINTS
 # =====================
 
