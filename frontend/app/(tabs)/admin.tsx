@@ -133,14 +133,16 @@ export default function AdminScreen() {
   const fetchData = useCallback(async () => {
     try {
       console.log('Fetching admin data...');
-      const [sitesData, usersData, payRatesData] = await Promise.all([
+      const [sitesData, usersData, payRatesData, roomTypesData] = await Promise.all([
         getSites(),
         getUsers(),
         axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/pay-rates`),
+        axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/room-types`),
       ]);
       console.log(`Loaded: ${sitesData?.length || 0} sites, ${usersData?.length || 0} users`);
       setSites(sitesData || []);
       setUsers(usersData || []);
+      setRoomTypes(roomTypesData.data || []);
       
       // Deduplicate pay rates by award_level (keep the first occurrence of each level)
       const uniquePayRates = (payRatesData.data || []).reduce((acc: any[], rate: any) => {
