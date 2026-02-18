@@ -3313,26 +3313,25 @@ async def get_room_cleaning_entries(
 @api_router.post("/room-cleaning")
 async def create_room_cleaning_entry(entry: RoomCleaningCreate):
     """Add a room cleaning entry"""
-    # Get room type to fetch credits
+    # Get room type to fetch minutes
     room_type = await db.room_types.find_one({"_id": ObjectId(entry.room_type_id)})
     if not room_type:
         raise HTTPException(status_code=404, detail="Room type not found")
     
-    # Calculate status multiplier
-    status_multipliers = {
-        "departure": 1.0,
-        "linen_change": 0.7,
-        "stayover": 0.5
-    }
-    multiplier = status_multipliers.get(entry.status, 1.0)
+    # Get minutes based on status
+    if entry.status == "departure":
+        minutes_per_room = room_type.get("departure_minutes", 30)
+    elif entry.status == "linen_change":
+        minutes_per_room = room_type.get("linen_change_minutes", 20)
+    else:  # stayover
+        minutes_per_room = room_type.get("stayover_minutes", 15)
     
-    credits_per_room = room_type.get("credits", 1.0) * multiplier
-    total_credits = credits_per_room * entry.count
+    total_minutes = minutes_per_room * entry.count
     
     entry_dict = entry.model_dump()
     entry_dict["room_type_name"] = room_type.get("name", "Unknown")
-    entry_dict["credits_per_room"] = credits_per_room
-    entry_dict["total_credits"] = total_credits
+    entry_dict["minutes_per_room"] = minutes_per_room
+    entry_dict["total_minutes"] = total_minutes
     entry_dict["created_at"] = datetime.utcnow()
     
     result = await db.room_cleaning.insert_one(entry_dict)
