@@ -871,6 +871,38 @@ export default function AdminScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
 
+        {/* Room Types Section */}
+        <View style={styles.cleanupSection}>
+          <View style={styles.roomTypeHeader}>
+            <Text style={styles.cleanupTitle}>Room Types</Text>
+            <TouchableOpacity style={styles.addRoomTypeBtn} onPress={() => openRoomTypeModal()}>
+              <Ionicons name="add" size={20} color="#fff" />
+              <Text style={styles.addRoomTypeBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {roomTypes.map((rt) => (
+            <View key={rt.id} style={styles.roomTypeCard}>
+              <View style={styles.roomTypeInfo}>
+                <Text style={styles.roomTypeName}>{rt.name}</Text>
+                <View style={styles.roomTypeMinutes}>
+                  <Text style={styles.minuteTag}>🚪 {rt.departure_minutes || 30}m</Text>
+                  <Text style={styles.minuteTag}>🛏️ {rt.linen_change_minutes || 20}m</Text>
+                  <Text style={styles.minuteTag}>🧹 {rt.stayover_minutes || 15}m</Text>
+                </View>
+              </View>
+              <View style={styles.roomTypeActions}>
+                <TouchableOpacity style={styles.editBtn} onPress={() => openRoomTypeModal(rt)}>
+                  <Ionicons name="pencil" size={18} color="#6366f1" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteRoomType(rt.id)}>
+                  <Ionicons name="trash" size={18} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+        </View>
+
         {/* Timesheet Cleanup Section */}
         <View style={styles.cleanupSection}>
           <Text style={styles.cleanupTitle}>Timesheet Cleanup</Text>
