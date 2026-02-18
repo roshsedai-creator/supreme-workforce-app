@@ -81,6 +81,16 @@ export default function AdminScreen() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedSiteId, setSelectedSiteId] = useState('');
   
+  // Room Types
+  const [roomTypes, setRoomTypes] = useState<any[]>([]);
+  const [showRoomTypeModal, setShowRoomTypeModal] = useState(false);
+  const [editingRoomType, setEditingRoomType] = useState<any>(null);
+  const [roomTypeName, setRoomTypeName] = useState('');
+  const [departureMinutes, setDepartureMinutes] = useState('30');
+  const [linenMinutes, setLinenMinutes] = useState('20');
+  const [stayoverMinutes, setStayoverMinutes] = useState('15');
+  const [roomTypeDescription, setRoomTypeDescription] = useState('');
+  
   // Permissions modal
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
