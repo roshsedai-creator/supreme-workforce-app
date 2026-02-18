@@ -3225,6 +3225,302 @@ async def get_employee_smart_dashboard(employee_id: str):
         "alerts": alerts
     }
 
+# =====================
+# ROOM TYPES ENDPOINTS
+# =====================
+
+@api_router.get("/room-types")
+async def get_room_types(site_id: Optional[str] = None):
+    """Get all room types, optionally filtered by site"""
+    query = {"active": True}
+    if site_id:
+        query["$or"] = [{"site_id": site_id}, {"site_id": None}]
+    
+    room_types = await db.room_types.find(query).to_list(100)
+    return [serialize_doc(rt) for rt in room_types]
+
+@api_router.post("/room-types")
+async def create_room_type(room_type: RoomTypeCreate):
+    """Create a new room type (Admin only)"""
+    rt_dict = room_type.model_dump()
+    rt_dict["active"] = True
+    rt_dict["created_at"] = datetime.utcnow()
+    
+    result = await db.room_types.insert_one(rt_dict)
+    rt_dict["id"] = str(result.inserted_id)
+    
+    return {"success": True, "room_type": serialize_doc(rt_dict)}
+
+@api_router.put("/room-types/{room_type_id}")
+async def update_room_type(room_type_id: str, room_type: RoomTypeCreate):
+    """Update a room type"""
+    update_data = room_type.model_dump()
+    
+    result = await db.room_types.update_one(
+        {"_id": ObjectId(room_type_id)},
+        {"$set": update_data}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Room type not found")
+    
+    return {"success": True, "message": "Room type updated"}
+
+@api_router.delete("/room-types/{room_type_id}")
+async def delete_room_type(room_type_id: str):
+    """Soft delete a room type"""
+    result = await db.room_types.update_one(
+        {"_id": ObjectId(room_type_id)},
+        {"$set": {"active": False}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Room type not found")
+    
+    return {"success": True, "message": "Room type deleted"}
+
+# =====================
+# ROOM CLEANING ENDPOINTS
+# =====================
+
+@api_router.get("/room-cleaning")
+async def get_room_cleaning_entries(
+    employee_id: Optional[str] = None,
+    site_id: Optional[str] = None,
+    date: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None
+):
+    """Get room cleaning entries with filters"""
+    query = {}
+    if employee_id:
+        query["employee_id"] = employee_id
+    if site_id:
+        query["site_id"] = site_id
+    if date:
+        query["date"] = date
+    if start_date and end_date:
+        query["date"] = {"$gte": start_date, "$lte": end_date}
+    
+    entries = await db.room_cleaning.find(query).sort("created_at", -1).to_list(500)
+    return [serialize_doc(entry) for entry in entries]
+
+@api_router.post("/room-cleaning")
+async def create_room_cleaning_entry(entry: RoomCleaningCreate):
+    """Add a room cleaning entry"""
+    # Get room type to fetch credits
+    room_type = await db.room_types.find_one({"_id": ObjectId(entry.room_type_id)})
+    if not room_type:
+        raise HTTPException(status_code=404, detail="Room type not found")
+    
+    # Calculate status multiplier
+    status_multipliers = {
+        "departure": 1.0,
+        "linen_change": 0.7,
+        "stayover": 0.5
+    }
+    multiplier = status_multipliers.get(entry.status, 1.0)
+    
+    credits_per_room = room_type.get("credits", 1.0) * multiplier
+    total_credits = credits_per_room * entry.count
+    
+    entry_dict = entry.model_dump()
+    entry_dict["room_type_name"] = room_type.get("name", "Unknown")
+    entry_dict["credits_per_room"] = credits_per_room
+    entry_dict["total_credits"] = total_credits
+    entry_dict["created_at"] = datetime.utcnow()
+    
+    result = await db.room_cleaning.insert_one(entry_dict)
+    entry_dict["id"] = str(result.inserted_id)
+    
+    return {"success": True, "entry": serialize_doc(entry_dict)}
+
+@api_router.delete("/room-cleaning/{entry_id}")
+async def delete_room_cleaning_entry(entry_id: str):
+    """Delete a room cleaning entry"""
+    result = await db.room_cleaning.delete_one({"_id": ObjectId(entry_id)})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Entry not found")
+    
+    return {"success": True, "message": "Entry deleted"}
+
+# =====================
+# EMPLOYEE PAY RATES ENDPOINTS
+# =====================
+
+@api_router.get("/employee-pay-rates")
+async def get_all_employee_pay_rates():
+    """Get all employee pay rates"""
+    rates = await db.employee_pay_rates.find().to_list(500)
+    return [serialize_doc(rate) for rate in rates]
+
+@api_router.get("/employee-pay-rates/{employee_id}")
+async def get_employee_pay_rate(employee_id: str):
+    """Get pay rate for a specific employee"""
+    rate = await db.employee_pay_rates.find_one({"employee_id": employee_id})
+    if not rate:
+        # Return default rates
+        return {
+            "employee_id": employee_id,
+            "employee_type": "cash",
+            "weekday_rate": 0,
+            "saturday_rate": 0,
+            "sunday_rate": 0,
+            "public_holiday_rate": 0,
+            "credit_rate": 0
+        }
+    return serialize_doc(rate)
+
+@api_router.put("/employee-pay-rates/{employee_id}")
+async def update_employee_pay_rate(employee_id: str, rate: EmployeePayRateUpdate):
+    """Set or update pay rate for an employee (Admin only)"""
+    rate_dict = rate.model_dump()
+    rate_dict["employee_id"] = employee_id
+    rate_dict["updated_at"] = datetime.utcnow()
+    
+    result = await db.employee_pay_rates.update_one(
+        {"employee_id": employee_id},
+        {"$set": rate_dict, "$setOnInsert": {"created_at": datetime.utcnow()}},
+        upsert=True
+    )
+    
+    return {"success": True, "message": "Pay rate updated"}
+
+# =====================
+# WAGE CALCULATION ENDPOINTS
+# =====================
+
+@api_router.get("/wages/calculate/{employee_id}")
+async def calculate_wages(
+    employee_id: str,
+    period: str = "daily",  # daily, weekly, fortnightly
+    date: Optional[str] = None  # For daily, specific date
+):
+    """Calculate wages for an employee"""
+    # Get employee pay rates
+    pay_rate = await db.employee_pay_rates.find_one({"employee_id": employee_id})
+    if not pay_rate:
+        pay_rate = {
+            "weekday_rate": 0,
+            "saturday_rate": 0,
+            "sunday_rate": 0,
+            "public_holiday_rate": 0,
+            "credit_rate": 0
+        }
+    
+    # Calculate date range
+    now = datetime.utcnow()
+    if date:
+        target_date = datetime.strptime(date, "%Y-%m-%d")
+    else:
+        target_date = now
+    
+    if period == "daily":
+        start_date = target_date.strftime("%Y-%m-%d")
+        end_date = start_date
+    elif period == "weekly":
+        # Start of week (Monday)
+        start_of_week = target_date - timedelta(days=target_date.weekday())
+        start_date = start_of_week.strftime("%Y-%m-%d")
+        end_date = (start_of_week + timedelta(days=6)).strftime("%Y-%m-%d")
+    else:  # fortnightly
+        # Last 14 days
+        start_date = (target_date - timedelta(days=13)).strftime("%Y-%m-%d")
+        end_date = target_date.strftime("%Y-%m-%d")
+    
+    # Get timesheets for the period
+    timesheets = await db.timesheets.find({
+        "employee_id": employee_id,
+        "approval_status": "approved",
+        "clock_in": {"$ne": None}
+    }).to_list(500)
+    
+    # Filter by date range
+    time_wages = 0
+    total_hours = 0
+    time_breakdown = []
+    
+    for ts in timesheets:
+        if ts.get("clock_in"):
+            ts_date = ts["clock_in"].strftime("%Y-%m-%d")
+            if start_date <= ts_date <= end_date:
+                hours = ts.get("total_hours", 0)
+                total_hours += hours
+                
+                # Determine day type
+                ts_datetime = ts["clock_in"]
+                day_of_week = ts_datetime.weekday()
+                is_ph, ph_name = is_public_holiday(ts_datetime)
+                
+                if is_ph:
+                    rate = pay_rate.get("public_holiday_rate", 0)
+                    day_type = f"Public Holiday ({ph_name})"
+                elif day_of_week == 5:  # Saturday
+                    rate = pay_rate.get("saturday_rate", 0)
+                    day_type = "Saturday"
+                elif day_of_week == 6:  # Sunday
+                    rate = pay_rate.get("sunday_rate", 0)
+                    day_type = "Sunday"
+                else:
+                    rate = pay_rate.get("weekday_rate", 0)
+                    day_type = "Weekday"
+                
+                day_pay = hours * rate
+                time_wages += day_pay
+                
+                time_breakdown.append({
+                    "date": ts_date,
+                    "hours": hours,
+                    "day_type": day_type,
+                    "rate": rate,
+                    "pay": round(day_pay, 2)
+                })
+    
+    # Get room cleaning credits for the period
+    room_entries = await db.room_cleaning.find({
+        "employee_id": employee_id,
+        "date": {"$gte": start_date, "$lte": end_date}
+    }).to_list(500)
+    
+    total_credits = sum(entry.get("total_credits", 0) for entry in room_entries)
+    credit_rate = pay_rate.get("credit_rate", 0)
+    room_wages = total_credits * credit_rate
+    
+    room_breakdown = []
+    for entry in room_entries:
+        room_breakdown.append({
+            "date": entry.get("date"),
+            "room_type": entry.get("room_type_name"),
+            "status": entry.get("status"),
+            "count": entry.get("count"),
+            "credits": entry.get("total_credits", 0),
+            "pay": round(entry.get("total_credits", 0) * credit_rate, 2)
+        })
+    
+    total_wages = time_wages + room_wages
+    
+    return {
+        "success": True,
+        "employee_id": employee_id,
+        "period": period,
+        "start_date": start_date,
+        "end_date": end_date,
+        "employee_type": pay_rate.get("employee_type", "cash"),
+        "time_based": {
+            "total_hours": round(total_hours, 2),
+            "total_wages": round(time_wages, 2),
+            "breakdown": time_breakdown
+        },
+        "room_credits": {
+            "total_credits": round(total_credits, 2),
+            "credit_rate": credit_rate,
+            "total_wages": round(room_wages, 2),
+            "breakdown": room_breakdown
+        },
+        "total_wages": round(total_wages, 2)
+    }
+
 # Root endpoint
 @api_router.get("/")
 async def root():
