@@ -372,6 +372,57 @@ export default function HomeScreen() {
     }
   };
 
+  const submitRoomCleaning = async () => {
+    if (!roomDate || !selectedRoomType || !roomCount) {
+      Alert.alert('Missing Fields', 'Please fill in all required fields');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const response = await axios.post(`${backendUrl}/api/room-cleaning`, {
+        employee_id: user?.id,
+        site_id: user?.site_id || 'default',
+        date: roomDate,
+        room_type_id: selectedRoomType.id,
+        status: roomStatus,
+        count: parseInt(roomCount) || 1,
+        notes: roomNotes,
+      });
+
+      if (response.data.success) {
+        Alert.alert('Success', `${roomCount} ${selectedRoomType.name}(s) logged!`);
+        setShowEntryModal(false);
+        fetchTodayRoomEntries();
+        // Reset form
+        setRoomCount('1');
+        setRoomNotes('');
+      }
+    } catch (error: any) {
+      console.error('Room cleaning submit error:', error);
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to submit');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteRoomEntry = async (entryId: string) => {
+    if (Platform.OS === 'web') {
+      if (!window.confirm('Delete this room entry?')) return;
+    } else {
+      // For mobile, use Alert
+    }
+
+    try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      await axios.delete(`${backendUrl}/api/room-cleaning/${entryId}`);
+      fetchTodayRoomEntries();
+    } catch (error) {
+      console.error('Delete error:', error);
+    }
+  };
+
   const updateFortnightEntry = (index: number, field: string, value: string) => {
     const updated = [...fortnightEntries];
     updated[index][field] = value;
