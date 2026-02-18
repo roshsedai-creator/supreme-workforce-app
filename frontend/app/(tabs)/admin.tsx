@@ -212,6 +212,82 @@ export default function AdminScreen() {
     }
   };
 
+  // Room Type functions
+  const openRoomTypeModal = (roomType?: any) => {
+    if (roomType) {
+      setEditingRoomType(roomType);
+      setRoomTypeName(roomType.name || '');
+      setDepartureMinutes(String(roomType.departure_minutes || 30));
+      setLinenMinutes(String(roomType.linen_change_minutes || 20));
+      setStayoverMinutes(String(roomType.stayover_minutes || 15));
+      setRoomTypeDescription(roomType.description || '');
+    } else {
+      setEditingRoomType(null);
+      setRoomTypeName('');
+      setDepartureMinutes('30');
+      setLinenMinutes('20');
+      setStayoverMinutes('15');
+      setRoomTypeDescription('');
+    }
+    setShowRoomTypeModal(true);
+  };
+
+  const saveRoomType = async () => {
+    if (!roomTypeName.trim()) {
+      Alert.alert('Error', 'Please enter a room type name');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const data = {
+        name: roomTypeName.trim(),
+        departure_minutes: parseInt(departureMinutes) || 30,
+        linen_change_minutes: parseInt(linenMinutes) || 20,
+        stayover_minutes: parseInt(stayoverMinutes) || 15,
+        description: roomTypeDescription.trim() || null,
+      };
+
+      if (editingRoomType) {
+        await axios.put(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/room-types/${editingRoomType.id}`, data);
+        Alert.alert('Success', 'Room type updated');
+      } else {
+        await axios.post(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/room-types`, data);
+        Alert.alert('Success', 'Room type created');
+      }
+      
+      setShowRoomTypeModal(false);
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to save room type');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteRoomType = async (roomTypeId: string) => {
+    if (Platform.OS === 'web') {
+      if (!window.confirm('Delete this room type?')) return;
+    } else {
+      Alert.alert('Confirm', 'Delete this room type?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: () => performDeleteRoomType(roomTypeId) }
+      ]);
+      return;
+    }
+    performDeleteRoomType(roomTypeId);
+  };
+
+  const performDeleteRoomType = async (roomTypeId: string) => {
+    try {
+      await axios.delete(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/room-types/${roomTypeId}`);
+      Alert.alert('Success', 'Room type deleted');
+      fetchData();
+    } catch (error: any) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to delete');
+    }
+  };
+
   // Call fetchData on mount
   useEffect(() => {
     fetchData();
