@@ -879,34 +879,78 @@ export default function AdminScreen() {
 
         {/* Room Types Section */}
         <View style={styles.cleanupSection}>
-          <View style={styles.roomTypeHeader}>
-            <Text style={styles.cleanupTitle}>Room Types</Text>
-            <TouchableOpacity style={styles.addRoomTypeBtn} onPress={() => openRoomTypeModal()}>
-              <Ionicons name="add" size={20} color="#fff" />
-              <Text style={styles.addRoomTypeBtnText}>Add</Text>
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.cleanupTitle}>Room Types by Site</Text>
           
-          {roomTypes.map((rt) => (
-            <View key={rt.id} style={styles.roomTypeCard}>
-              <View style={styles.roomTypeInfo}>
-                <Text style={styles.roomTypeName}>{rt.name}</Text>
-                <View style={styles.roomTypeMinutes}>
-                  <Text style={styles.minuteTag}>🚪 {rt.departure_minutes || 30}m</Text>
-                  <Text style={styles.minuteTag}>🛏️ {rt.linen_change_minutes || 20}m</Text>
-                  <Text style={styles.minuteTag}>🧹 {rt.stayover_minutes || 15}m</Text>
+          {/* Site Selector */}
+          <View style={styles.siteSelector}>
+            <Text style={styles.siteSelectorLabel}>Select Site/Hotel:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.siteChips}>
+              {sites.map((site) => (
+                <TouchableOpacity
+                  key={site.id}
+                  style={[
+                    styles.siteChip,
+                    roomTypeSiteId === site.id && styles.siteChipActive
+                  ]}
+                  onPress={() => setRoomTypeSiteId(site.id)}
+                >
+                  <Text style={[
+                    styles.siteChipText,
+                    roomTypeSiteId === site.id && styles.siteChipTextActive
+                  ]}>{site.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+
+          {roomTypeSiteId ? (
+            <>
+              <View style={styles.roomTypeHeader}>
+                <Text style={styles.roomTypeSubtitle}>
+                  {sites.find(s => s.id === roomTypeSiteId)?.name || 'Selected Site'}
+                </Text>
+                <TouchableOpacity style={styles.addRoomTypeBtn} onPress={() => openRoomTypeModal()}>
+                  <Ionicons name="add" size={20} color="#fff" />
+                  <Text style={styles.addRoomTypeBtnText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {roomTypes.filter(rt => rt.site_id === roomTypeSiteId).length === 0 ? (
+                <View style={styles.emptyRoomTypes}>
+                  <Ionicons name="bed-outline" size={48} color={colors.gray[300]} />
+                  <Text style={styles.emptyRoomTypesText}>No room types for this site</Text>
+                  <Text style={styles.emptyRoomTypesSubtext}>Tap "Add" to create room types</Text>
                 </View>
-              </View>
-              <View style={styles.roomTypeActions}>
-                <TouchableOpacity style={styles.editBtn} onPress={() => openRoomTypeModal(rt)}>
-                  <Ionicons name="pencil" size={18} color="#6366f1" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteRoomType(rt.id)}>
-                  <Ionicons name="trash" size={18} color="#ef4444" />
-                </TouchableOpacity>
-              </View>
+              ) : (
+                roomTypes.filter(rt => rt.site_id === roomTypeSiteId).map((rt) => (
+                  <View key={rt.id} style={styles.roomTypeCard}>
+                    <View style={styles.roomTypeInfo}>
+                      <Text style={styles.roomTypeName}>{rt.name}</Text>
+                      <View style={styles.roomTypeMinutes}>
+                        <Text style={styles.minuteTag}>🚪 {rt.departure_minutes || 30}m</Text>
+                        <Text style={styles.minuteTag}>🛏️ {rt.linen_change_minutes || 20}m</Text>
+                        <Text style={styles.minuteTag}>🧹 {rt.stayover_minutes || 15}m</Text>
+                      </View>
+                    </View>
+                    <View style={styles.roomTypeActions}>
+                      <TouchableOpacity style={styles.editBtn} onPress={() => openRoomTypeModal(rt)}>
+                        <Ionicons name="pencil" size={18} color="#6366f1" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteRoomType(rt.id)}>
+                        <Ionicons name="trash" size={18} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              )}
+            </>
+          ) : (
+            <View style={styles.selectSitePrompt}>
+              <Ionicons name="business-outline" size={48} color={colors.gray[300]} />
+              <Text style={styles.selectSiteText}>Select a site above</Text>
+              <Text style={styles.selectSiteSubtext}>to manage its room types</Text>
             </View>
-          ))}
+          )}
         </View>
 
         {/* Timesheet Cleanup Section */}
