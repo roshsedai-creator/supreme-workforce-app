@@ -90,6 +90,7 @@ export default function AdminScreen() {
   const [linenMinutes, setLinenMinutes] = useState('20');
   const [stayoverMinutes, setStayoverMinutes] = useState('15');
   const [roomTypeDescription, setRoomTypeDescription] = useState('');
+  const [roomTypeSiteId, setRoomTypeSiteId] = useState<string>('');  // Selected site for room types
   
   // Permissions modal
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
