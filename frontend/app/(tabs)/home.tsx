@@ -605,27 +605,86 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Productivity Comparison Card */}
+        {(todayTimesheetHours > 0 || todayRoomEntries.length > 0) && (
+          <View style={styles.cardsSection}>
+            <Text style={styles.sectionTitle}>Today's Productivity</Text>
+            <View style={styles.productivityCard}>
+              {/* Main Stats Row */}
+              <View style={styles.productivityStatsRow}>
+                <View style={styles.productivityStat}>
+                  <Text style={styles.productivityStatLabel}>Timesheet</Text>
+                  <Text style={styles.productivityStatValue}>{todayTimesheetHours.toFixed(1)}h</Text>
+                  <Text style={styles.productivityStatSub}>Actual Hours</Text>
+                </View>
+                <View style={styles.productivityDivider} />
+                <View style={styles.productivityStat}>
+                  <Text style={styles.productivityStatLabel}>Room Credits</Text>
+                  <Text style={styles.productivityStatValue}>{getTodayRoomHours().toFixed(1)}h</Text>
+                  <Text style={styles.productivityStatSub}>Expected Hours</Text>
+                </View>
+                <View style={styles.productivityDivider} />
+                <View style={styles.productivityStat}>
+                  <Text style={styles.productivityStatLabel}>Variance</Text>
+                  <Text style={[
+                    styles.productivityStatValue,
+                    { color: getVariance() >= 0 ? '#10b981' : '#ef4444' }
+                  ]}>
+                    {getVariance() >= 0 ? '+' : ''}{getVariance().toFixed(1)}h
+                  </Text>
+                  <Text style={styles.productivityStatSub}>
+                    {getVariance() >= 0 ? 'Ahead' : 'Behind'}
+                  </Text>
+                </View>
+              </View>
+              
+              {/* Efficiency Bar */}
+              <View style={styles.efficiencySection}>
+                <View style={styles.efficiencyHeader}>
+                  <Text style={styles.efficiencyLabel}>Efficiency</Text>
+                  <Text style={styles.efficiencyPercent}>
+                    {todayTimesheetHours > 0 
+                      ? Math.round((getTodayRoomHours() / todayTimesheetHours) * 100) 
+                      : 0}%
+                  </Text>
+                </View>
+                <View style={styles.efficiencyBarBg}>
+                  <View style={[
+                    styles.efficiencyBarFill,
+                    { 
+                      width: `${Math.min(100, todayTimesheetHours > 0 ? (getTodayRoomHours() / todayTimesheetHours) * 100 : 0)}%`,
+                      backgroundColor: (getTodayRoomHours() / todayTimesheetHours) >= 0.8 ? '#10b981' : '#f59e0b'
+                    }
+                  ]} />
+                </View>
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Today's Room Summary */}
         {todayRoomEntries.length > 0 && (
           <View style={styles.cardsSection}>
-            <Text style={styles.sectionTitle}>Today's Room Summary</Text>
+            <Text style={styles.sectionTitle}>Rooms Cleaned Today</Text>
             <View style={styles.roomSummaryCard}>
-              <View style={styles.roomSummaryRow}>
-                <Text style={styles.roomSummaryLabel}>Total Rooms</Text>
-                <Text style={styles.roomSummaryValue}>
-                  {todayRoomEntries.reduce((sum, e) => sum + e.count, 0)}
-                </Text>
-              </View>
-              <View style={styles.roomSummaryRow}>
-                <Text style={styles.roomSummaryLabel}>Total Time Credit</Text>
-                <Text style={styles.roomSummaryValue}>
-                  {(() => {
-                    const totalMins = todayRoomEntries.reduce((sum, e) => sum + (e.total_minutes || 0), 0);
-                    const hours = Math.floor(totalMins / 60);
-                    const mins = totalMins % 60;
-                    return hours > 0 ? `${hours}h ${mins}m` : `${totalMins}m`;
-                  })()}
-                </Text>
+              <View style={styles.roomSummaryHeader}>
+                <View style={styles.roomSummaryHeaderItem}>
+                  <Ionicons name="bed" size={20} color="#6366f1" />
+                  <Text style={styles.roomSummaryHeaderValue}>
+                    {todayRoomEntries.reduce((sum, e) => sum + e.count, 0)} rooms
+                  </Text>
+                </View>
+                <View style={styles.roomSummaryHeaderItem}>
+                  <Ionicons name="time" size={20} color="#10b981" />
+                  <Text style={styles.roomSummaryHeaderValue}>
+                    {(() => {
+                      const totalMins = getTodayRoomMinutes();
+                      const hours = Math.floor(totalMins / 60);
+                      const mins = totalMins % 60;
+                      return hours > 0 ? `${hours}h ${mins}m` : `${totalMins}m`;
+                    })()}
+                  </Text>
+                </View>
               </View>
               {todayRoomEntries.map((entry, index) => (
                 <View key={entry.id || index} style={styles.roomEntryItem}>
@@ -638,7 +697,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={styles.roomEntryRight}>
                     <Text style={styles.roomEntryCount}>×{entry.count}</Text>
-                    <TouchableOpacity onPress={() => deleteRoomEntry(entry.id)}>
+                    <TouchableOpacity onPress={() => deleteTodayRoomEntry(entry.id)}>
                       <Ionicons name="trash-outline" size={18} color="#ef4444" />
                     </TouchableOpacity>
                   </View>
