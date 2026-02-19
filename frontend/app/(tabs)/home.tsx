@@ -486,51 +486,61 @@ export default function HomeScreen() {
   };
 
   const submitRoomCleaning = async () => {
-    if (!roomDate || !selectedRoomType || !roomCount) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields');
+    if (!roomDate || roomEntries.length === 0) {
+      Alert.alert('Missing Data', 'Please add at least one room entry');
       return;
     }
 
     setLoading(true);
-    try {
-      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
-      const response = await axios.post(`${backendUrl}/api/room-cleaning`, {
-        employee_id: user?.id,
-        site_id: user?.site_id || 'default',
-        date: roomDate,
-        room_type_id: selectedRoomType.id,
-        status: roomStatus,
-        count: parseInt(roomCount) || 1,
-        notes: roomNotes,
-      });
-
-      if (response.data.success) {
-        Alert.alert('Success', `${roomCount} ${selectedRoomType.name}(s) logged!`);
-        setShowEntryModal(false);
-        fetchTodayRoomEntries();
-        // Reset form
-        setRoomCount('1');
-        setRoomNotes('');
+    let successCount = 0;
+    const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+    
+    for (const entry of roomEntries) {
+      try {
+        await axios.post(`${backendUrl}/api/room-cleaning`, {
+          employee_id: user?.id,
+          site_id: user?.site_id || 'default',
+          date: roomDate,
+          room_type_id: entry.roomTypeId,
+          status: entry.status,
+          count: entry.count,
+          notes: roomNotes,
+        });
+        successCount++;
+      } catch (error: any) {
+        console.error('Room cleaning submit error:', error);
       }
-    } catch (error: any) {
-      console.error('Room cleaning submit error:', error);
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to submit');
-    } finally {
-      setLoading(false);
+    }
+
+    setLoading(false);
+    
+    if (successCount > 0) {
+      const totalRooms = getTotalRoomCount();
+      const totalMins = getTotalRoomMinutes();
+      const hours = Math.floor(totalMins / 60);
+      const mins = totalMins % 60;
+      Alert.alert('Success', `${totalRooms} room(s) logged! (${hours}h ${mins}m credit)`);
+      setShowEntryModal(false);
+      setRoomEntries([]);
+      setRoomNotes('');
+      fetchTodayRoomEntries();
+      fetchTodayTimesheet();
+      fetchProductivity();
+    } else {
+      Alert.alert('Error', 'Failed to submit room entries');
     }
   };
 
-  const deleteRoomEntry = async (entryId: string) => {
+  const deleteTodayRoomEntry = async (entryId: string) => {
     if (Platform.OS === 'web') {
       if (!window.confirm('Delete this room entry?')) return;
-    } else {
-      // For mobile, use Alert
     }
 
     try {
       const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
       await axios.delete(`${backendUrl}/api/room-cleaning/${entryId}`);
       fetchTodayRoomEntries();
+      fetchProductivity();
     } catch (error) {
       console.error('Delete error:', error);
     }
