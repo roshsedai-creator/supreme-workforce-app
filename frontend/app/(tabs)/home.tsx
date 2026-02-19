@@ -86,6 +86,108 @@ export default function HomeScreen() {
     }
   };
 
+  const fetchTodayTimesheet = async () => {
+    try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const today = getTodayDate();
+      const response = await axios.get(`${backendUrl}/api/timesheets?employee_id=${user?.id}`);
+      // Filter for today's entries
+      const todayEntries = response.data.filter((ts: any) => {
+        if (ts.clock_in) {
+          const tsDate = ts.clock_in.split('T')[0];
+          return tsDate === today;
+        }
+        return false;
+      });
+      const totalHours = todayEntries.reduce((sum: number, ts: any) => sum + (ts.total_hours || 0), 0);
+      setTodayTimesheetHours(totalHours);
+    } catch (error) {
+      console.log('Failed to fetch timesheets:', error);
+    }
+  };
+
+  const fetchProductivity = async () => {
+    try {
+      const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      const today = getTodayDate();
+      const response = await axios.get(`${backendUrl}/api/productivity/${user?.id}?date=${today}`);
+      setProductivity(response.data);
+    } catch (error) {
+      console.log('Failed to fetch productivity:', error);
+    }
+  };
+
+  // Add room entry to the list
+  const addRoomEntry = (roomType: any, status: string) => {
+    const minutes = status === 'departure' 
+      ? (roomType.departure_minutes || 30)
+      : status === 'linen_change' 
+        ? (roomType.linen_change_minutes || 20)
+        : (roomType.stayover_minutes || 15);
+    
+    // Check if same room type + status already exists
+    const existingIndex = roomEntries.findIndex(
+      e => e.roomTypeId === roomType.id && e.status === status
+    );
+    
+    if (existingIndex >= 0) {
+      // Increment count
+      const updated = [...roomEntries];
+      updated[existingIndex].count += 1;
+      updated[existingIndex].minutes = minutes * updated[existingIndex].count;
+      setRoomEntries(updated);
+    } else {
+      // Add new entry
+      setRoomEntries([...roomEntries, {
+        roomTypeId: roomType.id,
+        roomTypeName: roomType.name,
+        status,
+        count: 1,
+        minutes
+      }]);
+    }
+  };
+
+  // Remove room entry
+  const removeRoomEntry = (index: number) => {
+    const updated = [...roomEntries];
+    if (updated[index].count > 1) {
+      updated[index].count -= 1;
+      const roomType = roomTypes.find(rt => rt.id === updated[index].roomTypeId);
+      const mins = updated[index].status === 'departure' 
+        ? (roomType?.departure_minutes || 30)
+        : updated[index].status === 'linen_change'
+          ? (roomType?.linen_change_minutes || 20)
+          : (roomType?.stayover_minutes || 15);
+      updated[index].minutes = mins * updated[index].count;
+      setRoomEntries(updated);
+    } else {
+      updated.splice(index, 1);
+      setRoomEntries(updated);
+    }
+  };
+
+  // Calculate totals
+  const getTotalRoomMinutes = () => {
+    return roomEntries.reduce((sum, e) => sum + e.minutes, 0);
+  };
+
+  const getTotalRoomCount = () => {
+    return roomEntries.reduce((sum, e) => sum + e.count, 0);
+  };
+
+  const getTodayRoomMinutes = () => {
+    return todayRoomEntries.reduce((sum, e) => sum + (e.total_minutes || 0), 0);
+  };
+
+  const getTodayRoomHours = () => {
+    return getTodayRoomMinutes() / 60;
+  };
+
+  const getVariance = () => {
+    return todayTimesheetHours - getTodayRoomHours();
+  };
+
   const getTodayDate = () => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
