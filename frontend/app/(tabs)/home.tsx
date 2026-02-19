@@ -335,9 +335,8 @@ export default function HomeScreen() {
       setFortnightImage(null);
     } else if (mode === 'rooms') {
       setRoomDate(getTodayDate());
-      setRoomCount('1');
+      setRoomEntries([]);
       setRoomNotes('');
-      setRoomStatus('departure');
     }
     setShowEntryModal(true);
   };
