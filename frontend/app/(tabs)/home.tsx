@@ -888,7 +888,7 @@ export default function HomeScreen() {
             )}
             
             {entryMode === 'rooms' && (
-              /* ROOM CLEANING FORM */
+              /* ROOM CLEANING FORM - MULTI-SELECT */
               <View style={styles.form}>
                 <Text style={styles.label}>Date</Text>
                 <View style={styles.dateInputRow}>
@@ -904,98 +904,101 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <Text style={styles.label}>Room Type</Text>
-                <View style={styles.roomTypeGrid}>
-                  {roomTypes.map((rt) => (
-                    <TouchableOpacity
-                      key={rt.id}
-                      style={[
-                        styles.roomTypeOption,
-                        selectedRoomType?.id === rt.id && styles.roomTypeSelected
-                      ]}
-                      onPress={() => setSelectedRoomType(rt)}
-                    >
-                      <Text style={[
-                        styles.roomTypeText,
-                        selectedRoomType?.id === rt.id && styles.roomTypeTextSelected
-                      ]}>{rt.name}</Text>
-                      <Text style={[
-                        styles.roomTypeCredits,
-                        selectedRoomType?.id === rt.id && styles.roomTypeTextSelected
-                      ]}>{rt.departure_minutes || 30}m</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
+                <Text style={styles.label}>Select Room Types & Status</Text>
+                <Text style={styles.subLabel}>Tap to add, tap multiple times to increase count</Text>
+                
+                {/* Room Types Grid with Actions */}
+                {roomTypes.map((rt) => (
+                  <View key={rt.id} style={styles.roomTypeRow}>
+                    <View style={styles.roomTypeRowHeader}>
+                      <Text style={styles.roomTypeRowName}>{rt.name}</Text>
+                    </View>
+                    <View style={styles.roomTypeRowActions}>
+                      <TouchableOpacity 
+                        style={styles.roomActionBtn}
+                        onPress={() => addRoomEntry(rt, 'departure')}
+                      >
+                        <Text style={styles.roomActionEmoji}>🚪</Text>
+                        <Text style={styles.roomActionTime}>{rt.departure_minutes || 30}m</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.roomActionBtn}
+                        onPress={() => addRoomEntry(rt, 'linen_change')}
+                      >
+                        <Text style={styles.roomActionEmoji}>🛏️</Text>
+                        <Text style={styles.roomActionTime}>{rt.linen_change_minutes || 20}m</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={styles.roomActionBtn}
+                        onPress={() => addRoomEntry(rt, 'stayover')}
+                      >
+                        <Text style={styles.roomActionEmoji}>🧹</Text>
+                        <Text style={styles.roomActionTime}>{rt.stayover_minutes || 15}m</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))}
 
-                <Text style={styles.label}>Room Status</Text>
-                <View style={styles.statusRow}>
-                  <TouchableOpacity
-                    style={[styles.statusBtn, roomStatus === 'departure' && styles.statusBtnActive]}
-                    onPress={() => setRoomStatus('departure')}
-                  >
-                    <Text style={styles.statusEmoji}>🚪</Text>
-                    <Text style={[styles.statusText, roomStatus === 'departure' && styles.statusTextActive]}>Departure</Text>
-                    <Text style={styles.statusMultiplier}>{selectedRoomType?.departure_minutes || 30}m</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.statusBtn, roomStatus === 'linen_change' && styles.statusBtnActive]}
-                    onPress={() => setRoomStatus('linen_change')}
-                  >
-                    <Text style={styles.statusEmoji}>🛏️</Text>
-                    <Text style={[styles.statusText, roomStatus === 'linen_change' && styles.statusTextActive]}>Linen</Text>
-                    <Text style={styles.statusMultiplier}>{selectedRoomType?.linen_change_minutes || 20}m</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.statusBtn, roomStatus === 'stayover' && styles.statusBtnActive]}
-                    onPress={() => setRoomStatus('stayover')}
-                  >
-                    <Text style={styles.statusEmoji}>🧹</Text>
-                    <Text style={[styles.statusText, roomStatus === 'stayover' && styles.statusTextActive]}>Stayover</Text>
-                    <Text style={styles.statusMultiplier}>{selectedRoomType?.stayover_minutes || 15}m</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Text style={styles.label}>Number of Rooms</Text>
-                <View style={styles.counterRow}>
-                  <TouchableOpacity 
-                    style={styles.counterBtn}
-                    onPress={() => setRoomCount(String(Math.max(1, parseInt(roomCount) - 1)))}
-                  >
-                    <Ionicons name="remove" size={24} color="#6366f1" />
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.counterInput}
-                    value={roomCount}
-                    onChangeText={setRoomCount}
-                    keyboardType="numeric"
-                  />
-                  <TouchableOpacity 
-                    style={styles.counterBtn}
-                    onPress={() => setRoomCount(String(parseInt(roomCount) + 1))}
-                  >
-                    <Ionicons name="add" size={24} color="#6366f1" />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Time Preview */}
-                {selectedRoomType && (
-                  <View style={styles.creditsPreview}>
-                    <Text style={styles.creditsLabel}>Total Time:</Text>
-                    <Text style={styles.creditsValue}>
-                      {(() => {
-                        const mins = roomStatus === 'departure' 
-                          ? (selectedRoomType.departure_minutes || 30)
-                          : roomStatus === 'linen_change' 
-                            ? (selectedRoomType.linen_change_minutes || 20)
-                            : (selectedRoomType.stayover_minutes || 15);
-                        const totalMins = mins * parseInt(roomCount || '0');
-                        const hours = Math.floor(totalMins / 60);
-                        const remMins = totalMins % 60;
-                        return hours > 0 ? `${hours}h ${remMins}m` : `${remMins}m`;
-                      })()}
-                    </Text>
+                {/* Selected Rooms List */}
+                {roomEntries.length > 0 && (
+                  <View style={styles.selectedRoomsSection}>
+                    <Text style={styles.selectedRoomsTitle}>Added Rooms</Text>
+                    {roomEntries.map((entry, index) => (
+                      <View key={index} style={styles.selectedRoomItem}>
+                        <View style={styles.selectedRoomInfo}>
+                          <Text style={styles.selectedRoomName}>{entry.roomTypeName}</Text>
+                          <Text style={styles.selectedRoomStatus}>
+                            {entry.status === 'departure' ? '🚪 Departure' : 
+                             entry.status === 'linen_change' ? '🛏️ Linen' : '🧹 Stayover'}
+                          </Text>
+                        </View>
+                        <View style={styles.selectedRoomRight}>
+                          <TouchableOpacity 
+                            style={styles.selectedRoomMinus}
+                            onPress={() => removeRoomEntry(index)}
+                          >
+                            <Ionicons name="remove" size={16} color="#ef4444" />
+                          </TouchableOpacity>
+                          <Text style={styles.selectedRoomCount}>×{entry.count}</Text>
+                          <TouchableOpacity 
+                            style={styles.selectedRoomPlus}
+                            onPress={() => {
+                              const rt = roomTypes.find(r => r.id === entry.roomTypeId);
+                              if (rt) addRoomEntry(rt, entry.status);
+                            }}
+                          >
+                            <Ionicons name="add" size={16} color="#10b981" />
+                          </TouchableOpacity>
+                          <Text style={styles.selectedRoomMinutes}>{entry.minutes}m</Text>
+                        </View>
+                      </View>
+                    ))}
                   </View>
                 )}
+
+                {/* Total Summary */}
+                <View style={styles.roomTotalCard}>
+                  <View style={styles.roomTotalRow}>
+                    <View style={styles.roomTotalItem}>
+                      <Ionicons name="bed" size={24} color="#6366f1" />
+                      <Text style={styles.roomTotalValue}>{getTotalRoomCount()}</Text>
+                      <Text style={styles.roomTotalLabel}>Rooms</Text>
+                    </View>
+                    <View style={styles.roomTotalDivider} />
+                    <View style={styles.roomTotalItem}>
+                      <Ionicons name="time" size={24} color="#10b981" />
+                      <Text style={styles.roomTotalValue}>
+                        {(() => {
+                          const totalMins = getTotalRoomMinutes();
+                          const hours = Math.floor(totalMins / 60);
+                          const mins = totalMins % 60;
+                          return hours > 0 ? `${hours}h ${mins}m` : `${totalMins}m`;
+                        })()}
+                      </Text>
+                      <Text style={styles.roomTotalLabel}>Credit</Text>
+                    </View>
+                  </View>
+                </View>
 
                 <Text style={styles.label}>Notes (optional)</Text>
                 <TextInput
