@@ -1192,6 +1192,9 @@ const styles = StyleSheet.create({
 
   // Room Summary styles
   roomSummaryCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+  roomSummaryHeader: { flexDirection: 'row', justifyContent: 'space-around', paddingBottom: 16, borderBottomWidth: 2, borderBottomColor: '#f1f5f9', marginBottom: 12 },
+  roomSummaryHeaderItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  roomSummaryHeaderValue: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
   roomSummaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
   roomSummaryLabel: { fontSize: 14, color: '#64748b' },
   roomSummaryValue: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
@@ -1201,4 +1204,48 @@ const styles = StyleSheet.create({
   roomEntryStatus: { fontSize: 12, color: '#64748b', marginTop: 2 },
   roomEntryRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   roomEntryCount: { fontSize: 16, fontWeight: '700', color: '#6366f1' },
+  
+  // Productivity Card styles
+  productivityCard: { backgroundColor: '#fff', borderRadius: 20, padding: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 5 },
+  productivityStatsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  productivityStat: { flex: 1, alignItems: 'center' },
+  productivityStatLabel: { fontSize: 11, fontWeight: '600', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.5 },
+  productivityStatValue: { fontSize: 28, fontWeight: '800', color: '#1e293b', marginTop: 4 },
+  productivityStatSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  productivityDivider: { width: 1, height: 50, backgroundColor: '#e2e8f0' },
+  efficiencySection: { marginTop: 20, paddingTop: 20, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
+  efficiencyHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  efficiencyLabel: { fontSize: 14, fontWeight: '600', color: '#64748b' },
+  efficiencyPercent: { fontSize: 14, fontWeight: '800', color: '#1e293b' },
+  efficiencyBarBg: { height: 12, backgroundColor: '#f1f5f9', borderRadius: 6, overflow: 'hidden' },
+  efficiencyBarFill: { height: '100%', borderRadius: 6 },
+  
+  // Multi-room selection styles
+  subLabel: { fontSize: 12, color: '#94a3b8', marginBottom: 12, marginTop: -8 },
+  roomTypeRow: { backgroundColor: '#fff', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#e2e8f0' },
+  roomTypeRowHeader: { marginBottom: 10 },
+  roomTypeRowName: { fontSize: 16, fontWeight: '700', color: '#1e293b' },
+  roomTypeRowActions: { flexDirection: 'row', gap: 8 },
+  roomActionBtn: { flex: 1, backgroundColor: '#f8fafc', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#e2e8f0' },
+  roomActionEmoji: { fontSize: 20 },
+  roomActionTime: { fontSize: 11, color: '#64748b', fontWeight: '600', marginTop: 4 },
+  
+  selectedRoomsSection: { marginTop: 20, backgroundColor: '#fff', borderRadius: 12, padding: 16, borderWidth: 2, borderColor: '#6366f1' },
+  selectedRoomsTitle: { fontSize: 14, fontWeight: '700', color: '#6366f1', marginBottom: 12 },
+  selectedRoomItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f1f5f9' },
+  selectedRoomInfo: { flex: 1 },
+  selectedRoomName: { fontSize: 14, fontWeight: '600', color: '#1e293b' },
+  selectedRoomStatus: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  selectedRoomRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  selectedRoomMinus: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#fef2f2', alignItems: 'center', justifyContent: 'center' },
+  selectedRoomPlus: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#dcfce7', alignItems: 'center', justifyContent: 'center' },
+  selectedRoomCount: { fontSize: 16, fontWeight: '700', color: '#1e293b', minWidth: 30, textAlign: 'center' },
+  selectedRoomMinutes: { fontSize: 14, fontWeight: '600', color: '#6366f1', minWidth: 50, textAlign: 'right' },
+  
+  roomTotalCard: { backgroundColor: '#6366f1', borderRadius: 16, padding: 20, marginTop: 20 },
+  roomTotalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' },
+  roomTotalItem: { alignItems: 'center' },
+  roomTotalValue: { fontSize: 24, fontWeight: '800', color: '#fff', marginTop: 8 },
+  roomTotalLabel: { fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 4 },
+  roomTotalDivider: { width: 1, height: 60, backgroundColor: 'rgba(255,255,255,0.3)' },
 });
