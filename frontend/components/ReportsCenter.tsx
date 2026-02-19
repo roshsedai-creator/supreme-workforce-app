@@ -9,56 +9,50 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import axios from 'axios';
-import { colors } from '../constants/colors';
+import { LinearGradient } from 'expo-linear-gradient';
+
+const { width } = Dimensions.get('window');
 
 interface ReportsCenterProps {
   visible: boolean;
   onClose: () => void;
 }
 
-type ReportType = 'payroll' | 'timesheets' | 'abn';
+type ReportType = 'productivity' | 'payroll' | 'timesheets' | 'rooms';
 
 export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) {
-  const [selectedReport, setSelectedReport] = useState<ReportType>('timesheets');
+  const [selectedReport, setSelectedReport] = useState<ReportType>('productivity');
   const [sites, setSites] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedSite, setSelectedSite] = useState('all');
   const [selectedEmployee, setSelectedEmployee] = useState('all');
-  
-  // Set default dates: last 30 days
-  const getDefaultStartDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date;
-  };
-  
-  const [startDate, setStartDate] = useState(getDefaultStartDate());
-  const [endDate, setEndDate] = useState(new Date());
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState('today');
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<any>(null);
-  const [showDetailedView, setShowDetailedView] = useState(false);
 
   const reportTypes = [
-    { id: 'timesheets', name: 'Timesheets', icon: 'time-outline', description: 'Hours & status' },
-    { id: 'payroll', name: 'Payroll', icon: 'wallet-outline', description: 'Earnings' },
-    { id: 'abn', name: 'Contractors', icon: 'briefcase-outline', description: 'ABN details' },
+    { id: 'productivity', name: 'Productivity', icon: 'trending-up', color: '#10b981', gradient: ['#10b981', '#059669'] },
+    { id: 'payroll', name: 'Payroll', icon: 'wallet', color: '#6366f1', gradient: ['#6366f1', '#4f46e5'] },
+    { id: 'timesheets', name: 'Timesheets', icon: 'time', color: '#f59e0b', gradient: ['#f59e0b', '#d97706'] },
+    { id: 'rooms', name: 'Room Credits', icon: 'bed', color: '#ec4899', gradient: ['#ec4899', '#db2777'] },
+  ];
+
+  const periods = [
+    { id: 'today', name: 'Today' },
+    { id: 'week', name: 'This Week' },
+    { id: 'fortnight', name: 'Fortnight' },
+    { id: 'month', name: 'This Month' },
   ];
 
   useEffect(() => {
     if (visible) {
       loadData();
-      setStartDate(getDefaultStartDate());
-      setEndDate(new Date());
       setReportData(null);
-      setSelectedEmployee('all');
-      setSelectedSite('all');
     }
   }, [visible]);
 
@@ -75,530 +69,632 @@ export default function ReportsCenter({ visible, onClose }: ReportsCenterProps) 
     }
   };
 
+  const getDateRange = () => {
+    const now = new Date();
+    let start = new Date();
+    
+    switch (selectedPeriod) {
+      case 'today':
+        break;
+      case 'week':
+        start.setDate(now.getDate() - 7);
+        break;
+      case 'fortnight':
+        start.setDate(now.getDate() - 14);
+        break;
+      case 'month':
+        start.setDate(now.getDate() - 30);
+        break;
+    }
+    
+    return {
+      start_date: start.toISOString().split('T')[0],
+      end_date: now.toISOString().split('T')[0],
+    };
+  };
+
   const generateReport = async () => {
+    setLoading(true);
+    setReportData(null);
+    
     try {
-      setLoading(true);
-      setReportData(null);
-
-      const params: any = {
-        start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
-      };
-
+      const dateRange = getDateRange();
+      const params: any = { ...dateRange };
+      
       if (selectedSite !== 'all') params.site_id = selectedSite;
       if (selectedEmployee !== 'all') params.employee_id = selectedEmployee;
 
-      let response;
-      let reportTitle = '';
-      let summary = {};
+      let data: any = { type: selectedReport };
 
       switch (selectedReport) {
+        case 'productivity':
+          data = await generateProductivityReport(params);
+          break;
         case 'payroll':
-          reportTitle = 'Payroll Report';
-          try {
-            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/payroll/approved`, { params });
-            summary = calculatePayrollSummary(response.data);
-            setReportData({ title: reportTitle, data: response.data, summary });
-          } catch (error) {
-            setReportData({
-              title: reportTitle,
-              data: [],
-              summary: { total_timesheets: 0, total_hours: '0.00', total_pay: '$0.00', employees: 0 },
-            });
-          }
+          data = await generatePayrollReport(params);
           break;
-
         case 'timesheets':
-          reportTitle = 'Timesheet Summary';
-          try {
-            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { params });
-            summary = calculateTimesheetSummary(response.data);
-            setReportData({ title: reportTitle, data: response.data, summary });
-          } catch (error) {
-            setReportData({
-              title: reportTitle,
-              data: [],
-              summary: { total_entries: 0, pending: 0, approved: 0, rejected: 0 },
-            });
-          }
+          data = await generateTimesheetReport(params);
           break;
-
-        case 'abn':
-          reportTitle = 'ABN Contractor Report';
-          try {
-            response = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users`);
-            const contractors = response.data.filter((u: any) => u.is_contractor && u.abn);
-            const filteredContractors = selectedSite !== 'all'
-              ? contractors.filter((c: any) => c.site_id === selectedSite)
-              : contractors;
-            setReportData({
-              title: reportTitle,
-              data: filteredContractors,
-              summary: { total_contractors: filteredContractors.length, active: filteredContractors.length },
-            });
-          } catch (error) {
-            Alert.alert('Error', 'Failed to load contractor data');
-          }
+        case 'rooms':
+          data = await generateRoomReport(params);
           break;
       }
+      
+      setReportData(data);
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to generate report');
+      Alert.alert('Error', 'Failed to generate report');
     } finally {
       setLoading(false);
     }
   };
 
-  const calculatePayrollSummary = (data: any[]) => ({
-    total_timesheets: data.length,
-    total_hours: data.reduce((sum, t) => sum + (t.total_hours || 0), 0).toFixed(1),
-    total_pay: '$' + data.reduce((sum, t) => sum + (t.total_pay || 0), 0).toFixed(2),
-    employees: [...new Set(data.map((t) => t.employee_id))].length,
-  });
+  const generateProductivityReport = async (params: any) => {
+    // Get timesheets
+    const timesheetsRes = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { params });
+    const timesheets = timesheetsRes.data;
+    
+    // Get room cleaning entries
+    const roomsRes = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/room-cleaning`, { params });
+    const rooms = roomsRes.data;
+    
+    // Calculate totals
+    const totalTimesheetHours = timesheets.reduce((sum: number, t: any) => sum + (t.total_hours || 0), 0);
+    const totalRoomMinutes = rooms.reduce((sum: number, r: any) => sum + (r.total_minutes || 0), 0);
+    const totalRoomHours = totalRoomMinutes / 60;
+    const variance = totalTimesheetHours - totalRoomHours;
+    const efficiency = totalTimesheetHours > 0 ? (totalRoomHours / totalTimesheetHours) * 100 : 0;
+    
+    // Group by employee
+    const employeeMap: any = {};
+    
+    timesheets.forEach((ts: any) => {
+      if (!employeeMap[ts.employee_id]) {
+        employeeMap[ts.employee_id] = {
+          employee_id: ts.employee_id,
+          employee_name: ts.employee_name || 'Unknown',
+          timesheet_hours: 0,
+          room_hours: 0,
+          room_count: 0,
+        };
+      }
+      employeeMap[ts.employee_id].timesheet_hours += ts.total_hours || 0;
+    });
+    
+    rooms.forEach((r: any) => {
+      if (!employeeMap[r.employee_id]) {
+        employeeMap[r.employee_id] = {
+          employee_id: r.employee_id,
+          employee_name: 'Unknown',
+          timesheet_hours: 0,
+          room_hours: 0,
+          room_count: 0,
+        };
+      }
+      employeeMap[r.employee_id].room_hours += (r.total_minutes || 0) / 60;
+      employeeMap[r.employee_id].room_count += r.count || 0;
+    });
+    
+    const employeeData = Object.values(employeeMap).map((emp: any) => ({
+      ...emp,
+      variance: emp.timesheet_hours - emp.room_hours,
+      efficiency: emp.timesheet_hours > 0 ? Math.round((emp.room_hours / emp.timesheet_hours) * 100) : 0,
+    }));
 
-  const calculateTimesheetSummary = (data: any[]) => ({
-    total_entries: data.length,
-    pending: data.filter((t) => t.approval_status === 'pending').length,
-    approved: data.filter((t) => t.approval_status === 'approved').length,
-    rejected: data.filter((t) => t.approval_status === 'rejected').length,
-  });
-
-  const formatDate = (date: Date) => {
-    const day = date.getDate();
-    const month = date.toLocaleString('default', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month} ${year}`;
+    return {
+      type: 'productivity',
+      summary: {
+        totalTimesheetHours: totalTimesheetHours.toFixed(1),
+        totalRoomHours: totalRoomHours.toFixed(1),
+        variance: variance.toFixed(1),
+        efficiency: Math.round(efficiency),
+        totalRooms: rooms.reduce((sum: number, r: any) => sum + (r.count || 0), 0),
+        employeeCount: Object.keys(employeeMap).length,
+      },
+      employees: employeeData.sort((a: any, b: any) => b.efficiency - a.efficiency),
+    };
   };
 
-  const handleStartDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS !== 'ios') setShowStartPicker(false);
-    if (selectedDate) setStartDate(selectedDate);
+  const generatePayrollReport = async (params: any) => {
+    const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { params });
+    const timesheets = res.data.filter((t: any) => t.approval_status === 'approved');
+    
+    const totalHours = timesheets.reduce((sum: number, t: any) => sum + (t.total_hours || 0), 0);
+    const totalPay = timesheets.reduce((sum: number, t: any) => sum + (t.total_pay || 0), 0);
+    
+    // Group by employee
+    const employeeMap: any = {};
+    timesheets.forEach((ts: any) => {
+      if (!employeeMap[ts.employee_id]) {
+        employeeMap[ts.employee_id] = {
+          name: ts.employee_name || 'Unknown',
+          hours: 0,
+          pay: 0,
+          shifts: 0,
+        };
+      }
+      employeeMap[ts.employee_id].hours += ts.total_hours || 0;
+      employeeMap[ts.employee_id].pay += ts.total_pay || 0;
+      employeeMap[ts.employee_id].shifts += 1;
+    });
+
+    return {
+      type: 'payroll',
+      summary: {
+        totalHours: totalHours.toFixed(1),
+        totalPay: totalPay.toFixed(2),
+        avgHourlyRate: totalHours > 0 ? (totalPay / totalHours).toFixed(2) : '0.00',
+        employeeCount: Object.keys(employeeMap).length,
+        totalShifts: timesheets.length,
+      },
+      employees: Object.entries(employeeMap).map(([id, data]: any) => ({
+        id,
+        ...data,
+        avgRate: data.hours > 0 ? (data.pay / data.hours).toFixed(2) : '0.00',
+      })).sort((a: any, b: any) => b.pay - a.pay),
+    };
   };
 
-  const handleEndDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS !== 'ios') setShowEndPicker(false);
-    if (selectedDate) setEndDate(selectedDate);
+  const generateTimesheetReport = async (params: any) => {
+    const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/timesheets`, { params });
+    const timesheets = res.data;
+    
+    const pending = timesheets.filter((t: any) => t.approval_status === 'pending').length;
+    const approved = timesheets.filter((t: any) => t.approval_status === 'approved').length;
+    const rejected = timesheets.filter((t: any) => t.approval_status === 'rejected').length;
+    
+    return {
+      type: 'timesheets',
+      summary: {
+        total: timesheets.length,
+        pending,
+        approved,
+        rejected,
+        approvalRate: timesheets.length > 0 ? Math.round((approved / timesheets.length) * 100) : 0,
+      },
+      entries: timesheets.slice(0, 20),
+    };
+  };
+
+  const generateRoomReport = async (params: any) => {
+    const res = await axios.get(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/room-cleaning`, { params });
+    const rooms = res.data;
+    
+    const totalRooms = rooms.reduce((sum: number, r: any) => sum + (r.count || 0), 0);
+    const totalMinutes = rooms.reduce((sum: number, r: any) => sum + (r.total_minutes || 0), 0);
+    
+    // Group by room type
+    const roomTypeMap: any = {};
+    rooms.forEach((r: any) => {
+      const key = `${r.room_type_name}-${r.status}`;
+      if (!roomTypeMap[key]) {
+        roomTypeMap[key] = {
+          roomType: r.room_type_name,
+          status: r.status,
+          count: 0,
+          minutes: 0,
+        };
+      }
+      roomTypeMap[key].count += r.count || 0;
+      roomTypeMap[key].minutes += r.total_minutes || 0;
+    });
+
+    return {
+      type: 'rooms',
+      summary: {
+        totalRooms,
+        totalHours: (totalMinutes / 60).toFixed(1),
+        avgMinutesPerRoom: totalRooms > 0 ? Math.round(totalMinutes / totalRooms) : 0,
+        uniqueTypes: Object.keys(roomTypeMap).length,
+      },
+      breakdown: Object.values(roomTypeMap).sort((a: any, b: any) => b.count - a.count),
+    };
+  };
+
+  const renderProductivityReport = () => {
+    if (!reportData || reportData.type !== 'productivity') return null;
+    
+    const { summary, employees } = reportData;
+    
+    return (
+      <View style={styles.reportContent}>
+        {/* Summary Cards */}
+        <View style={styles.summaryGrid}>
+          <View style={[styles.summaryCard, { backgroundColor: '#eef2ff' }]}>
+            <Ionicons name="time" size={24} color="#6366f1" />
+            <Text style={styles.summaryValue}>{summary.totalTimesheetHours}h</Text>
+            <Text style={styles.summaryLabel}>Timesheet Hours</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#dcfce7' }]}>
+            <Ionicons name="bed" size={24} color="#10b981" />
+            <Text style={styles.summaryValue}>{summary.totalRoomHours}h</Text>
+            <Text style={styles.summaryLabel}>Room Credit Hours</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: parseFloat(summary.variance) >= 0 ? '#dcfce7' : '#fef2f2' }]}>
+            <Ionicons name={parseFloat(summary.variance) >= 0 ? 'trending-up' : 'trending-down'} size={24} color={parseFloat(summary.variance) >= 0 ? '#10b981' : '#ef4444'} />
+            <Text style={[styles.summaryValue, { color: parseFloat(summary.variance) >= 0 ? '#10b981' : '#ef4444' }]}>
+              {parseFloat(summary.variance) >= 0 ? '+' : ''}{summary.variance}h
+            </Text>
+            <Text style={styles.summaryLabel}>Variance</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#fef3c7' }]}>
+            <Ionicons name="speedometer" size={24} color="#f59e0b" />
+            <Text style={styles.summaryValue}>{summary.efficiency}%</Text>
+            <Text style={styles.summaryLabel}>Efficiency</Text>
+          </View>
+        </View>
+
+        {/* Employee Breakdown */}
+        <Text style={styles.reportSectionTitle}>Employee Performance</Text>
+        {employees.map((emp: any, index: number) => (
+          <View key={emp.employee_id || index} style={styles.employeeRow}>
+            <View style={styles.employeeRank}>
+              <Text style={styles.employeeRankText}>#{index + 1}</Text>
+            </View>
+            <View style={styles.employeeInfo}>
+              <Text style={styles.employeeName}>{emp.employee_name}</Text>
+              <View style={styles.employeeStats}>
+                <Text style={styles.employeeStat}>⏱️ {emp.timesheet_hours.toFixed(1)}h</Text>
+                <Text style={styles.employeeStat}>🛏️ {emp.room_hours.toFixed(1)}h</Text>
+                <Text style={styles.employeeStat}>🚪 {emp.room_count} rooms</Text>
+              </View>
+            </View>
+            <View style={[styles.efficiencyBadge, { backgroundColor: emp.efficiency >= 80 ? '#dcfce7' : emp.efficiency >= 60 ? '#fef3c7' : '#fef2f2' }]}>
+              <Text style={[styles.efficiencyText, { color: emp.efficiency >= 80 ? '#10b981' : emp.efficiency >= 60 ? '#f59e0b' : '#ef4444' }]}>
+                {emp.efficiency}%
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderPayrollReport = () => {
+    if (!reportData || reportData.type !== 'payroll') return null;
+    
+    const { summary, employees } = reportData;
+    
+    return (
+      <View style={styles.reportContent}>
+        <View style={styles.summaryGrid}>
+          <View style={[styles.summaryCard, { backgroundColor: '#dcfce7' }]}>
+            <Ionicons name="cash" size={24} color="#10b981" />
+            <Text style={styles.summaryValue}>${summary.totalPay}</Text>
+            <Text style={styles.summaryLabel}>Total Pay</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#eef2ff' }]}>
+            <Ionicons name="time" size={24} color="#6366f1" />
+            <Text style={styles.summaryValue}>{summary.totalHours}h</Text>
+            <Text style={styles.summaryLabel}>Total Hours</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#fef3c7' }]}>
+            <Ionicons name="calculator" size={24} color="#f59e0b" />
+            <Text style={styles.summaryValue}>${summary.avgHourlyRate}/h</Text>
+            <Text style={styles.summaryLabel}>Avg Rate</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#fce7f3' }]}>
+            <Ionicons name="people" size={24} color="#ec4899" />
+            <Text style={styles.summaryValue}>{summary.employeeCount}</Text>
+            <Text style={styles.summaryLabel}>Employees</Text>
+          </View>
+        </View>
+
+        <Text style={styles.reportSectionTitle}>Employee Earnings</Text>
+        {employees.map((emp: any, index: number) => (
+          <View key={emp.id || index} style={styles.employeeRow}>
+            <View style={styles.employeeInfo}>
+              <Text style={styles.employeeName}>{emp.name}</Text>
+              <View style={styles.employeeStats}>
+                <Text style={styles.employeeStat}>{emp.hours.toFixed(1)}h • {emp.shifts} shifts</Text>
+              </View>
+            </View>
+            <Text style={styles.payAmount}>${emp.pay.toFixed(2)}</Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderTimesheetReport = () => {
+    if (!reportData || reportData.type !== 'timesheets') return null;
+    
+    const { summary } = reportData;
+    
+    return (
+      <View style={styles.reportContent}>
+        <View style={styles.summaryGrid}>
+          <View style={[styles.summaryCard, { backgroundColor: '#eef2ff' }]}>
+            <Ionicons name="documents" size={24} color="#6366f1" />
+            <Text style={styles.summaryValue}>{summary.total}</Text>
+            <Text style={styles.summaryLabel}>Total Entries</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#fef3c7' }]}>
+            <Ionicons name="hourglass" size={24} color="#f59e0b" />
+            <Text style={styles.summaryValue}>{summary.pending}</Text>
+            <Text style={styles.summaryLabel}>Pending</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#dcfce7' }]}>
+            <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+            <Text style={styles.summaryValue}>{summary.approved}</Text>
+            <Text style={styles.summaryLabel}>Approved</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#fef2f2' }]}>
+            <Ionicons name="close-circle" size={24} color="#ef4444" />
+            <Text style={styles.summaryValue}>{summary.rejected}</Text>
+            <Text style={styles.summaryLabel}>Rejected</Text>
+          </View>
+        </View>
+
+        <View style={styles.approvalRateCard}>
+          <Text style={styles.approvalRateLabel}>Approval Rate</Text>
+          <Text style={styles.approvalRateValue}>{summary.approvalRate}%</Text>
+          <View style={styles.approvalBar}>
+            <View style={[styles.approvalBarFill, { width: `${summary.approvalRate}%` }]} />
+          </View>
+        </View>
+      </View>
+    );
+  };
+
+  const renderRoomReport = () => {
+    if (!reportData || reportData.type !== 'rooms') return null;
+    
+    const { summary, breakdown } = reportData;
+    
+    return (
+      <View style={styles.reportContent}>
+        <View style={styles.summaryGrid}>
+          <View style={[styles.summaryCard, { backgroundColor: '#fce7f3' }]}>
+            <Ionicons name="bed" size={24} color="#ec4899" />
+            <Text style={styles.summaryValue}>{summary.totalRooms}</Text>
+            <Text style={styles.summaryLabel}>Total Rooms</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#dcfce7' }]}>
+            <Ionicons name="time" size={24} color="#10b981" />
+            <Text style={styles.summaryValue}>{summary.totalHours}h</Text>
+            <Text style={styles.summaryLabel}>Total Credits</Text>
+          </View>
+          <View style={[styles.summaryCard, { backgroundColor: '#eef2ff' }]}>
+            <Ionicons name="speedometer" size={24} color="#6366f1" />
+            <Text style={styles.summaryValue}>{summary.avgMinutesPerRoom}m</Text>
+            <Text style={styles.summaryLabel}>Avg/Room</Text>
+          </View>
+        </View>
+
+        <Text style={styles.reportSectionTitle}>Breakdown by Type</Text>
+        {breakdown.map((item: any, index: number) => (
+          <View key={index} style={styles.roomBreakdownRow}>
+            <View style={styles.roomBreakdownInfo}>
+              <Text style={styles.roomBreakdownType}>{item.roomType}</Text>
+              <Text style={styles.roomBreakdownStatus}>
+                {item.status === 'departure' ? '🚪 Departure' : 
+                 item.status === 'linen_change' ? '🛏️ Linen' : '🧹 Stayover'}
+              </Text>
+            </View>
+            <View style={styles.roomBreakdownStats}>
+              <Text style={styles.roomBreakdownCount}>×{item.count}</Text>
+              <Text style={styles.roomBreakdownMinutes}>{item.minutes}m</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    );
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
+    <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
+      <View style={styles.container}>
+        {/* Premium Header */}
+        <LinearGradient colors={['#6366f1', '#4f46e5']} style={styles.header}>
+          <View style={styles.headerContent}>
             <View>
               <Text style={styles.headerTitle}>Reports Center</Text>
-              <Text style={styles.headerSubtitle}>Generate detailed reports</Text>
+              <Text style={styles.headerSubtitle}>Analytics & Insights</Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <Ionicons name="close" size={24} color="#374151" />
+              <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
+        </LinearGradient>
 
-          <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* Report Type Selection */}
-            <Text style={styles.sectionLabel}>Report Type</Text>
-            <View style={styles.reportTypeRow}>
-              {reportTypes.map((report) => (
-                <TouchableOpacity
-                  key={report.id}
-                  style={[
-                    styles.reportTypeCard,
-                    selectedReport === report.id && styles.reportTypeCardActive,
-                  ]}
-                  onPress={() => setSelectedReport(report.id as ReportType)}
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Report Type Selection */}
+          <Text style={styles.sectionLabel}>Select Report</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.reportTypeScroll}>
+            {reportTypes.map((report) => (
+              <TouchableOpacity
+                key={report.id}
+                style={[styles.reportTypeCard, selectedReport === report.id && styles.reportTypeCardActive]}
+                onPress={() => setSelectedReport(report.id as ReportType)}
+              >
+                <LinearGradient
+                  colors={selectedReport === report.id ? report.gradient : ['#f8fafc', '#f1f5f9']}
+                  style={styles.reportTypeGradient}
                 >
-                  <View style={[
-                    styles.reportIconCircle,
-                    selectedReport === report.id && styles.reportIconCircleActive
-                  ]}>
-                    <Ionicons
-                      name={report.icon as any}
-                      size={20}
-                      color={selectedReport === report.id ? '#fff' : '#6366f1'}
-                    />
-                  </View>
-                  <Text style={[
-                    styles.reportTypeName,
-                    selectedReport === report.id && styles.reportTypeNameActive
-                  ]}>
+                  <Ionicons
+                    name={report.icon as any}
+                    size={28}
+                    color={selectedReport === report.id ? '#fff' : report.color}
+                  />
+                  <Text style={[styles.reportTypeName, selectedReport === report.id && styles.reportTypeNameActive]}>
                     {report.name}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-            {/* Filters Section */}
-            <Text style={styles.sectionLabel}>Filters</Text>
-            <View style={styles.filtersCard}>
-              {/* Employee Filter */}
-              <View style={styles.filterRow}>
-                <View style={styles.filterIconBox}>
-                  <Ionicons name="person-outline" size={18} color="#6366f1" />
-                </View>
-                <View style={styles.filterContent}>
-                  <Text style={styles.filterLabel}>Employee</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={selectedEmployee}
-                      onValueChange={setSelectedEmployee}
-                      style={styles.picker}
-                      dropdownIconColor="#6b7280"
-                    >
-                      <Picker.Item label="All Employees" value="all" />
-                      {employees.map((emp) => (
-                        <Picker.Item 
-                          key={emp.id} 
-                          label={`${emp.first_name} ${emp.last_name}`} 
-                          value={emp.id} 
-                        />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              </View>
-
-              {/* Site Filter */}
-              <View style={styles.filterRow}>
-                <View style={styles.filterIconBox}>
-                  <Ionicons name="location-outline" size={18} color="#6366f1" />
-                </View>
-                <View style={styles.filterContent}>
-                  <Text style={styles.filterLabel}>Site</Text>
-                  <View style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={selectedSite}
-                      onValueChange={setSelectedSite}
-                      style={styles.picker}
-                      dropdownIconColor="#6b7280"
-                    >
-                      <Picker.Item label="All Sites" value="all" />
-                      {sites.map((site) => (
-                        <Picker.Item key={site.id} label={site.name} value={site.id} />
-                      ))}
-                    </Picker>
-                  </View>
-                </View>
-              </View>
-
-              {/* Date Range */}
-              <View style={styles.dateRangeRow}>
-                <View style={styles.dateBox}>
-                  <Text style={styles.dateLabel}>From</Text>
-                  {Platform.OS === 'web' ? (
-                    <View style={styles.dateInput}>
-                      <Ionicons name="calendar-outline" size={16} color="#6366f1" />
-                      <input
-                        type="date"
-                        value={startDate.toISOString().split('T')[0]}
-                        onChange={(e) => {
-                          const newDate = new Date(e.target.value);
-                          if (!isNaN(newDate.getTime())) setStartDate(newDate);
-                        }}
-                        style={{
-                          border: 'none',
-                          background: 'transparent',
-                          fontSize: '15px',
-                          color: '#1f2937',
-                          outline: 'none',
-                          flex: 1,
-                          fontWeight: '500',
-                        }}
-                      />
-                    </View>
-                  ) : (
-                    <>
-                      <TouchableOpacity style={styles.dateInput} onPress={() => setShowStartPicker(true)}>
-                        <Ionicons name="calendar-outline" size={16} color="#6366f1" />
-                        <Text style={styles.dateText}>{formatDate(startDate)}</Text>
-                      </TouchableOpacity>
-                      {showStartPicker && (
-                        <DateTimePicker
-                          value={startDate}
-                          mode="date"
-                          display="default"
-                          onChange={handleStartDateChange}
-                          maximumDate={new Date()}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
-
-                <View style={styles.dateBox}>
-                  <Text style={styles.dateLabel}>To</Text>
-                  {Platform.OS === 'web' ? (
-                    <View style={styles.dateInput}>
-                      <Ionicons name="calendar-outline" size={16} color="#6366f1" />
-                      <input
-                        type="date"
-                        value={endDate.toISOString().split('T')[0]}
-                        onChange={(e) => {
-                          const newDate = new Date(e.target.value);
-                          if (!isNaN(newDate.getTime())) setEndDate(newDate);
-                        }}
-                        style={{
-                          border: 'none',
-                          background: 'transparent',
-                          fontSize: '15px',
-                          color: '#1f2937',
-                          outline: 'none',
-                          flex: 1,
-                          fontWeight: '500',
-                        }}
-                      />
-                    </View>
-                  ) : (
-                    <>
-                      <TouchableOpacity style={styles.dateInput} onPress={() => setShowEndPicker(true)}>
-                        <Ionicons name="calendar-outline" size={16} color="#6366f1" />
-                        <Text style={styles.dateText}>{formatDate(endDate)}</Text>
-                      </TouchableOpacity>
-                      {showEndPicker && (
-                        <DateTimePicker
-                          value={endDate}
-                          mode="date"
-                          display="default"
-                          onChange={handleEndDateChange}
-                          maximumDate={new Date()}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
+          {/* Filters */}
+          <Text style={styles.sectionLabel}>Filters</Text>
+          <View style={styles.filtersCard}>
+            {/* Period */}
+            <View style={styles.filterRow}>
+              <Ionicons name="calendar" size={20} color="#6366f1" />
+              <Text style={styles.filterLabel}>Period</Text>
+              <View style={styles.periodChips}>
+                {periods.map((p) => (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={[styles.periodChip, selectedPeriod === p.id && styles.periodChipActive]}
+                    onPress={() => setSelectedPeriod(p.id)}
+                  >
+                    <Text style={[styles.periodChipText, selectedPeriod === p.id && styles.periodChipTextActive]}>
+                      {p.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             </View>
 
-            {/* Generate Button */}
-            <TouchableOpacity
-              style={[styles.generateBtn, loading && styles.generateBtnDisabled]}
-              onPress={generateReport}
-              disabled={loading}
-            >
+            {/* Employee */}
+            <View style={styles.filterRow}>
+              <Ionicons name="person" size={20} color="#6366f1" />
+              <Text style={styles.filterLabel}>Employee</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedEmployee}
+                  onValueChange={setSelectedEmployee}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="All Employees" value="all" />
+                  {employees.map((emp) => (
+                    <Picker.Item key={emp.id} label={`${emp.first_name} ${emp.last_name}`} value={emp.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            {/* Site */}
+            <View style={styles.filterRow}>
+              <Ionicons name="business" size={20} color="#6366f1" />
+              <Text style={styles.filterLabel}>Site</Text>
+              <View style={styles.pickerWrapper}>
+                <Picker
+                  selectedValue={selectedSite}
+                  onValueChange={setSelectedSite}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="All Sites" value="all" />
+                  {sites.map((site) => (
+                    <Picker.Item key={site.id} label={site.name} value={site.id} />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+          </View>
+
+          {/* Generate Button */}
+          <TouchableOpacity style={styles.generateBtn} onPress={generateReport} disabled={loading}>
+            <LinearGradient colors={['#6366f1', '#4f46e5']} style={styles.generateBtnGradient}>
               {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
+                <ActivityIndicator color="#fff" />
               ) : (
                 <>
-                  <Ionicons name="analytics-outline" size={20} color="#fff" />
+                  <Ionicons name="analytics" size={20} color="#fff" />
                   <Text style={styles.generateBtnText}>Generate Report</Text>
                 </>
               )}
-            </TouchableOpacity>
+            </LinearGradient>
+          </TouchableOpacity>
 
-            {/* Results Section */}
-            {reportData && (
-              <View style={styles.resultsCard}>
-                <View style={styles.resultsHeader}>
-                  <Text style={styles.resultsTitle}>{reportData.title}</Text>
-                  <View style={styles.recordsBadge}>
-                    <Text style={styles.recordsBadgeText}>{reportData.data.length} records</Text>
-                  </View>
-                </View>
+          {/* Report Results */}
+          {reportData && (
+            <View style={styles.reportResults}>
+              <Text style={styles.reportResultsTitle}>
+                {selectedReport === 'productivity' && '📊 Productivity Report'}
+                {selectedReport === 'payroll' && '💰 Payroll Report'}
+                {selectedReport === 'timesheets' && '⏱️ Timesheet Report'}
+                {selectedReport === 'rooms' && '🛏️ Room Credits Report'}
+              </Text>
+              
+              {renderProductivityReport()}
+              {renderPayrollReport()}
+              {renderTimesheetReport()}
+              {renderRoomReport()}
+            </View>
+          )}
 
-                {/* Summary Stats */}
-                <View style={styles.statsGrid}>
-                  {Object.entries(reportData.summary).map(([key, value]) => (
-                    <View key={key} style={styles.statCard}>
-                      <Text style={styles.statValue}>{String(value)}</Text>
-                      <Text style={styles.statLabel}>
-                        {key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Period Info */}
-                <View style={styles.periodInfo}>
-                  <Ionicons name="time-outline" size={14} color="#6b7280" />
-                  <Text style={styles.periodText}>
-                    {formatDate(startDate)} — {formatDate(endDate)}
-                  </Text>
-                </View>
-
-                {/* View Details */}
-                <TouchableOpacity
-                  style={styles.detailsBtn}
-                  onPress={() => setShowDetailedView(!showDetailedView)}
-                >
-                  <Text style={styles.detailsBtnText}>
-                    {showDetailedView ? 'Hide Details' : 'View Details'}
-                  </Text>
-                  <Ionicons 
-                    name={showDetailedView ? 'chevron-up' : 'chevron-down'} 
-                    size={18} 
-                    color="#6366f1" 
-                  />
-                </TouchableOpacity>
-
-                {/* Detailed Records */}
-                {showDetailedView && (
-                  <View style={styles.detailsList}>
-                    {reportData.data.slice(0, 20).map((record: any, index: number) => (
-                      <View key={index} style={styles.recordRow}>
-                        {selectedReport === 'payroll' && (
-                          <>
-                            <View style={styles.recordMain}>
-                              <Text style={styles.recordName}>
-                                {record.employee_name || `${record.first_name} ${record.last_name}`}
-                              </Text>
-                              <Text style={styles.recordSub}>
-                                {new Date(record.clock_in || record.created_at).toLocaleDateString()}
-                              </Text>
-                            </View>
-                            <View style={styles.recordStats}>
-                              <Text style={styles.recordHours}>{record.total_hours || 0}h</Text>
-                              <Text style={styles.recordPay}>${record.total_pay || 0}</Text>
-                            </View>
-                          </>
-                        )}
-                        {selectedReport === 'timesheets' && (
-                          <>
-                            <View style={styles.recordMain}>
-                              <Text style={styles.recordName}>{record.employee_name || 'Employee'}</Text>
-                              <Text style={styles.recordSub}>
-                                {new Date(record.clock_in).toLocaleDateString()} • {record.total_hours || 0}h
-                              </Text>
-                            </View>
-                            <View style={[
-                              styles.statusBadge,
-                              { backgroundColor: 
-                                record.approval_status === 'approved' ? '#dcfce7' : 
-                                record.approval_status === 'rejected' ? '#fee2e2' : '#fef3c7' 
-                              }
-                            ]}>
-                              <Text style={[
-                                styles.statusText,
-                                { color: 
-                                  record.approval_status === 'approved' ? '#15803d' : 
-                                  record.approval_status === 'rejected' ? '#dc2626' : '#d97706' 
-                                }
-                              ]}>
-                                {record.approval_status}
-                              </Text>
-                            </View>
-                          </>
-                        )}
-                        {selectedReport === 'abn' && (
-                          <>
-                            <View style={styles.recordMain}>
-                              <Text style={styles.recordName}>{record.first_name} {record.last_name}</Text>
-                              <Text style={styles.recordSub}>ABN: {record.abn}</Text>
-                            </View>
-                            <Text style={styles.recordJob}>{record.job_title}</Text>
-                          </>
-                        )}
-                      </View>
-                    ))}
-                    {reportData.data.length > 20 && (
-                      <Text style={styles.moreText}>
-                        Showing 20 of {reportData.data.length} records
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            )}
-
-            <View style={{ height: 40 }} />
-          </ScrollView>
-        </View>
+          <View style={{ height: 50 }} />
+        </ScrollView>
       </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
   container: {
+    flex: 1,
     backgroundColor: '#f8fafc',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    maxHeight: '92%',
   },
   header: {
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    paddingBottom: 16,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   headerTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-    letterSpacing: -0.3,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#fff',
   },
   headerSubtitle: {
     fontSize: 14,
-    color: '#6b7280',
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 4,
   },
   closeBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   content: {
+    flex: 1,
     padding: 20,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#6b7280',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#64748b',
+    marginBottom: 12,
+    marginTop: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    marginBottom: 12,
-    marginTop: 4,
   },
-  reportTypeRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 24,
+  reportTypeScroll: {
+    marginBottom: 16,
   },
   reportTypeCard: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 14,
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#e5e7eb',
+    marginRight: 12,
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   reportTypeCardActive: {
-    borderColor: '#6366f1',
-    backgroundColor: '#eef2ff',
+    transform: [{ scale: 1.02 }],
   },
-  reportIconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#eef2ff',
+  reportTypeGradient: {
+    width: 100,
+    height: 100,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-  },
-  reportIconCircleActive: {
-    backgroundColor: '#6366f1',
+    padding: 12,
   },
   reportTypeName: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+    marginTop: 8,
     textAlign: 'center',
   },
   reportTypeNameActive: {
-    color: '#4f46e5',
+    color: '#fff',
   },
   filtersCard: {
     backgroundColor: '#fff',
@@ -607,239 +703,228 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
   filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 16,
   },
-  filterIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  periodChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  periodChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f1f5f9',
+    borderRadius: 20,
+  },
+  periodChipActive: {
+    backgroundColor: '#6366f1',
+  },
+  periodChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  periodChipTextActive: {
+    color: '#fff',
+  },
+  pickerWrapper: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  picker: {
+    height: 50,
+  },
+  generateBtn: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginBottom: 24,
+  },
+  generateBtnGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+    gap: 8,
+  },
+  generateBtnText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  reportResults: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  reportResultsTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginBottom: 20,
+  },
+  reportContent: {},
+  summaryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 24,
+  },
+  summaryCard: {
+    width: (width - 84) / 2,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+  },
+  summaryValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1e293b',
+    marginTop: 8,
+  },
+  summaryLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748b',
+    marginTop: 4,
+    textTransform: 'uppercase',
+  },
+  reportSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 16,
+  },
+  employeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  employeeRank: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#eef2ff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
-  filterContent: {
+  employeeRankText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#6366f1',
+  },
+  employeeInfo: {
     flex: 1,
   },
-  filterLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 4,
-  },
-  pickerContainer: {
-    backgroundColor: '#f9fafb',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    overflow: 'hidden',
-  },
-  picker: {
-    height: 44,
-    color: '#1f2937',
+  employeeName: {
     fontSize: 15,
+    fontWeight: '700',
+    color: '#1e293b',
   },
-  dateRangeRow: {
+  employeeStats: {
     flexDirection: 'row',
     gap: 12,
     marginTop: 4,
   },
-  dateBox: {
-    flex: 1,
-  },
-  dateLabel: {
+  employeeStat: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#6b7280',
-    marginBottom: 6,
+    color: '#64748b',
   },
-  dateInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    gap: 8,
-  },
-  dateText: {
-    fontSize: 15,
-    color: '#1f2937',
-    fontWeight: '500',
-  },
-  generateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#6366f1',
-    paddingVertical: 16,
-    borderRadius: 14,
-    gap: 8,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  generateBtnDisabled: {
-    opacity: 0.7,
-  },
-  generateBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  resultsCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginTop: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  resultsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  resultsTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  recordsBadge: {
-    backgroundColor: '#dcfce7',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+  efficiencyBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
   },
-  recordsBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#15803d',
+  efficiencyText: {
+    fontSize: 14,
+    fontWeight: '800',
   },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 16,
+  payAmount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#10b981',
   },
-  statCard: {
-    flex: 1,
-    minWidth: '45%',
+  approvalRateCard: {
     backgroundColor: '#f8fafc',
-    padding: 14,
-    borderRadius: 12,
+    borderRadius: 16,
+    padding: 20,
     alignItems: 'center',
   },
-  statValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#6366f1',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#6b7280',
-    marginTop: 4,
-    textAlign: 'center',
-    textTransform: 'capitalize',
-  },
-  periodInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#f3f4f6',
-  },
-  periodText: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  detailsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-    marginTop: 12,
-    backgroundColor: '#eef2ff',
-    borderRadius: 10,
-    gap: 6,
-  },
-  detailsBtnText: {
+  approvalRateLabel: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6366f1',
+    color: '#64748b',
   },
-  detailsList: {
-    marginTop: 16,
+  approvalRateValue: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: '#10b981',
+    marginVertical: 8,
   },
-  recordRow: {
+  approvalBar: {
+    width: '100%',
+    height: 12,
+    backgroundColor: '#e2e8f0',
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  approvalBarFill: {
+    height: '100%',
+    backgroundColor: '#10b981',
+    borderRadius: 6,
+  },
+  roomBreakdownRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
   },
-  recordMain: {
-    flex: 1,
-  },
-  recordName: {
+  roomBreakdownInfo: {},
+  roomBreakdownType: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: '700',
+    color: '#1e293b',
   },
-  recordSub: {
-    fontSize: 13,
-    color: '#6b7280',
+  roomBreakdownStatus: {
+    fontSize: 12,
+    color: '#64748b',
     marginTop: 2,
   },
-  recordStats: {
+  roomBreakdownStats: {
     alignItems: 'flex-end',
   },
-  recordHours: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
+  roomBreakdownCount: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#6366f1',
   },
-  recordPay: {
-    fontSize: 13,
-    color: '#10b981',
-    fontWeight: '500',
-  },
-  recordJob: {
-    fontSize: 13,
-    color: '#6b7280',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  statusText: {
+  roomBreakdownMinutes: {
     fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  moreText: {
-    textAlign: 'center',
-    fontSize: 13,
-    color: '#6b7280',
-    fontStyle: 'italic',
-    paddingVertical: 12,
+    color: '#64748b',
+    marginTop: 2,
   },
 });
