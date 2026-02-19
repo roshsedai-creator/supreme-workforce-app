@@ -2582,4 +2582,80 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  
+  // Site selector styles
+  siteSelector: {
+    marginBottom: 16,
+  },
+  siteSelectorLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginBottom: 8,
+  },
+  siteChips: {
+    flexDirection: 'row',
+  },
+  siteChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: colors.white,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 2,
+    borderColor: colors.gray[200],
+  },
+  siteChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  siteChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  siteChipTextActive: {
+    color: colors.white,
+  },
+  roomTypeSubtitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  emptyRoomTypes: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    backgroundColor: colors.white,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  emptyRoomTypesText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginTop: 12,
+  },
+  emptyRoomTypesSubtext: {
+    fontSize: 14,
+    color: colors.gray[400],
+    marginTop: 4,
+  },
+  selectSitePrompt: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    backgroundColor: colors.gray[50],
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  selectSiteText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginTop: 12,
+  },
+  selectSiteSubtext: {
+    fontSize: 14,
+    color: colors.gray[400],
+    marginTop: 4,
+  },
 });
