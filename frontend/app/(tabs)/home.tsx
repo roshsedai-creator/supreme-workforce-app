@@ -43,19 +43,23 @@ export default function HomeScreen() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
 
-  // Room Cleaning
+  // Room Cleaning - Multi-room support
   const [roomTypes, setRoomTypes] = useState<any[]>([]);
   const [roomDate, setRoomDate] = useState('');
-  const [selectedRoomType, setSelectedRoomType] = useState<any>(null);
-  const [roomStatus, setRoomStatus] = useState<'departure' | 'linen_change' | 'stayover'>('departure');
-  const [roomCount, setRoomCount] = useState('1');
+  const [roomEntries, setRoomEntries] = useState<{roomTypeId: string, roomTypeName: string, status: string, count: number, minutes: number}[]>([]);
   const [roomNotes, setRoomNotes] = useState('');
   const [todayRoomEntries, setTodayRoomEntries] = useState<any[]>([]);
+  
+  // Productivity comparison
+  const [productivity, setProductivity] = useState<any>(null);
+  const [todayTimesheetHours, setTodayTimesheetHours] = useState(0);
 
   // Fetch room types on mount
   useEffect(() => {
     fetchRoomTypes();
     fetchTodayRoomEntries();
+    fetchTodayTimesheet();
+    fetchProductivity();
   }, []);
 
   const fetchRoomTypes = async () => {
