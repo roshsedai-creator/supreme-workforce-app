@@ -238,10 +238,15 @@ export default function AdminScreen() {
       Alert.alert('Error', 'Please enter a room type name');
       return;
     }
+    if (!roomTypeSiteId) {
+      Alert.alert('Error', 'Please select a site first');
+      return;
+    }
 
     setLoading(true);
     try {
       const data = {
+        site_id: roomTypeSiteId,
         name: roomTypeName.trim(),
         departure_minutes: parseInt(departureMinutes) || 30,
         linen_change_minutes: parseInt(linenMinutes) || 20,
