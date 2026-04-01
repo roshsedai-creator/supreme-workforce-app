@@ -29,61 +29,82 @@ interface Category {
 }
 
 const SUGGESTED_TITLES: Record<string, string[]> = {
-  housekeeping: [
+  room_cleaning: [
     'Guest Room Cleaning & Turndown SOP',
-    'Laundry & Linen Management SOP',
-    'Deep Cleaning Schedule & Procedures',
-    'Lost & Found Property Handling',
-    'Chemical Safety & MSDS Compliance',
+    'Departure Room Cleaning Procedure',
+    'Stayover Room Service Standards',
+    'VIP Room Preparation Protocol',
+    'Room Inspection Quality Checklist',
   ],
-  food_beverage: [
-    'Food Safety & HACCP Compliance',
-    'Kitchen Hygiene & Sanitation SOP',
-    'Allergen Management Procedure',
-    'Bar Service & Responsible Service of Alcohol',
-    'Buffet Setup & Food Temperature Control',
+  laundry_linen: [
+    'Linen Inventory Management SOP',
+    'Laundry Processing & Quality Control',
+    'Stain Removal & Treatment Guide',
+    'Linen Par Level Management',
+    'Guest Laundry Service Procedure',
   ],
-  front_office: [
-    'Guest Check-in & Check-out Procedure',
-    'Reservation Management SOP',
-    'VIP Guest Handling Protocol',
-    'Night Audit Procedure',
-    'Guest Complaint Resolution Process',
+  chemical_safety: [
+    'Chemical Handling & Storage SOP',
+    'MSDS Register & Compliance Guide',
+    'Dilution Ratios & Mixing Procedures',
+    'Chemical Spill Response Protocol',
+    'PPE Requirements for Chemical Use',
   ],
-  health_safety: [
-    'Workplace Health & Safety Policy',
-    'Incident Reporting & Investigation',
-    'First Aid Response Procedure',
-    'COVID-19 Safety Protocol',
-    'Personal Protective Equipment (PPE) Policy',
+  deep_cleaning: [
+    'Quarterly Deep Cleaning Schedule',
+    'Bathroom Sanitisation Protocol',
+    'Carpet & Floor Deep Cleaning SOP',
+    'Infection Control Cleaning Procedure',
+    'Post-COVID Room Sanitisation Guide',
   ],
-  fire_safety: [
-    'Fire Evacuation Plan & Assembly Points',
-    'Fire Extinguisher Inspection Checklist',
-    'Emergency Warden Responsibilities',
-    'Fire Alarm System Testing Schedule',
-    'Kitchen Fire Prevention Procedure',
+  public_areas: [
+    'Lobby & Reception Cleaning SOP',
+    'Restroom Cleaning & Sanitisation',
+    'Elevator & Corridor Maintenance',
+    'Conference Room Setup & Cleaning',
+    'Pool & Gym Area Cleaning Procedure',
   ],
-  hr_employment: [
-    'New Employee Onboarding Checklist',
-    'Staff Training & Development Plan',
-    'Anti-Discrimination & Harassment Policy',
-    'Employee Performance Review Process',
-    'Uniform & Grooming Standards',
+  equipment_trolley: [
+    'Housekeeping Trolley Setup Guide',
+    'Equipment Maintenance Schedule',
+    'Vacuum Cleaner Care & Maintenance',
+    'Supply Inventory & Restocking SOP',
+    'Trolley Loading Standards',
   ],
-  general_operations: [
-    'Facility Maintenance Schedule',
-    'Energy Conservation Procedure',
-    'Waste Management & Recycling Policy',
-    'Pool & Spa Maintenance SOP',
-    'Security & Access Control Procedure',
+  quality_inspection: [
+    'Room Inspection Checklist',
+    'Quality Audit Scoring Criteria',
+    'Supervisor Inspection Procedure',
+    'Guest Complaint Follow-up Audit',
+    'Monthly Quality Performance Review',
   ],
-  guest_experience: [
-    'Guest Satisfaction Survey Process',
-    'Service Recovery Procedure',
-    'Special Request Handling',
-    'Concierge Service Standards',
-    'Loyalty Program Management',
+  staff_training: [
+    'New Staff Induction Program',
+    'Room Attendant Training Checklist',
+    'Supervisor Development Program',
+    'Cross-Training Competency Matrix',
+    'Annual Refresher Training Schedule',
+  ],
+  whs_compliance: [
+    'Manual Handling & Ergonomics SOP',
+    'Slip, Trip & Fall Prevention',
+    'Incident Reporting Procedure',
+    'First Aid Response Protocol',
+    'Hazard Identification & Risk Assessment',
+  ],
+  guest_requests: [
+    'Guest Request Response Procedure',
+    'Complaint Handling & Escalation',
+    'Lost & Found Management SOP',
+    'Extra Amenities Delivery Protocol',
+    'DND & Privacy Policy Procedure',
+  ],
+  swms: [
+    'Manual Handling of Linen & Supplies',
+    'Working at Heights — High Dusting',
+    'Chemical Handling & Mixing SWMS',
+    'Hot Water & Steam Equipment Use',
+    'Biological Hazard Cleanup SWMS',
   ],
 };
 
@@ -92,7 +113,7 @@ export default function GenerateScreen() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [step, setStep] = useState(1); // 1: type, 2: category, 3: details, 4: generating
-  const [docType, setDocType] = useState<'sop' | 'checklist'>('sop');
+  const [docType, setDocType] = useState<'sop' | 'checklist' | 'swms'>('sop');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [title, setTitle] = useState('');
   const [requirements, setRequirements] = useState('');
@@ -219,11 +240,11 @@ export default function GenerateScreen() {
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={docType === 'sop' ? ['#6366f1', '#8b5cf6'] : ['#ffffff', '#f9fafb']}
+          colors={docType === 'sop' ? ['#7B2D8E', '#9B4DB0'] : ['#ffffff', '#f9fafb']}
           style={styles.typeCardGradient}
         >
-          <View style={[styles.typeIconBg, { backgroundColor: docType === 'sop' ? 'rgba(255,255,255,0.2)' : '#eef2ff' }]}>
-            <Ionicons name="document-text" size={32} color={docType === 'sop' ? '#fff' : '#6366f1'} />
+          <View style={[styles.typeIconBg, { backgroundColor: docType === 'sop' ? 'rgba(255,255,255,0.2)' : '#f5f0ff' }]}>
+            <Ionicons name="document-text" size={32} color={docType === 'sop' ? '#fff' : '#7B2D8E'} />
           </View>
           <Text style={[styles.typeTitle, docType === 'sop' && styles.typeTitleActive]}>
             Standard Operating Procedure
@@ -245,11 +266,11 @@ export default function GenerateScreen() {
         activeOpacity={0.8}
       >
         <LinearGradient
-          colors={docType === 'checklist' ? ['#10b981', '#059669'] : ['#ffffff', '#f9fafb']}
+          colors={docType === 'checklist' ? ['#2ECC71', '#27AE60'] : ['#ffffff', '#f9fafb']}
           style={styles.typeCardGradient}
         >
           <View style={[styles.typeIconBg, { backgroundColor: docType === 'checklist' ? 'rgba(255,255,255,0.2)' : '#ecfdf5' }]}>
-            <Ionicons name="checkbox" size={32} color={docType === 'checklist' ? '#fff' : '#10b981'} />
+            <Ionicons name="checkbox" size={32} color={docType === 'checklist' ? '#fff' : '#2ECC71'} />
           </View>
           <Text style={[styles.typeTitle, docType === 'checklist' && styles.typeTitleActive]}>
             Compliance Checklist
@@ -266,11 +287,37 @@ export default function GenerateScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={[styles.typeCard, docType === 'swms' && styles.typeCardActive]}
+        onPress={() => setDocType('swms')}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={docType === 'swms' ? ['#C0392B', '#E74C3C'] : ['#ffffff', '#f9fafb']}
+          style={styles.typeCardGradient}
+        >
+          <View style={[styles.typeIconBg, { backgroundColor: docType === 'swms' ? 'rgba(255,255,255,0.2)' : '#fef2f2' }]}>
+            <Ionicons name="shield-checkmark" size={32} color={docType === 'swms' ? '#fff' : '#C0392B'} />
+          </View>
+          <Text style={[styles.typeTitle, docType === 'swms' && styles.typeTitleActive]}>
+            Safe Work Method Statement
+          </Text>
+          <Text style={[styles.typeDesc, docType === 'swms' && styles.typeDescActive]}>
+            SWMS for high-risk activities with hazard controls, PPE requirements, and risk assessments
+          </Text>
+          {docType === 'swms' && (
+            <View style={styles.typeCheck}>
+              <Ionicons name="checkmark-circle" size={24} color="#fff" />
+            </View>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={styles.nextBtn}
         onPress={() => setStep(2)}
       >
         <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
+          colors={['#7B2D8E', '#9B4DB0']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.nextBtnGradient}
@@ -286,7 +333,7 @@ export default function GenerateScreen() {
     <View style={styles.stepContainer}>
       <Text style={styles.stepTitle}>Select a Category</Text>
       <Text style={styles.stepSubtitle}>
-        Choose the area for your {docType === 'sop' ? 'SOP' : 'checklist'}
+        Choose the area for your {docType === 'sop' ? 'SOP' : docType === 'swms' ? 'SWMS' : 'checklist'}
       </Text>
 
       <View style={styles.categoryGrid}>
@@ -315,7 +362,7 @@ export default function GenerateScreen() {
 
       <View style={styles.navRow}>
         <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
-          <Ionicons name="arrow-back" size={20} color="#6366f1" />
+          <Ionicons name="arrow-back" size={20} color="#7B2D8E" />
           <Text style={styles.backBtnText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -324,7 +371,7 @@ export default function GenerateScreen() {
           disabled={!selectedCategory}
         >
           <LinearGradient
-            colors={selectedCategory ? ['#6366f1', '#8b5cf6'] : ['#d1d5db', '#d1d5db']}
+            colors={selectedCategory ? ['#7B2D8E', '#9B4DB0'] : ['#d1d5db', '#d1d5db']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.nextBtnGradient}
@@ -381,7 +428,7 @@ export default function GenerateScreen() {
                   onPress={() => setTitle(s)}
                 >
                   <Text style={styles.suggestionText}>{s}</Text>
-                  <Ionicons name="add-circle-outline" size={16} color="#6366f1" />
+                  <Ionicons name="add-circle-outline" size={16} color="#7B2D8E" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -434,7 +481,7 @@ export default function GenerateScreen() {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Type</Text>
               <Text style={styles.summaryValue}>
-                {docType === 'sop' ? 'Standard Operating Procedure' : 'Compliance Checklist'}
+                {docType === 'sop' ? 'Standard Operating Procedure' : docType === 'swms' ? 'Safe Work Method Statement' : 'Compliance Checklist'}
               </Text>
             </View>
             <View style={styles.summaryRow}>
@@ -449,7 +496,7 @@ export default function GenerateScreen() {
 
           <View style={styles.navRow}>
             <TouchableOpacity style={styles.backBtn} onPress={() => setStep(2)}>
-              <Ionicons name="arrow-back" size={20} color="#6366f1" />
+              <Ionicons name="arrow-back" size={20} color="#7B2D8E" />
               <Text style={styles.backBtnText}>Back</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -458,7 +505,7 @@ export default function GenerateScreen() {
               disabled={!title.trim() || generating}
             >
               <LinearGradient
-                colors={title.trim() ? ['#6366f1', '#8b5cf6'] : ['#d1d5db', '#d1d5db']}
+                colors={title.trim() ? ['#7B2D8E', '#9B4DB0'] : ['#d1d5db', '#d1d5db']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.generateBtnGradient}
@@ -477,16 +524,16 @@ export default function GenerateScreen() {
   const renderStep4 = () => (
     <View style={styles.generatingContainer}>
       <LinearGradient
-        colors={['#0f0f23', '#1a1a3e']}
+        colors={['#0a0a14', '#1a1a2e']}
         style={styles.generatingGradient}
       >
         <View style={styles.generatingContent}>
           <View style={styles.generatingIconWrap}>
-            <ActivityIndicator size="large" color="#a5b4fc" />
+            <ActivityIndicator size="large" color="#C4A265" />
           </View>
           <Text style={styles.generatingTitle}>Generating Document...</Text>
           <Text style={styles.generatingSubtitle}>
-            Our AI is crafting your {docType === 'sop' ? 'SOP' : 'checklist'}
+            Our AI is crafting your {docType === 'sop' ? 'SOP' : docType === 'swms' ? 'SWMS' : 'checklist'}
           </Text>
           <Text style={styles.generatingDocTitle}>"{title}"</Text>
 
@@ -681,7 +728,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepDotActive: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#7B2D8E',
   },
   stepDotCompleted: {
     backgroundColor: '#10b981',
@@ -823,7 +870,7 @@ const styles = StyleSheet.create({
   backBtnText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6366f1',
+    color: '#7B2D8E',
   },
   nextBtn: {
     flex: 1,
@@ -937,8 +984,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   sectionCountBtnActive: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
+    backgroundColor: '#7B2D8E',
+    borderColor: '#7B2D8E',
   },
   sectionCountText: {
     fontSize: 16,
@@ -1003,7 +1050,7 @@ const styles = StyleSheet.create({
   generatingDocTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#a5b4fc',
+    color: '#C4A265',
     fontStyle: 'italic',
     marginBottom: 24,
   },
@@ -1017,7 +1064,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#6366f1',
+    backgroundColor: '#7B2D8E',
     borderRadius: 3,
   },
   progressText: {

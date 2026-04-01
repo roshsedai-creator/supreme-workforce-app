@@ -191,7 +191,7 @@ export default function DocumentsScreen() {
         <View style={[styles.viewerContainer, { paddingTop: insets.top }]}>
           {/* Viewer Header */}
           <LinearGradient
-            colors={['#0f0f23', '#1a1a3e']}
+            colors={['#0a0a14', '#1a1a2e']}
             style={styles.viewerHeader}
           >
             <TouchableOpacity
@@ -201,11 +201,11 @@ export default function DocumentsScreen() {
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             <View style={styles.viewerHeaderCenter}>
-              <Text style={styles.viewerBrand}>SUPREME HOSPITALITY</Text>
+              <Text style={styles.viewerBrand}>SUPREME HOSPITALITY SERVICES</Text>
               <Text style={styles.viewerTitle} numberOfLines={2}>{selectedDoc.title}</Text>
               <View style={styles.viewerMeta}>
-                <View style={[styles.viewerBadge, { backgroundColor: (cat?.color || '#6366f1') + '30' }]}>
-                  <Text style={[styles.viewerBadgeText, { color: cat?.color || '#6366f1' }]}>
+                <View style={[styles.viewerBadge, { backgroundColor: (cat?.color || '#7B2D8E') + '30' }]}>
+                  <Text style={[styles.viewerBadgeText, { color: cat?.color || '#7B2D8E' }]}>
                     {cat?.name || selectedDoc.category}
                   </Text>
                 </View>
@@ -227,7 +227,7 @@ export default function DocumentsScreen() {
                 style={styles.viewerActionBtn}
                 onPress={() => handleExport(selectedDoc)}
               >
-                <Ionicons name="open-outline" size={20} color="#a5b4fc" />
+                <Ionicons name="open-outline" size={20} color="#C4A265" />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.viewerActionBtn}
@@ -236,7 +236,7 @@ export default function DocumentsScreen() {
                 <Ionicons
                   name={selectedDoc.status === 'published' ? 'eye-off-outline' : 'eye-outline'}
                   size={20}
-                  color="#a5b4fc"
+                  color="#C4A265"
                 />
               </TouchableOpacity>
             </View>
@@ -257,8 +257,8 @@ export default function DocumentsScreen() {
             {selectedDoc.sections?.map((section, index) => (
               <View key={index} style={styles.viewerSection}>
                 <View style={styles.viewerSectionHeader}>
-                  <View style={[styles.viewerSectionNumber, { backgroundColor: (cat?.color || '#6366f1') + '15' }]}>
-                    <Text style={[styles.viewerSectionNumberText, { color: cat?.color || '#6366f1' }]}>
+                  <View style={[styles.viewerSectionNumber, { backgroundColor: (cat?.color || '#7B2D8E') + '15' }]}>
+                    <Text style={[styles.viewerSectionNumberText, { color: cat?.color || '#7B2D8E' }]}>
                       {index + 1}
                     </Text>
                   </View>
@@ -277,7 +277,7 @@ export default function DocumentsScreen() {
               </Text>
               {selectedDoc.ai_generated && (
                 <View style={styles.viewerAiBadge}>
-                  <Ionicons name="sparkles" size={12} color="#6366f1" />
+                  <Ionicons name="sparkles" size={12} color="#7B2D8E" />
                   <Text style={styles.viewerAiText}>AI Generated</Text>
                 </View>
               )}
@@ -290,7 +290,7 @@ export default function DocumentsScreen() {
               style={styles.viewerBottomBtn}
               onPress={() => handleExport(selectedDoc)}
             >
-              <Ionicons name="download-outline" size={20} color="#6366f1" />
+              <Ionicons name="download-outline" size={20} color="#7B2D8E" />
               <Text style={styles.viewerBottomBtnText}>Export / Print</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -315,7 +315,7 @@ export default function DocumentsScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#6366f1" />
+        <ActivityIndicator size="large" color="#7B2D8E" />
       </View>
     );
   }
@@ -409,7 +409,7 @@ export default function DocumentsScreen() {
         contentContainerStyle={styles.docListContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7B2D8E" />
         }
       >
         {documents.length > 0 ? (
@@ -423,11 +423,11 @@ export default function DocumentsScreen() {
                 onPress={() => openDocViewer(doc)}
               >
                 <View style={styles.docCardHeader}>
-                  <View style={[styles.docCardIcon, { backgroundColor: (cat?.color || '#6366f1') + '15' }]}>
+                  <View style={[styles.docCardIcon, { backgroundColor: (cat?.color || '#7B2D8E') + '15' }]}>
                     <Ionicons
                       name={getCategoryIcon(cat?.icon || 'document-outline')}
                       size={22}
-                      color={cat?.color || '#6366f1'}
+                      color={cat?.color || '#7B2D8E'}
                     />
                   </View>
                   <View style={styles.docCardInfo}>
@@ -445,7 +445,7 @@ export default function DocumentsScreen() {
                   <View style={styles.docCardFooterLeft}>
                     {doc.ai_generated && (
                       <View style={styles.aiBadge}>
-                        <Ionicons name="sparkles" size={10} color="#6366f1" />
+                        <Ionicons name="sparkles" size={10} color="#7B2D8E" />
                         <Text style={styles.aiBadgeText}>AI</Text>
                       </View>
                     )}
@@ -554,8 +554,8 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chipActive: {
-    backgroundColor: '#6366f1',
-    borderColor: '#6366f1',
+    backgroundColor: '#7B2D8E',
+    borderColor: '#7B2D8E',
   },
   chipText: {
     fontSize: 13,
@@ -578,7 +578,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
   },
   statusChipActive: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#7B2D8E',
   },
   statusChipActiveGreen: {
     backgroundColor: '#10b981',
@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
   aiBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#eef2ff',
+    backgroundColor: '#f5f0ff',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -663,7 +663,7 @@ const styles = StyleSheet.create({
   aiBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#6366f1',
+    color: '#7B2D8E',
   },
   docCardDate: {
     fontSize: 12,
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   viewerBrand: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#a5b4fc',
+    color: '#C4A265',
     letterSpacing: 2,
     marginBottom: 4,
   },
@@ -775,12 +775,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   viewerSummary: {
-    backgroundColor: '#eef2ff',
+    backgroundColor: '#f5f0ff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     borderLeftWidth: 4,
-    borderLeftColor: '#6366f1',
+    borderLeftColor: '#7B2D8E',
   },
   viewerSummaryText: {
     fontSize: 14,
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
   viewerFooterConfidential: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#ef4444',
+    color: '#E74C3C',
     letterSpacing: 1,
     marginBottom: 4,
   },
@@ -847,14 +847,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     marginTop: 8,
-    backgroundColor: '#eef2ff',
+    backgroundColor: '#f5f0ff',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
   },
   viewerAiText: {
     fontSize: 11,
-    color: '#6366f1',
+    color: '#7B2D8E',
     fontWeight: '600',
   },
   viewerBottomBar: {
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   viewerBottomBtnPrimary: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#7B2D8E',
   },
   viewerBottomBtnText: {
     fontSize: 14,

@@ -52,7 +52,7 @@ export default function ProfileScreen() {
       >
         <View style={styles.avatarContainer}>
           <LinearGradient
-            colors={['#6366f1', '#8b5cf6']}
+            colors={['#7B2D8E', '#9B4DB0']}
             style={styles.avatar}
           >
             <Text style={styles.avatarText}>{getInitials()}</Text>
@@ -64,11 +64,11 @@ export default function ProfileScreen() {
         <Text style={styles.userRole}>{user?.role || 'Admin'}</Text>
         <View style={styles.brandBadge}>
           <Image
-            source={require('../../assets/logo.jpg')}
+            source={require('../../assets/supreme-logo.png')}
             style={styles.brandLogo}
             resizeMode="contain"
           />
-          <Text style={styles.brandText}>Supreme Hospitality</Text>
+          <Text style={styles.brandText}>Supreme Hospitality Services</Text>
         </View>
       </LinearGradient>
 
@@ -78,8 +78,8 @@ export default function ProfileScreen() {
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <View style={[styles.infoIcon, { backgroundColor: '#eef2ff' }]}>
-              <Ionicons name="person-outline" size={18} color="#6366f1" />
+            <View style={[styles.infoIcon, { backgroundColor: '#f5f0ff' }]}>
+              <Ionicons name="person-outline" size={18} color="#7B2D8E" />
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Full Name</Text>
@@ -133,8 +133,8 @@ export default function ProfileScreen() {
 
         <View style={styles.infoCard}>
           <View style={styles.infoRow}>
-            <View style={[styles.infoIcon, { backgroundColor: '#eef2ff' }]}>
-              <Ionicons name="information-circle-outline" size={18} color="#6366f1" />
+            <View style={[styles.infoIcon, { backgroundColor: '#f5f0ff' }]}>
+              <Ionicons name="information-circle-outline" size={18} color="#7B2D8E" />
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>App Version</Text>
@@ -166,7 +166,7 @@ export default function ProfileScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>© 2026 Supreme Hospitality Services</Text>
+        <Text style={styles.footerText}>© 2026 Supreme Hospitality Services Pty Ltd</Text>
         <Text style={styles.footerSubText}>SOPs & Compliance Document Generator</Text>
       </View>
 
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   },
   userRole: {
     fontSize: 14,
-    color: '#a5b4fc',
+    color: '#C4A265',
     fontWeight: '500',
     textTransform: 'capitalize',
     marginBottom: 16,

@@ -22,15 +22,15 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: '#ffffff',
+          backgroundColor: '#0a0a14',
           borderTopWidth: 1,
-          borderTopColor: '#e5e7eb',
+          borderTopColor: 'rgba(196,162,101,0.15)',
           height: 60 + insets.bottom,
           paddingBottom: insets.bottom > 0 ? insets.bottom : 6,
           paddingTop: 6,
         },
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#9ca3af',
+        tabBarActiveTintColor: '#C4A265',
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.35)',
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
@@ -106,6 +106,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   iconWrapActive: {
-    backgroundColor: '#eef2ff',
+    backgroundColor: 'rgba(123,45,142,0.25)',
   },
 });

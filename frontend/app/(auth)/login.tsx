@@ -86,7 +86,7 @@ export default function LoginScreen() {
       {/* Animated Gradient Orbs */}
       <View style={styles.orbContainer}>
         <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
+          colors={['#7B2D8E', '#9B4DB0']}
           style={[styles.orb, styles.orb1]}
         />
         <LinearGradient
@@ -116,14 +116,14 @@ export default function LoginScreen() {
                 style={styles.logoGradient}
               >
                 <Image 
-                  source={require('../../assets/logo.jpg')}
+                  source={require('../../assets/supreme-logo.png')}
                   style={styles.logo}
                   resizeMode="contain"
                 />
               </LinearGradient>
             </View>
             
-            <Text style={styles.brandName}>Supreme Hospitality</Text>
+            <Text style={styles.brandName}>Supreme Hospitality Services</Text>
             <Text style={styles.tagline}>SOPs & Compliance Generator</Text>
             
             {/* Feature Badges */}
@@ -137,7 +137,7 @@ export default function LoginScreen() {
                 <Text style={styles.badgeText}>Secure</Text>
               </View>
               <View style={styles.badge}>
-                <Ionicons name="analytics" size={12} color="#6366f1" />
+                <Ionicons name="analytics" size={12} color="#7B2D8E" />
                 <Text style={styles.badgeText}>Smart</Text>
               </View>
             </View>
@@ -159,7 +159,7 @@ export default function LoginScreen() {
                   focusedInput === 'identifier' && styles.inputContainerFocused
                 ]}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="person" size={18} color="#6366f1" />
+                    <Ionicons name="person" size={18} color="#7B2D8E" />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -183,7 +183,7 @@ export default function LoginScreen() {
                   focusedInput === 'pin' && styles.inputContainerFocused
                 ]}>
                   <View style={styles.inputIconBox}>
-                    <Ionicons name="lock-closed" size={18} color="#6366f1" />
+                    <Ionicons name="lock-closed" size={18} color="#7B2D8E" />
                   </View>
                   <TextInput
                     style={styles.input}
@@ -208,7 +208,7 @@ export default function LoginScreen() {
                 activeOpacity={0.9}
               >
                 <LinearGradient
-                  colors={loading ? ['#6b7280', '#6b7280'] : ['#6366f1', '#8b5cf6']}
+                  colors={loading ? ['#6b7280', '#6b7280'] : ['#7B2D8E', '#9B4DB0']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   style={styles.signInGradient}
@@ -219,7 +219,7 @@ export default function LoginScreen() {
                     <>
                       <Text style={styles.signInText}>Sign In</Text>
                       <View style={styles.arrowCircle}>
-                        <Ionicons name="arrow-forward" size={16} color="#6366f1" />
+                        <Ionicons name="arrow-forward" size={16} color="#7B2D8E" />
                       </View>
                     </>
                   )}
@@ -242,7 +242,7 @@ export default function LoginScreen() {
               </View>
               <View style={styles.trustDot} />
               <View style={styles.trustItem}>
-                <Ionicons name="finger-print" size={16} color="#6366f1" />
+                <Ionicons name="finger-print" size={16} color="#7B2D8E" />
                 <Text style={styles.trustText}>Biometric Ready</Text>
               </View>
             </View>
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderRadius: 28,
     padding: 28,
-    shadowColor: '#6366f1',
+    shadowColor: '#7B2D8E',
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.15,
     shadowRadius: 40,
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   inputContainerFocused: {
-    borderColor: '#6366f1',
+    borderColor: '#7B2D8E',
     backgroundColor: '#fafaff',
   },
   inputIconBox: {
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#6366f1',
+    shadowColor: '#7B2D8E',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
   },
   registerLink: {
     fontSize: 15,
-    color: '#6366f1',
+    color: '#7B2D8E',
     fontWeight: '700',
   },
   trustSection: {

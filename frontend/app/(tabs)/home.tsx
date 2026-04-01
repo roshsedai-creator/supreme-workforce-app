@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuthStore } from '../../store/authStore';
 import { getDashboardStats, getCategories } from '../../utils/api';
+import { Colors } from '../../constants/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -110,7 +111,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#6366f1" />
+        <ActivityIndicator size="large" color="#7B2D8E" />
       </View>
     );
   }
@@ -121,24 +122,24 @@ export default function HomeScreen() {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#6366f1" />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7B2D8E" />
       }
     >
       {/* Header */}
       <LinearGradient
-        colors={['#0f0f23', '#1a1a3e', '#252550']}
+        colors={['#0a0a14', '#1a1a2e', '#2d1b4e']}
         style={styles.headerGradient}
       >
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.brandLabel}>SUPREME HOSPITALITY</Text>
+            <Text style={styles.brandLabel}>SUPREME HOSPITALITY SERVICES</Text>
             <Text style={styles.greeting}>
               Welcome, {user?.first_name || 'User'}
             </Text>
           </View>
           <View style={styles.headerLogo}>
             <Image
-              source={require('../../assets/logo.jpg')}
+              source={require('../../assets/supreme-logo.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -152,7 +153,7 @@ export default function HomeScreen() {
               colors={['rgba(99,102,241,0.15)', 'rgba(99,102,241,0.05)']}
               style={styles.statCardGradient}
             >
-              <Ionicons name="document-text" size={24} color="#a5b4fc" />
+              <Ionicons name="document-text" size={24} color="#C4A265" />
               <Text style={styles.statNumber}>{stats?.total_documents || 0}</Text>
               <Text style={styles.statLabel}>Total Docs</Text>
             </LinearGradient>
@@ -162,7 +163,7 @@ export default function HomeScreen() {
               colors={['rgba(16,185,129,0.15)', 'rgba(16,185,129,0.05)']}
               style={styles.statCardGradient}
             >
-              <Ionicons name="checkmark-circle" size={24} color="#6ee7b7" />
+              <Ionicons name="checkmark-circle" size={24} color="#2ECC71" />
               <Text style={styles.statNumber}>{stats?.published_documents || 0}</Text>
               <Text style={styles.statLabel}>Published</Text>
             </LinearGradient>
@@ -172,7 +173,7 @@ export default function HomeScreen() {
               colors={['rgba(245,158,11,0.15)', 'rgba(245,158,11,0.05)']}
               style={styles.statCardGradient}
             >
-              <Ionicons name="create" size={24} color="#fcd34d" />
+              <Ionicons name="create" size={24} color="#F39C12" />
               <Text style={styles.statNumber}>{stats?.draft_documents || 0}</Text>
               <Text style={styles.statLabel}>Drafts</Text>
             </LinearGradient>
@@ -187,14 +188,14 @@ export default function HomeScreen() {
         onPress={() => router.push('/(tabs)/generate')}
       >
         <LinearGradient
-          colors={['#6366f1', '#8b5cf6']}
+          colors={['#7B2D8E', '#9B4DB0']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.ctaGradient}
         >
           <View style={styles.ctaContent}>
             <View style={styles.ctaIconContainer}>
-              <Ionicons name="sparkles" size={28} color="#fff" />
+              <Ionicons name="sparkles" size={28} color="#C4A265" />
             </View>
             <View style={styles.ctaText}>
               <Text style={styles.ctaTitle}>Generate New Document</Text>
@@ -259,11 +260,11 @@ export default function HomeScreen() {
                   params: { viewDocId: doc.id }
                 })}
               >
-                <View style={[styles.recentIcon, { backgroundColor: (cat?.color || '#6366f1') + '15' }]}>
+                <View style={[styles.recentIcon, { backgroundColor: (cat?.color || '#7B2D8E') + '15' }]}>
                   <Ionicons
                     name={getCategoryIcon(cat?.icon || 'document-outline')}
                     size={20}
-                    color={cat?.color || '#6366f1'}
+                    color={cat?.color || '#7B2D8E'}
                   />
                 </View>
                 <View style={styles.recentInfo}>
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
   brandLabel: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#a5b4fc',
+    color: '#C4A265',
     letterSpacing: 2,
     marginBottom: 4,
   },
@@ -433,7 +434,7 @@ const styles = StyleSheet.create({
   sectionLink: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6366f1',
+    color: '#7B2D8E',
   },
   categoriesGrid: {
     flexDirection: 'row',

@@ -1,37 +1,39 @@
-export const colors = {
-  // Supreme Brand Colors (from logo)
-  primary: '#8B5CF6', // Supreme Purple
-  gold: '#F59E0B', // Supreme Gold
+// Supreme Hospitality Services — Brand Colors
+export const Colors = {
+  primary: '#7B2D8E',       // Supreme Purple
+  primaryDark: '#5a1d6e',   // Dark Purple
+  primaryLight: '#9B4DB0',  // Light Purple
+  accent: '#C4A265',        // Supreme Gold
+  accentDark: '#A68B4B',    // Dark Gold
+  accentLight: '#D4B87A',   // Light Gold
   
-  // Status Colors
-  success: '#10B981',
-  error: '#EF4444',
-  warning: '#F59E0B',
-  
-  // Neutral
-  white: '#FFFFFF',
-  black: '#000000',
-  gray: {
-    50: '#F9FAFB',
-    100: '#F3F4F6',
-    200: '#E5E7EB',
-    300: '#D1D5DB',
-    400: '#9CA3AF',
-    500: '#6B7280',
-    600: '#4B5563',
-    700: '#374151',
-    800: '#1F2937',
-    900: '#111827',
+  bg: {
+    dark: '#0a0a14',        // Deep dark background
+    darkAlt: '#1a1a2e',     // Slightly lighter dark
+    darkPurple: '#2d1b4e',  // Dark purple tint
+    light: '#f8f7f4',       // Warm light background
+    card: '#ffffff',
+    cardAlt: '#faf8f5',
   },
   
-  // Background
-  background: '#F9FAFB',
-  card: '#FFFFFF',
-  
-  // Text
   text: {
-    primary: '#111827',
-    secondary: '#6B7280',
-    light: '#9CA3AF',
+    primary: '#1a1a2e',
+    secondary: '#4a4a6a',
+    light: '#9ca3af',
+    white: '#ffffff',
+    gold: '#C4A265',
+    purple: '#7B2D8E',
   },
+  
+  status: {
+    success: '#2ECC71',
+    warning: '#F39C12',
+    danger: '#E74C3C',
+    info: '#3498DB',
+  },
+  
+  border: {
+    light: '#f0ede8',
+    medium: '#e5e0d8',
+  }
 };
