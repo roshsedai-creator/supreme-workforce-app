@@ -1,0 +1,50 @@
+{
+  "total_tests": 6,
+  "passed_tests": 6,
+  "failed_tests": 0,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "Admin Login",
+      "success": true,
+      "details": "Login successful without token (PIN-based auth). User: John",
+      "timestamp": "2026-04-01T03:20:15.412373",
+      "response_data": null
+    },
+    {
+      "test": "Categories API",
+      "success": true,
+      "details": "Retrieved 11 categories with all required fields",
+      "timestamp": "2026-04-01T03:20:15.469331",
+      "response_data": null
+    },
+    {
+      "test": "Dashboard Stats",
+      "success": true,
+      "details": "All required fields present. Total docs: 3",
+      "timestamp": "2026-04-01T03:20:15.529596",
+      "response_data": null
+    },
+    {
+      "test": "Documents List",
+      "success": true,
+      "details": "Retrieved 3 documents",
+      "timestamp": "2026-04-01T03:20:15.583740",
+      "response_data": null
+    },
+    {
+      "test": "Document Export (SWMS)",
+      "success": true,
+      "details": "All 9 validation checks passed. HTML length: 43155 chars",
+      "timestamp": "2026-04-01T03:20:15.666674",
+      "response_data": null
+    },
+    {
+      "test": "Document Export (SOP)",
+      "success": true,
+      "details": "All 9 validation checks passed. HTML length: 36624 chars",
+      "timestamp": "2026-04-01T03:20:15.734606",
+      "response_data": null
+    }
+  ]
+}

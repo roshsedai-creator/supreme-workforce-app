@@ -27,6 +27,15 @@ export default function MarkdownViewer({ content, accentColor = '#7B2D8E' }: Mar
       continue;
     }
 
+    // Horizontal rule (--- or ***)
+    if (/^[-*_]{3,}$/.test(line)) {
+      elements.push(
+        <View key={key++} style={styles.horizontalRule} />
+      );
+      i++;
+      continue;
+    }
+
     // Check for markdown table
     if (line.includes('|') && line.startsWith('|')) {
       const tableLines: string[] = [];
@@ -208,6 +217,12 @@ function renderTable(tableLines: string[], key: number, accentColor: string): Re
 const styles = StyleSheet.create({
   container: {
     gap: 6,
+  },
+  horizontalRule: {
+    height: 2,
+    backgroundColor: '#e5e0d8',
+    marginVertical: 12,
+    borderRadius: 1,
   },
   paragraph: {
     fontSize: 14,
