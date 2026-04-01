@@ -15,7 +15,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { getDocuments, getCategories, deleteDocument, updateDocument, getDocumentExportUrl } from '../../utils/api';
 import MarkdownViewer from '../../components/MarkdownViewer';
 import * as WebBrowser from 'expo-web-browser';
@@ -45,6 +45,7 @@ interface Category {
 
 export default function DocumentsScreen() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const params = useLocalSearchParams<{ filterCategory?: string; viewDocId?: string }>();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -455,21 +456,16 @@ export default function DocumentsScreen() {
                       {doc.sections?.length || 0} section{(doc.sections?.length || 0) !== 1 ? 's' : ''}
                     </Text>
                   </View>
-                  <View style={[
-                    styles.docStatusBadge,
-                    { backgroundColor: doc.status === 'published' ? '#ecfdf5' : '#fef3c7' }
-                  ]}>
-                    <View style={[
-                      styles.docStatusDot,
-                      { backgroundColor: doc.status === 'published' ? '#10b981' : '#f59e0b' }
-                    ]} />
-                    <Text style={[
-                      styles.docStatusText,
-                      { color: doc.status === 'published' ? '#059669' : '#d97706' }
-                    ]}>
-                      {doc.status === 'published' ? 'Published' : 'Draft'}
-                    </Text>
-                  </View>
+                  <TouchableOpacity
+                    style={styles.exportPdfBtn}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      handleExport(doc);
+                    }}
+                  >
+                    <Ionicons name="download-outline" size={14} color="#fff" />
+                    <Text style={styles.exportPdfBtnText}>PDF</Text>
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             );
@@ -483,8 +479,22 @@ export default function DocumentsScreen() {
             </Text>
           </View>
         )}
-        <View style={{ height: 20 }} />
+        <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity
+        style={[styles.fab, { bottom: insets.bottom + 80 }]}
+        activeOpacity={0.9}
+        onPress={() => router.push('/(tabs)/generate')}
+      >
+        <LinearGradient
+          colors={['#7B2D8E', '#9B4DB0']}
+          style={styles.fabGradient}
+        >
+          <Ionicons name="add" size={28} color="#fff" />
+        </LinearGradient>
+      </TouchableOpacity>
 
       {renderDocViewer()}
     </View>
@@ -884,5 +894,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#374151',
+  },
+  exportPdfBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#7B2D8E',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+  },
+  exportPdfBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.5,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    zIndex: 10,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
   },
 });
