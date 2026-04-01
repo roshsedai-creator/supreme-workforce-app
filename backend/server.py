@@ -613,35 +613,152 @@ async def get_dashboard_stats():
     }
 
 # =====================
-# DOCUMENT EXPORT (HTML) — Premium branded
+# MARKDOWN TO HTML CONVERTER
+# =====================
+
+import re
+
+def markdown_to_html(text: str) -> str:
+    """Convert markdown content to premium HTML with proper table support."""
+    if not text:
+        return ""
+    
+    lines = text.split('\n')
+    html_parts = []
+    i = 0
+    
+    while i < len(lines):
+        line = lines[i].strip()
+        
+        # Empty lines
+        if not line:
+            i += 1
+            continue
+        
+        # Tables: detect rows starting with |
+        if line.startswith('|') and '|' in line[1:]:
+            table_lines = []
+            while i < len(lines) and lines[i].strip().startswith('|'):
+                table_lines.append(lines[i].strip())
+                i += 1
+            html_parts.append(_parse_table(table_lines))
+            continue
+        
+        # Headers
+        if line.startswith('### '):
+            html_parts.append(f'<h4>{_inline_format(line[4:])}</h4>')
+            i += 1
+            continue
+        if line.startswith('## '):
+            html_parts.append(f'<h3>{_inline_format(line[3:])}</h3>')
+            i += 1
+            continue
+        if line.startswith('# '):
+            html_parts.append(f'<h3>{_inline_format(line[2:])}</h3>')
+            i += 1
+            continue
+        
+        # Checkbox items
+        if line.startswith('- [ ] '):
+            html_parts.append(f'<div class="check-item"><span class="check-box">☐</span> {_inline_format(line[6:])}</div>')
+            i += 1
+            continue
+        if line.startswith('- [x] ') or line.startswith('- [X] '):
+            html_parts.append(f'<div class="check-item checked"><span class="check-box checked">☑</span> {_inline_format(line[6:])}</div>')
+            i += 1
+            continue
+        
+        # Bullet lists
+        if line.startswith('- ') or line.startswith('• '):
+            html_parts.append(f'<div class="list-item"><span class="bullet">●</span> {_inline_format(line[2:])}</div>')
+            i += 1
+            continue
+        
+        # Numbered lists
+        num_match = re.match(r'^(\d+)\.\s+(.+)', line)
+        if num_match:
+            html_parts.append(f'<div class="num-item"><span class="num-badge">{num_match.group(1)}</span> {_inline_format(num_match.group(2))}</div>')
+            i += 1
+            continue
+        
+        # Regular paragraph
+        html_parts.append(f'<p>{_inline_format(line)}</p>')
+        i += 1
+    
+    return '\n'.join(html_parts)
+
+def _inline_format(text: str) -> str:
+    """Handle bold, italic inline formatting."""
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
+    return text
+
+def _parse_table(table_lines: list) -> str:
+    """Convert markdown table lines to HTML table."""
+    rows = []
+    header = None
+    
+    for line in table_lines:
+        # Skip separator rows (|---|---|)
+        if re.match(r'^\|[\s\-:]+\|$', line.replace(' ', '')):
+            continue
+        
+        cells = [c.strip() for c in line.split('|') if c.strip() or line.startswith('|')]
+        # Remove empty first/last from split
+        if line.startswith('|'):
+            cells = [c.strip() for c in line.split('|')[1:-1]]
+        
+        if cells:
+            if header is None:
+                header = cells
+            else:
+                rows.append(cells)
+    
+    if not header:
+        return ""
+    
+    # Build HTML table
+    th_html = ''.join(f'<th>{_inline_format(h)}</th>' for h in header)
+    tbody = ''
+    for row in rows:
+        td_html = ''
+        for j, h in enumerate(header):
+            val = row[j] if j < len(row) else '—'
+            td_html += f'<td>{_inline_format(val)}</td>'
+        tbody += f'<tr>{td_html}</tr>'
+    
+    return f'''<div class="table-wrap">
+        <table>
+            <thead><tr>{th_html}</tr></thead>
+            <tbody>{tbody}</tbody>
+        </table>
+    </div>'''
+
+# =====================
+# DOCUMENT EXPORT (HTML) — Premium branded with PDF support
 # =====================
 
 @api_router.get("/documents/{doc_id}/export")
 async def export_document(doc_id: str):
-    """Export document as premium branded HTML"""
+    """Export document as premium branded HTML with Save as PDF"""
     doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     
     doc = serialize_doc(doc)
     
-    # Build sections HTML
+    # Build sections HTML with proper markdown parsing
     sections_html = ""
     for i, section in enumerate(doc.get("sections", [])):
         content = section.get("content", "")
-        # Convert markdown-style formatting to HTML
-        content = content.replace("\n\n", "</p><p>")
-        content = content.replace("\n- [ ] ", "<br><span class='checkbox'>☐</span> ")
-        content = content.replace("\n- [x] ", "<br><span class='checkbox checked'>☑</span> ")
-        content = content.replace("\n- ", "<br>• ")
-        content = content.replace("\n", "<br>")
+        parsed_content = markdown_to_html(content)
         
         sections_html += f"""
         <div class="section">
             <div class="section-number">{i+1:02d}</div>
             <div class="section-body">
                 <h2>{section.get('title', 'Section')}</h2>
-                <div class="section-content"><p>{content}</p></div>
+                <div class="section-content">{parsed_content}</div>
             </div>
         </div>"""
     
@@ -673,7 +790,7 @@ async def export_document(doc_id: str):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{doc.get('title', 'Document')} — Supreme Hospitality Services</title>
+    <title>{doc.get('title', 'Document')} — Supreme Compliance</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         
@@ -684,6 +801,51 @@ async def export_document(doc_id: str):
             color: #1a1a2e;
             line-height: 1.7;
             background: #f8f7f4;
+        }}
+        
+        /* Save as PDF toolbar */
+        .toolbar {{
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            background: #0a0a14;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            border-bottom: 1px solid rgba(196,162,101,0.2);
+        }}
+        
+        .toolbar-text {{
+            color: #C4A265;
+            font-size: 13px;
+            font-weight: 600;
+        }}
+        
+        .pdf-btn {{
+            background: linear-gradient(135deg, #7B2D8E, #9B4DB0);
+            color: white;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Inter', sans-serif;
+        }}
+        
+        .pdf-btn:hover {{
+            opacity: 0.9;
+        }}
+        
+        .toolbar-spacer {{
+            height: 56px;
         }}
         
         .header {{
@@ -702,17 +864,6 @@ async def export_document(doc_id: str):
             width: 400px;
             height: 400px;
             background: radial-gradient(circle, rgba(123,45,142,0.15) 0%, transparent 70%);
-            border-radius: 50%;
-        }}
-        
-        .header::after {{
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            left: -10%;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(196,162,101,0.1) 0%, transparent 70%);
             border-radius: 50%;
         }}
         
@@ -750,7 +901,6 @@ async def export_document(doc_id: str):
             font-weight: 700;
             letter-spacing: 3px;
             color: #C4A265;
-            text-transform: uppercase;
         }}
         
         .company-sub {{
@@ -766,14 +916,9 @@ async def export_document(doc_id: str):
             color: rgba(255,255,255,0.4);
         }}
         
-        .doc-ref strong {{
-            color: rgba(196,162,101,0.7);
-        }}
+        .doc-ref strong {{ color: rgba(196,162,101,0.7); }}
         
-        .header-title {{
-            position: relative;
-            z-index: 1;
-        }}
+        .header-title {{ position: relative; z-index: 1; }}
         
         .doc-type-badge {{
             display: inline-block;
@@ -793,7 +938,6 @@ async def export_document(doc_id: str):
             font-weight: 800;
             line-height: 1.3;
             margin-bottom: 8px;
-            letter-spacing: -0.5px;
         }}
         
         .header-meta {{
@@ -802,12 +946,6 @@ async def export_document(doc_id: str):
             display: flex;
             gap: 24px;
             margin-top: 12px;
-        }}
-        
-        .header-meta span {{
-            display: flex;
-            align-items: center;
-            gap: 6px;
         }}
         
         .gold-line {{
@@ -882,28 +1020,120 @@ async def export_document(doc_id: str):
             line-height: 1.8;
         }}
         
-        .section-content p {{
-            margin-bottom: 8px;
+        .section-content p {{ margin-bottom: 8px; }}
+        .section-content h3 {{ font-size: 15px; font-weight: 700; color: #1a1a2e; margin: 14px 0 8px; }}
+        .section-content h4 {{ font-size: 14px; font-weight: 600; color: #374151; margin: 10px 0 6px; }}
+        
+        /* Tables */
+        .table-wrap {{
+            margin: 16px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e5e0d8;
         }}
         
-        .checkbox {{
-            display: inline-block;
-            width: 18px;
-            height: 18px;
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }}
+        
+        thead tr {{
+            background: linear-gradient(135deg, #7B2D8E, #5a1d6e);
+        }}
+        
+        th {{
+            color: white;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-right: 1px solid rgba(255,255,255,0.15);
+        }}
+        
+        th:last-child {{ border-right: none; }}
+        
+        td {{
+            padding: 10px 14px;
+            border-bottom: 1px solid #f0ede8;
+            border-right: 1px solid #f0ede8;
+            color: #3a3a5a;
+        }}
+        
+        td:last-child {{ border-right: none; }}
+        
+        tbody tr:nth-child(even) {{ background: #faf8f5; }}
+        tbody tr:nth-child(odd) {{ background: white; }}
+        tbody tr:last-child td {{ border-bottom: none; }}
+        
+        /* Lists */
+        .list-item {{
+            padding: 4px 0 4px 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }}
+        
+        .bullet {{
+            color: #7B2D8E;
+            font-size: 8px;
+            margin-top: 6px;
+            flex-shrink: 0;
+        }}
+        
+        .num-item {{
+            padding: 4px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }}
+        
+        .num-badge {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            height: 24px;
+            background: rgba(123,45,142,0.1);
+            color: #7B2D8E;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }}
+        
+        /* Checkboxes */
+        .check-item {{
+            padding: 6px 0 6px 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }}
+        
+        .check-box {{
+            display: inline-flex;
+            width: 20px;
+            height: 20px;
             border: 2px solid #7B2D8E;
             border-radius: 4px;
-            margin-right: 8px;
-            vertical-align: middle;
-            text-align: center;
-            line-height: 14px;
-            font-size: 12px;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
         }}
         
-        .checkbox.checked {{
+        .check-box.checked {{
             background: #7B2D8E;
             color: white;
         }}
         
+        .check-item.checked {{ color: #9ca3af; }}
+        
+        /* Footer */
         .footer {{
             background: linear-gradient(135deg, #0a0a14, #1a1a2e);
             color: rgba(255,255,255,0.5);
@@ -949,22 +1179,37 @@ async def export_document(doc_id: str):
         }}
         
         @media print {{
+            .toolbar {{ display: none !important; }}
+            .toolbar-spacer {{ display: none !important; }}
             body {{ background: white; }}
-            .header {{ page-break-after: avoid; }}
+            .header {{ page-break-after: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
             .section {{ page-break-inside: avoid; }}
             .section-body {{ box-shadow: none; border: 1px solid #e5e5e5; }}
-            .footer {{ page-break-before: auto; }}
+            .section-number {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            thead tr {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            .doc-type-badge {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            .footer {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; page-break-before: auto; }}
+            .gold-line {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
         }}
     </style>
 </head>
 <body>
+    <!-- Save as PDF Toolbar -->
+    <div class="toolbar">
+        <span class="toolbar-text">Supreme Compliance — {doc.get('title', 'Document')}</span>
+        <button class="pdf-btn" onclick="window.print()">
+            📥 Save as PDF
+        </button>
+    </div>
+    <div class="toolbar-spacer"></div>
+
     <div class="header">
         <div class="header-top">
             <div class="logo-area">
                 <div class="logo-icon">SH</div>
                 <div>
-                    <div class="company-name">Supreme Hospitality Services</div>
-                    <div class="company-sub">Outsourced Housekeeping Excellence</div>
+                    <div class="company-name">SUPREME COMPLIANCE</div>
+                    <div class="company-sub">Supreme Hospitality Services</div>
                 </div>
             </div>
             <div class="doc-ref">
@@ -994,7 +1239,7 @@ async def export_document(doc_id: str):
     
     <div class="footer">
         <div class="footer-content">
-            <div class="footer-brand">SUPREME HOSPITALITY SERVICES</div>
+            <div class="footer-brand">SUPREME COMPLIANCE</div>
             <div class="footer-confidential">CONFIDENTIAL — INTERNAL USE ONLY</div>
             <div class="footer-divider"></div>
             <div class="footer-text">
@@ -1004,7 +1249,7 @@ async def export_document(doc_id: str):
             </div>
             <div class="footer-divider"></div>
             <div class="footer-text">
-                Generated on {created_date} | © {datetime.utcnow().year} Supreme Hospitality Services
+                Generated on {created_date} | © {datetime.utcnow().year} Supreme Compliance
             </div>
         </div>
     </div>

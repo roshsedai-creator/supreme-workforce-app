@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getDocuments, getCategories, deleteDocument, updateDocument, getDocumentExportUrl } from '../../utils/api';
+import MarkdownViewer from '../../components/MarkdownViewer';
 import * as WebBrowser from 'expo-web-browser';
 
 const { width, height } = Dimensions.get('window');
@@ -264,7 +265,7 @@ export default function DocumentsScreen() {
                   </View>
                   <Text style={styles.viewerSectionTitle}>{section.title}</Text>
                 </View>
-                <Text style={styles.viewerSectionContent}>{section.content}</Text>
+                <MarkdownViewer content={section.content} accentColor={cat?.color || '#7B2D8E'} />
               </View>
             ))}
 
