@@ -240,7 +240,7 @@ Once deployed:
 
 **Web Version (Browser):**
 ```
-https://timemaster-93.preview.emergentagent.com
+https://supreme-sop-gen.preview.emergentagent.com
 ```
 
 **iOS App Store:**

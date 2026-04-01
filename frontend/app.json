@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Supreme Workforce",
-    "slug": "supreme-workforce",
+    "name": "Supreme SOP Generator",
+    "slug": "supreme-sop-gen",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -46,9 +46,9 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/favicon.png",
-      "name": "Supreme Workforce",
-      "shortName": "Workforce",
-      "description": "Premium Timesheet & Workforce Management App",
+      "name": "Supreme SOP Generator",
+      "shortName": "SOP Gen",
+      "description": "Supreme Hospitality SOPs & Compliance Document Generator",
       "backgroundColor": "#1a1a2e",
       "themeColor": "#6366f1",
       "orientation": "portrait",

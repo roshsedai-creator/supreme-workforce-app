@@ -71,7 +71,7 @@ eas build --platform android --profile preview
 ## App Configuration
 
 The app is pre-configured to connect to:
-- **Backend URL:** https://timemaster-93.preview.emergentagent.com
+- **Backend URL:** https://supreme-sop-gen.preview.emergentagent.com
 
 ---
 

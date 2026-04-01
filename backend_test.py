@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Timesheet & Workforce Management App
-Tests critical APIs: Authentication, Manual Timesheet Creation, Timesheet Delete, Supervisor Dashboard
+Backend API Testing for Supreme Hospitality SOPs & Compliance Document Generator
+Tests all critical APIs: Authentication, Categories, Dashboard, Documents CRUD, AI Generation, Export, Templates
 """
 
 import requests
 import json
 from datetime import datetime
 import sys
+import time
 
 # Get backend URL from frontend .env
-BACKEND_URL = "https://timemaster-93.preview.emergentagent.com/api"
+BACKEND_URL = "https://supreme-sop-gen.preview.emergentagent.com/api"
 
-class TimesheetAPITester:
+class SOPGeneratorAPITester:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
@@ -20,6 +21,9 @@ class TimesheetAPITester:
             'Accept': 'application/json'
         })
         self.test_results = []
+        self.auth_token = None
+        self.created_document_id = None
+        self.created_template_id = None
         
     def log_test(self, test_name, success, details=""):
         """Log test result"""
@@ -34,35 +38,37 @@ class TimesheetAPITester:
             "details": details
         })
     
-    def test_authentication_login(self):
-        """Test 1: Authentication - Login API"""
-        print("\n=== Testing Authentication Login API ===")
+    def test_authentication_api(self):
+        """Test 1: Authentication API - Login with phone/PIN"""
+        print("\n=== Testing Authentication API ===")
         
-        # Test 1a: Valid login with employee credentials
+        # Test 1a: Valid login with admin credentials
         try:
             response = self.session.post(f"{BACKEND_URL}/auth/login", json={
-                "identifier": "0433708550",
-                "pin": "4748"
+                "identifier": "0457802302",
+                "pin": "1234"
             })
             
             if response.status_code == 200:
                 data = response.json()
                 if data.get("success") and data.get("user") and data.get("token"):
-                    self.log_test("Valid login with employee credentials", True, 
-                                f"Status: {response.status_code}, User: {data['user'].get('first_name', 'Unknown')}")
+                    user = data["user"]
+                    self.auth_token = data["token"]
+                    self.log_test("Valid admin login", True, 
+                                f"User: {user.get('first_name')} {user.get('last_name')}, Role: {user.get('role')}")
                 else:
-                    self.log_test("Valid login with employee credentials", False, 
+                    self.log_test("Valid admin login", False, 
                                 f"Missing required fields in response: {data}")
             else:
-                self.log_test("Valid login with employee credentials", False, 
+                self.log_test("Valid admin login", False, 
                             f"Status: {response.status_code}, Response: {response.text}")
         except Exception as e:
-            self.log_test("Valid login with employee credentials", False, f"Exception: {str(e)}")
+            self.log_test("Valid admin login", False, f"Exception: {str(e)}")
         
         # Test 1b: Invalid PIN should return 401
         try:
             response = self.session.post(f"{BACKEND_URL}/auth/login", json={
-                "identifier": "0433708550",
+                "identifier": "0457802302",
                 "pin": "9999"  # Wrong PIN
             })
             
@@ -73,324 +79,424 @@ class TimesheetAPITester:
                             f"Expected 401, got {response.status_code}, Response: {response.text}")
         except Exception as e:
             self.log_test("Invalid PIN rejection", False, f"Exception: {str(e)}")
-    
-    def test_manual_timesheet_creation(self):
-        """Test 2: Manual Timesheet Creation API (CRITICAL - Timezone handling)"""
-        print("\n=== Testing Manual Timesheet Creation API ===")
         
+        # Test 1c: Non-existent user should return 404
         try:
-            # Create manual timesheet with local datetime strings (no timezone)
-            timesheet_data = {
-                "employee_id": "6946008e4d67d45754c55f12",
-                "site_id": "6937ab02ed93a77515eb99de", 
-                "clock_in": "2025-12-20T09:00:00",
-                "clock_out": "2025-12-20T17:00:00",
-                "break_minutes": 30,
-                "notes": "Test manual entry"
-            }
-            
-            response = self.session.post(f"{BACKEND_URL}/timesheets/manual", json=timesheet_data)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and data.get("timesheet"):
-                    timesheet = data["timesheet"]
-                    
-                    # Check timezone handling - clock_in should remain as "2025-12-20T09:00:00"
-                    clock_in_response = timesheet.get("clock_in", "")
-                    expected_clock_in = "2025-12-20T09:00:00"
-                    
-                    # Remove any timezone info for comparison
-                    if "T" in clock_in_response:
-                        clock_in_clean = clock_in_response.split("T")[0] + "T" + clock_in_response.split("T")[1].split("+")[0].split("Z")[0]
-                    else:
-                        clock_in_clean = clock_in_response
-                    
-                    timezone_correct = expected_clock_in in clock_in_clean
-                    
-                    # Check total hours calculation (8 hours - 0.5 hour break = 7.5 hours)
-                    total_hours = timesheet.get("total_hours", 0)
-                    hours_correct = total_hours == 7.5
-                    
-                    if timezone_correct and hours_correct:
-                        self.log_test("Manual timesheet creation with timezone handling", True, 
-                                    f"Clock_in: {clock_in_response}, Total_hours: {total_hours}")
-                    else:
-                        self.log_test("Manual timesheet creation with timezone handling", False, 
-                                    f"Timezone OK: {timezone_correct}, Hours OK: {hours_correct}, Clock_in: {clock_in_response}, Total_hours: {total_hours}")
-                    
-                    # Store timesheet ID for delete test
-                    self.created_timesheet_id = timesheet.get("id")
-                    
-                else:
-                    self.log_test("Manual timesheet creation with timezone handling", False, 
-                                f"Missing success or timesheet in response: {data}")
-            else:
-                self.log_test("Manual timesheet creation with timezone handling", False, 
-                            f"Status: {response.status_code}, Response: {response.text}")
-                
-        except Exception as e:
-            self.log_test("Manual timesheet creation with timezone handling", False, f"Exception: {str(e)}")
-    
-    def test_timesheet_delete_api(self):
-        """Test 3: Timesheet Delete API"""
-        print("\n=== Testing Timesheet Delete API ===")
-        
-        # Test 3a: Get timesheets to find an ID
-        try:
-            response = self.session.get(f"{BACKEND_URL}/timesheets")
-            
-            if response.status_code == 200:
-                timesheets = response.json()
-                if isinstance(timesheets, list) and len(timesheets) > 0:
-                    # Use the timesheet we created, or the first one available
-                    timesheet_id = getattr(self, 'created_timesheet_id', timesheets[0].get('id'))
-                    self.log_test("Get timesheets for delete test", True, 
-                                f"Found {len(timesheets)} timesheets, using ID: {timesheet_id}")
-                    
-                    # Test 3b: Delete valid timesheet
-                    if timesheet_id:
-                        try:
-                            delete_response = self.session.delete(f"{BACKEND_URL}/timesheets/{timesheet_id}")
-                            
-                            if delete_response.status_code == 200:
-                                delete_data = delete_response.json()
-                                if delete_data.get("success"):
-                                    self.log_test("Delete valid timesheet", True, 
-                                                f"Status: {delete_response.status_code}")
-                                else:
-                                    self.log_test("Delete valid timesheet", False, 
-                                                f"Success flag false: {delete_data}")
-                            else:
-                                self.log_test("Delete valid timesheet", False, 
-                                            f"Status: {delete_response.status_code}, Response: {delete_response.text}")
-                        except Exception as e:
-                            self.log_test("Delete valid timesheet", False, f"Exception: {str(e)}")
-                    
-                else:
-                    self.log_test("Get timesheets for delete test", False, 
-                                f"No timesheets found or invalid response: {timesheets}")
-            else:
-                self.log_test("Get timesheets for delete test", False, 
-                            f"Status: {response.status_code}, Response: {response.text}")
-                
-        except Exception as e:
-            self.log_test("Get timesheets for delete test", False, f"Exception: {str(e)}")
-        
-        # Test 3c: Delete invalid timesheet ID should return 404
-        try:
-            response = self.session.delete(f"{BACKEND_URL}/timesheets/invalid_id_12345")
+            response = self.session.post(f"{BACKEND_URL}/auth/login", json={
+                "identifier": "0999999999",
+                "pin": "1234"
+            })
             
             if response.status_code == 404:
-                self.log_test("Delete invalid timesheet ID", True, f"Status: {response.status_code}")
+                self.log_test("Non-existent user rejection", True, f"Status: {response.status_code}")
             else:
-                self.log_test("Delete invalid timesheet ID", False, 
+                self.log_test("Non-existent user rejection", False, 
                             f"Expected 404, got {response.status_code}, Response: {response.text}")
         except Exception as e:
-            self.log_test("Delete invalid timesheet ID", False, f"Exception: {str(e)}")
+            self.log_test("Non-existent user rejection", False, f"Exception: {str(e)}")
     
-    def test_supervisor_dashboard_api(self):
-        """Test 4: Supervisor Dashboard API"""
-        print("\n=== Testing Supervisor Dashboard API ===")
+    def test_categories_api(self):
+        """Test 2: Categories API"""
+        print("\n=== Testing Categories API ===")
         
         try:
-            response = self.session.get(f"{BACKEND_URL}/dashboard/supervisor")
+            response = self.session.get(f"{BACKEND_URL}/categories")
+            
+            if response.status_code == 200:
+                categories = response.json()
+                if isinstance(categories, list) and len(categories) == 8:
+                    # Check for required fields in first category
+                    first_cat = categories[0]
+                    required_fields = ["id", "name", "icon", "color", "description"]
+                    missing_fields = [field for field in required_fields if field not in first_cat]
+                    
+                    if not missing_fields:
+                        category_names = [cat.get("name", "") for cat in categories]
+                        self.log_test("Categories API", True, 
+                                    f"Found 8 categories: {', '.join(category_names[:3])}...")
+                    else:
+                        self.log_test("Categories API", False, 
+                                    f"Missing fields in category: {missing_fields}")
+                else:
+                    self.log_test("Categories API", False, 
+                                f"Expected 8 categories, got {len(categories) if isinstance(categories, list) else 'invalid response'}")
+            else:
+                self.log_test("Categories API", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Categories API", False, f"Exception: {str(e)}")
+    
+    def test_dashboard_stats_api(self):
+        """Test 3: Dashboard Stats API"""
+        print("\n=== Testing Dashboard Stats API ===")
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/dashboard/stats")
             
             if response.status_code == 200:
                 data = response.json()
                 
                 # Check for required fields
-                has_pending_approvals = "pending_approvals" in data
-                has_active_employees = "active_employees" in data
+                required_fields = ["total_documents", "published_documents", "draft_documents", 
+                                 "total_templates", "category_counts", "recent_documents"]
+                missing_fields = [field for field in required_fields if field not in data]
                 
-                if has_pending_approvals and has_active_employees:
-                    # These are integers, not arrays
-                    pending_count = data.get("pending_approvals", 0)
-                    active_count = data.get("active_employees", 0)
-                    
-                    # Also check for the arrays that contain the actual data
-                    has_pending_timesheets = "pending_timesheets" in data
-                    has_active_timesheets = "active_timesheets" in data
-                    
-                    if has_pending_timesheets and has_active_timesheets:
-                        self.log_test("Supervisor dashboard API", True, 
-                                    f"Pending approvals: {pending_count}, Active employees: {active_count}, Has data arrays: Yes")
-                    else:
-                        self.log_test("Supervisor dashboard API", False, 
-                                    f"Missing data arrays - pending_timesheets: {has_pending_timesheets}, active_timesheets: {has_active_timesheets}")
+                if not missing_fields:
+                    stats = {
+                        "total_docs": data.get("total_documents", 0),
+                        "published": data.get("published_documents", 0),
+                        "drafts": data.get("draft_documents", 0),
+                        "templates": data.get("total_templates", 0),
+                        "recent_count": len(data.get("recent_documents", []))
+                    }
+                    self.log_test("Dashboard Stats API", True, 
+                                f"Total: {stats['total_docs']}, Published: {stats['published']}, Drafts: {stats['drafts']}, Templates: {stats['templates']}, Recent: {stats['recent_count']}")
                 else:
-                    missing_fields = []
-                    if not has_pending_approvals:
-                        missing_fields.append("pending_approvals")
-                    if not has_active_employees:
-                        missing_fields.append("active_employees")
-                    
-                    self.log_test("Supervisor dashboard API", False, 
-                                f"Missing required fields: {missing_fields}, Response: {data}")
+                    self.log_test("Dashboard Stats API", False, 
+                                f"Missing required fields: {missing_fields}")
             else:
-                self.log_test("Supervisor dashboard API", False, 
+                self.log_test("Dashboard Stats API", False, 
                             f"Status: {response.status_code}, Response: {response.text}")
-                
         except Exception as e:
-            self.log_test("Supervisor dashboard API", False, f"Exception: {str(e)}")
+            self.log_test("Dashboard Stats API", False, f"Exception: {str(e)}")
     
-    def test_smart_dashboard_api(self):
-        """Test 5: Smart Dashboard API for employee"""
-        print("\n=== Testing Smart Dashboard API ===")
+    def test_documents_crud_api(self):
+        """Test 4: Documents CRUD API"""
+        print("\n=== Testing Documents CRUD API ===")
         
-        # Test employee ID from review request
-        employee_id = "69461c4be9693ef7e04bdc12"  # Nagita nagita
-        
+        # Test 4a: Create document
         try:
-            response = self.session.get(f"{BACKEND_URL}/employee/smart-dashboard/{employee_id}")
+            document_data = {
+                "title": "Test Room Cleaning SOP",
+                "category": "housekeeping",
+                "content": "Test SOP for room cleaning procedures",
+                "sections": [
+                    {"title": "Preparation", "content": "Gather cleaning supplies", "order": 1},
+                    {"title": "Cleaning Process", "content": "Clean room systematically", "order": 2}
+                ],
+                "status": "draft"
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/documents", json=document_data)
             
             if response.status_code == 200:
                 data = response.json()
-                
-                # Verify required fields are present
-                required_fields = ["success", "employee_name", "this_week", "performance", "alerts"]
-                missing_fields = [field for field in required_fields if field not in data]
-                
-                if missing_fields:
-                    self.log_test("Smart Dashboard API", False, f"Missing required fields: {missing_fields}")
-                    return
-                
-                # Verify this_week structure
-                this_week = data.get("this_week", {})
-                week_required = ["hours_worked", "earnings_estimate", "shifts_completed", "overtime_hours", "approaching_overtime"]
-                week_missing = [field for field in week_required if field not in this_week]
-                
-                if week_missing:
-                    self.log_test("Smart Dashboard API - this_week", False, f"Missing this_week fields: {week_missing}")
-                    return
-                
-                # Verify performance structure
-                performance = data.get("performance", {})
-                perf_required = ["punctuality_score", "current_streak", "total_shifts_30d"]
-                perf_missing = [field for field in perf_required if field not in performance]
-                
-                if perf_missing:
-                    self.log_test("Smart Dashboard API - performance", False, f"Missing performance fields: {perf_missing}")
-                    return
-                
-                # Success - log detailed results
-                employee_name = data.get("employee_name")
-                hours_worked = this_week.get("hours_worked")
-                earnings = this_week.get("earnings_estimate")
-                shifts = this_week.get("shifts_completed")
-                overtime = this_week.get("overtime_hours")
-                
-                punctuality = performance.get("punctuality_score")
-                streak = performance.get("current_streak")
-                total_shifts = performance.get("total_shifts_30d")
-                
-                alerts_count = len(data.get("alerts", []))
-                next_shift = data.get("next_shift")
-                
-                details = f"Employee: {employee_name}, This Week: {hours_worked}h worked, ${earnings} estimated, {shifts} shifts, Performance: {punctuality}% punctuality, {streak} day streak, {alerts_count} alerts"
-                
-                self.log_test("Smart Dashboard API", True, details)
-                
-            elif response.status_code == 404:
-                self.log_test("Smart Dashboard API", False, f"Employee not found (ID: {employee_id})")
-            else:
-                self.log_test("Smart Dashboard API", False, f"Status: {response.status_code}, Response: {response.text}")
-                
-        except Exception as e:
-            self.log_test("Smart Dashboard API", False, f"Exception: {str(e)}")
-    
-    def test_live_sites_status_api(self):
-        """Test 6: Live Sites Status API"""
-        print("\n=== Testing Live Sites Status API ===")
-        
-        try:
-            response = self.session.get(f"{BACKEND_URL}/sites/live-status")
-            
-            if response.status_code == 200:
-                data = response.json()
-                
-                # Verify required fields
-                required_fields = ["success", "timestamp", "total_active", "sites"]
-                missing_fields = [field for field in required_fields if field not in data]
-                
-                if missing_fields:
-                    self.log_test("Live Sites Status API", False, f"Missing required fields: {missing_fields}")
-                    return
-                
-                sites = data.get("sites", [])
-                total_active = data.get("total_active", 0)
-                timestamp = data.get("timestamp")
-                
-                # Verify site structure if sites exist
-                if sites:
-                    site = sites[0]
-                    site_required = ["id", "name", "active_count", "active_employees"]
-                    site_missing = [field for field in site_required if field not in site]
-                    
-                    if site_missing:
-                        self.log_test("Live Sites Status API", False, f"Missing site fields: {site_missing}")
-                        return
-                
-                details = f"Total Active: {total_active}, Sites: {len(sites)}, Timestamp: {timestamp}"
-                if sites:
-                    details += f", Sample Site: {sites[0]['name']} ({sites[0]['active_count']} active)"
-                
-                self.log_test("Live Sites Status API", True, details)
-                
-            else:
-                self.log_test("Live Sites Status API", False, f"Status: {response.status_code}, Response: {response.text}")
-                
-        except Exception as e:
-            self.log_test("Live Sites Status API", False, f"Exception: {str(e)}")
-    
-    def test_login_with_review_credentials(self):
-        """Test 7: Login API with review request credentials"""
-        print("\n=== Testing Login API with Review Credentials ===")
-        
-        # Test credentials from review request
-        test_credentials = {
-            "identifier": "0420576508",  # Nagita nagita
-            "pin": "2003"
-        }
-        
-        try:
-            response = self.session.post(f"{BACKEND_URL}/auth/login", json=test_credentials)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("success") and data.get("user") and data.get("token"):
-                    user = data["user"]
-                    self.log_test("Login API (Review Credentials)", True, 
-                                f"Successfully logged in: {user.get('first_name')} {user.get('last_name')} (ID: {user.get('id')})")
+                if data.get("id") and data.get("title") == document_data["title"]:
+                    self.created_document_id = data["id"]
+                    self.log_test("Create document", True, 
+                                f"Created document ID: {self.created_document_id}")
                 else:
-                    self.log_test("Login API (Review Credentials)", False, f"Invalid response structure: {data}")
-            elif response.status_code == 401:
-                self.log_test("Login API (Review Credentials)", False, "Invalid PIN")
-            elif response.status_code == 404:
-                self.log_test("Login API (Review Credentials)", False, "User not found")
+                    self.log_test("Create document", False, 
+                                f"Invalid response structure: {data}")
             else:
-                self.log_test("Login API (Review Credentials)", False, f"Status: {response.status_code}, Response: {response.text}")
-                
+                self.log_test("Create document", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
         except Exception as e:
-            self.log_test("Login API (Review Credentials)", False, f"Exception: {str(e)}")
+            self.log_test("Create document", False, f"Exception: {str(e)}")
+        
+        # Test 4b: Get all documents
+        try:
+            response = self.session.get(f"{BACKEND_URL}/documents")
+            
+            if response.status_code == 200:
+                documents = response.json()
+                if isinstance(documents, list):
+                    self.log_test("Get all documents", True, 
+                                f"Found {len(documents)} documents")
+                else:
+                    self.log_test("Get all documents", False, 
+                                f"Expected list, got: {type(documents)}")
+            else:
+                self.log_test("Get all documents", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Get all documents", False, f"Exception: {str(e)}")
+        
+        # Test 4c: Get documents with category filter
+        try:
+            response = self.session.get(f"{BACKEND_URL}/documents?category=housekeeping")
+            
+            if response.status_code == 200:
+                documents = response.json()
+                if isinstance(documents, list):
+                    housekeeping_docs = [d for d in documents if d.get("category") == "housekeeping"]
+                    self.log_test("Get documents by category", True, 
+                                f"Found {len(housekeeping_docs)} housekeeping documents")
+                else:
+                    self.log_test("Get documents by category", False, 
+                                f"Expected list, got: {type(documents)}")
+            else:
+                self.log_test("Get documents by category", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Get documents by category", False, f"Exception: {str(e)}")
+        
+        # Test 4d: Get documents with status filter
+        try:
+            response = self.session.get(f"{BACKEND_URL}/documents?status=draft")
+            
+            if response.status_code == 200:
+                documents = response.json()
+                if isinstance(documents, list):
+                    draft_docs = [d for d in documents if d.get("status") == "draft"]
+                    self.log_test("Get documents by status", True, 
+                                f"Found {len(draft_docs)} draft documents")
+                else:
+                    self.log_test("Get documents by status", False, 
+                                f"Expected list, got: {type(documents)}")
+            else:
+                self.log_test("Get documents by status", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Get documents by status", False, f"Exception: {str(e)}")
+        
+        # Test 4e: Get documents with search filter
+        try:
+            response = self.session.get(f"{BACKEND_URL}/documents?search=cleaning")
+            
+            if response.status_code == 200:
+                documents = response.json()
+                if isinstance(documents, list):
+                    self.log_test("Get documents by search", True, 
+                                f"Found {len(documents)} documents matching 'cleaning'")
+                else:
+                    self.log_test("Get documents by search", False, 
+                                f"Expected list, got: {type(documents)}")
+            else:
+                self.log_test("Get documents by search", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Get documents by search", False, f"Exception: {str(e)}")
+        
+        # Test 4f: Get single document
+        if self.created_document_id:
+            try:
+                response = self.session.get(f"{BACKEND_URL}/documents/{self.created_document_id}")
+                
+                if response.status_code == 200:
+                    document = response.json()
+                    if document.get("id") == self.created_document_id:
+                        self.log_test("Get single document", True, 
+                                    f"Retrieved document: {document.get('title')}")
+                    else:
+                        self.log_test("Get single document", False, 
+                                    f"ID mismatch: expected {self.created_document_id}, got {document.get('id')}")
+                else:
+                    self.log_test("Get single document", False, 
+                                f"Status: {response.status_code}, Response: {response.text}")
+            except Exception as e:
+                self.log_test("Get single document", False, f"Exception: {str(e)}")
+        
+        # Test 4g: Update document (change status to published)
+        if self.created_document_id:
+            try:
+                update_data = {"status": "published"}
+                response = self.session.put(f"{BACKEND_URL}/documents/{self.created_document_id}", 
+                                          json=update_data)
+                
+                if response.status_code == 200:
+                    document = response.json()
+                    if document.get("status") == "published":
+                        self.log_test("Update document", True, 
+                                    f"Status changed to: {document.get('status')}")
+                    else:
+                        self.log_test("Update document", False, 
+                                    f"Status not updated: {document.get('status')}")
+                else:
+                    self.log_test("Update document", False, 
+                                f"Status: {response.status_code}, Response: {response.text}")
+            except Exception as e:
+                self.log_test("Update document", False, f"Exception: {str(e)}")
+    
+    def test_ai_generation_api(self):
+        """Test 5: AI Document Generation API (with longer timeout)"""
+        print("\n=== Testing AI Document Generation API ===")
+        
+        try:
+            generation_data = {
+                "category": "housekeeping",
+                "document_type": "sop",
+                "title": "Test Room Cleaning SOP",
+                "sections_count": 3
+            }
+            
+            # Use longer timeout for AI generation (60 seconds)
+            response = self.session.post(f"{BACKEND_URL}/documents/generate", 
+                                       json=generation_data, timeout=60)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("document"):
+                    document = data["document"]
+                    sections_count = len(document.get("sections", []))
+                    self.log_test("AI Document Generation", True, 
+                                f"Generated document: {document.get('title')}, Sections: {sections_count}")
+                    
+                    # Store the generated document ID for export test
+                    if not self.created_document_id:
+                        self.created_document_id = document.get("id")
+                else:
+                    self.log_test("AI Document Generation", False, 
+                                f"Invalid response structure: {data}")
+            else:
+                self.log_test("AI Document Generation", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except requests.exceptions.Timeout:
+            self.log_test("AI Document Generation", False, "Request timed out after 60 seconds")
+        except Exception as e:
+            self.log_test("AI Document Generation", False, f"Exception: {str(e)}")
+    
+    def test_document_export_api(self):
+        """Test 6: Document Export API (HTML)"""
+        print("\n=== Testing Document Export API ===")
+        
+        if not self.created_document_id:
+            self.log_test("Document Export", False, "No document ID available for export test")
+            return
+        
+        try:
+            response = self.session.get(f"{BACKEND_URL}/documents/{self.created_document_id}/export")
+            
+            if response.status_code == 200:
+                html_content = response.text
+                # Check for Supreme Hospitality branding
+                if "SUPREME HOSPITALITY" in html_content and "<!DOCTYPE html>" in html_content:
+                    # Check for print styles
+                    has_print_styles = "@media print" in html_content
+                    self.log_test("Document Export", True, 
+                                f"HTML export successful, Print styles: {has_print_styles}, Length: {len(html_content)} chars")
+                else:
+                    self.log_test("Document Export", False, 
+                                f"Missing branding or invalid HTML structure")
+            else:
+                self.log_test("Document Export", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Document Export", False, f"Exception: {str(e)}")
+    
+    def test_templates_crud_api(self):
+        """Test 7: Templates CRUD API"""
+        print("\n=== Testing Templates CRUD API ===")
+        
+        # Test 7a: Create template
+        try:
+            template_data = {
+                "name": "Test Housekeeping Template",
+                "category": "housekeeping",
+                "description": "Template for housekeeping SOPs",
+                "sections": [
+                    {"title": "Preparation", "content": "Template preparation steps", "order": 1},
+                    {"title": "Execution", "content": "Template execution steps", "order": 2}
+                ]
+            }
+            
+            response = self.session.post(f"{BACKEND_URL}/templates", json=template_data)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("id") and data.get("name") == template_data["name"]:
+                    self.created_template_id = data["id"]
+                    self.log_test("Create template", True, 
+                                f"Created template ID: {self.created_template_id}")
+                else:
+                    self.log_test("Create template", False, 
+                                f"Invalid response structure: {data}")
+            else:
+                self.log_test("Create template", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Create template", False, f"Exception: {str(e)}")
+        
+        # Test 7b: Get all templates
+        try:
+            response = self.session.get(f"{BACKEND_URL}/templates")
+            
+            if response.status_code == 200:
+                templates = response.json()
+                if isinstance(templates, list):
+                    self.log_test("Get all templates", True, 
+                                f"Found {len(templates)} templates")
+                else:
+                    self.log_test("Get all templates", False, 
+                                f"Expected list, got: {type(templates)}")
+            else:
+                self.log_test("Get all templates", False, 
+                            f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("Get all templates", False, f"Exception: {str(e)}")
+        
+        # Test 7c: Update template
+        if self.created_template_id:
+            try:
+                update_data = {"description": "Updated template description"}
+                response = self.session.put(f"{BACKEND_URL}/templates/{self.created_template_id}", 
+                                          json=update_data)
+                
+                if response.status_code == 200:
+                    template = response.json()
+                    if template.get("description") == update_data["description"]:
+                        self.log_test("Update template", True, 
+                                    f"Description updated successfully")
+                    else:
+                        self.log_test("Update template", False, 
+                                    f"Description not updated: {template.get('description')}")
+                else:
+                    self.log_test("Update template", False, 
+                                f"Status: {response.status_code}, Response: {response.text}")
+            except Exception as e:
+                self.log_test("Update template", False, f"Exception: {str(e)}")
+        
+        # Test 7d: Delete template
+        if self.created_template_id:
+            try:
+                response = self.session.delete(f"{BACKEND_URL}/templates/{self.created_template_id}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        self.log_test("Delete template", True, 
+                                    f"Template deleted successfully")
+                    else:
+                        self.log_test("Delete template", False, 
+                                    f"Success flag false: {data}")
+                else:
+                    self.log_test("Delete template", False, 
+                                f"Status: {response.status_code}, Response: {response.text}")
+            except Exception as e:
+                self.log_test("Delete template", False, f"Exception: {str(e)}")
+    
+    def cleanup_test_data(self):
+        """Clean up test data"""
+        print("\n=== Cleaning up test data ===")
+        
+        # Delete created document
+        if self.created_document_id:
+            try:
+                response = self.session.delete(f"{BACKEND_URL}/documents/{self.created_document_id}")
+                if response.status_code == 200:
+                    self.log_test("Cleanup - Delete document", True, "Test document deleted")
+                else:
+                    self.log_test("Cleanup - Delete document", False, f"Status: {response.status_code}")
+            except Exception as e:
+                self.log_test("Cleanup - Delete document", False, f"Exception: {str(e)}")
     
     def run_all_tests(self):
         """Run all backend API tests"""
-        print("🚀 Starting Backend API Testing for Timesheet & Workforce Management App")
-        print("🆕 Including Smart Dashboard Feature Tests")
+        print("🚀 Starting Backend API Testing for Supreme Hospitality SOPs & Compliance Generator")
         print(f"Backend URL: {BACKEND_URL}")
         print("=" * 80)
         
-        # Run all tests
-        self.test_authentication_login()
-        self.test_manual_timesheet_creation()
-        self.test_timesheet_delete_api()
-        self.test_supervisor_dashboard_api()
+        # Run all tests in order
+        self.test_authentication_api()
+        self.test_categories_api()
+        self.test_dashboard_stats_api()
+        self.test_documents_crud_api()
+        self.test_ai_generation_api()
+        self.test_document_export_api()
+        self.test_templates_crud_api()
         
-        # NEW: Smart Dashboard Feature Tests
-        self.test_login_with_review_credentials()
-        self.test_smart_dashboard_api()
-        self.test_live_sites_status_api()
+        # Cleanup
+        self.cleanup_test_data()
         
         # Summary
         print("\n" + "=" * 80)
@@ -415,7 +521,7 @@ class TimesheetAPITester:
         return failed_tests == 0
 
 if __name__ == "__main__":
-    tester = TimesheetAPITester()
+    tester = SOPGeneratorAPITester()
     success = tester.run_all_tests()
     
     if not success:

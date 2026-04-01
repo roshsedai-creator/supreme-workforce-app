@@ -10,7 +10,7 @@ import sys
 from datetime import datetime, timedelta
 
 # Backend URL from environment
-BACKEND_URL = "https://timemaster-93.preview.emergentagent.com/api"
+BACKEND_URL = "https://supreme-sop-gen.preview.emergentagent.com/api"
 
 # Test credentials from review request
 EMPLOYEE_CREDS = {"identifier": "0420576508", "pin": "2003"}  # Nagita

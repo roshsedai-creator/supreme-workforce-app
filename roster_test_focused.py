@@ -8,7 +8,7 @@ import requests
 import json
 from datetime import datetime, timedelta
 
-BASE_URL = "https://timemaster-93.preview.emergentagent.com/api"
+BASE_URL = "https://supreme-sop-gen.preview.emergentagent.com/api"
 
 # Test accounts
 ADMIN_ACCOUNT = {"phone": "0457802302", "pin": "1234"}

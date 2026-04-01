@@ -5,7 +5,7 @@ Test script to verify RBAC is working correctly for new employees
 import requests
 import uuid
 
-BASE_URL = "https://timemaster-93.preview.emergentagent.com/api"
+BASE_URL = "https://supreme-sop-gen.preview.emergentagent.com/api"
 
 def test_new_employee_permissions():
     """Test that new employees have restrictive permissions"""

@@ -124,7 +124,7 @@ export default function LoginScreen() {
             </View>
             
             <Text style={styles.brandName}>Supreme Hospitality</Text>
-            <Text style={styles.tagline}>Workforce Management Platform</Text>
+            <Text style={styles.tagline}>SOPs & Compliance Generator</Text>
             
             {/* Feature Badges */}
             <View style={styles.badgeRow}>
@@ -226,21 +226,12 @@ export default function LoginScreen() {
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Divider */}
+              {/* App Description */}
               <View style={styles.divider}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>or</Text>
+                <Text style={styles.dividerText}>SOPs & Compliance</Text>
                 <View style={styles.dividerLine} />
               </View>
-
-              {/* Register Link */}
-              <TouchableOpacity 
-                style={styles.registerButton}
-                onPress={() => router.push('/register')}
-              >
-                <Text style={styles.registerText}>New employee?</Text>
-                <Text style={styles.registerLink}>Create account</Text>
-              </TouchableOpacity>
             </View>
 
             {/* Trust Badges */}
@@ -259,8 +250,8 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>© 2025 Supreme Hospitality Services</Text>
-            <Text style={styles.versionText}>v2.0.0</Text>
+            <Text style={styles.footerText}>© 2026 Supreme Hospitality Services</Text>
+            <Text style={styles.versionText}>v2.0.0 — SOPs & Compliance Generator</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

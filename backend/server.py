@@ -7,11 +7,9 @@ import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
-from datetime import datetime, timedelta
+from datetime import datetime
 from bson import ObjectId
-import bcrypt
-import random
-import string
+import uuid
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,13 +17,20 @@ load_dotenv(ROOT_DIR / '.env')
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+db = client[os.environ.get('DB_NAME', 'test_database')]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Create the main app
+app = FastAPI(title="Supreme Hospitality SOPs & Compliance Generator")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Helper to convert ObjectId to string
 def serialize_doc(doc):
@@ -34,499 +39,116 @@ def serialize_doc(doc):
         del doc["_id"]
     return doc
 
-# Australian Public Holidays 2024-2025
-AUSTRALIAN_PUBLIC_HOLIDAYS = {
-    # 2024
-    "2024-01-01": "New Year's Day",
-    "2024-01-26": "Australia Day",
-    "2024-03-29": "Good Friday",
-    "2024-03-30": "Easter Saturday",
-    "2024-04-01": "Easter Monday",
-    "2024-04-25": "ANZAC Day",
-    "2024-06-10": "Queen's Birthday",
-    "2024-12-25": "Christmas Day",
-    "2024-12-26": "Boxing Day",
-    
-    # 2025
-    "2025-01-01": "New Year's Day",
-    "2025-01-26": "Australia Day",
-    "2025-01-27": "Australia Day (observed)",
-    "2025-04-18": "Good Friday",
-    "2025-04-19": "Easter Saturday",
-    "2025-04-21": "Easter Monday",
-    "2025-04-25": "ANZAC Day",
-    "2025-06-09": "Queen's Birthday",
-    "2025-12-25": "Christmas Day",
-    "2025-12-26": "Boxing Day",
-    
-    # 2026
-    "2026-01-01": "New Year's Day",
-    "2026-01-26": "Australia Day",
-    "2026-04-03": "Good Friday",
-    "2026-04-04": "Easter Saturday",
-    "2026-04-06": "Easter Monday",
-    "2026-04-25": "ANZAC Day",
-    "2026-06-08": "Queen's Birthday",
-    "2026-12-25": "Christmas Day",
-    "2026-12-26": "Boxing Day",
-}
-
-def is_public_holiday(date: datetime) -> tuple[bool, str]:
-    """
-    Check if a date is a public holiday
-    Returns: (is_holiday, holiday_name)
-    """
-    date_str = date.strftime("%Y-%m-%d")
-    if date_str in AUSTRALIAN_PUBLIC_HOLIDAYS:
-        return (True, AUSTRALIAN_PUBLIC_HOLIDAYS[date_str])
-    return (False, "")
-
-def calculate_pay_rate_with_holiday(base_rate: float, date: datetime, hours: float) -> dict:
-    """
-    Calculate pay considering public holidays
-    Public holidays typically get 2.5x pay rate
-    """
-    is_holiday, holiday_name = is_public_holiday(date)
-    
-    if is_holiday:
-        multiplier = 2.5  # Public holiday rate
-        total_pay = base_rate * multiplier * hours
-        return {
-            "base_rate": base_rate,
-            "multiplier": multiplier,
-            "effective_rate": base_rate * multiplier,
-            "hours": hours,
-            "total_pay": round(total_pay, 2),
-            "is_public_holiday": True,
-            "holiday_name": holiday_name
-        }
-    else:
-        # Regular rate
-        total_pay = base_rate * hours
-        return {
-            "base_rate": base_rate,
-            "multiplier": 1.0,
-            "effective_rate": base_rate,
-            "hours": hours,
-            "total_pay": round(total_pay, 2),
-            "is_public_holiday": False,
-            "holiday_name": ""
-        }
-
-def get_default_permissions(role: str) -> dict:
-    """Get default permissions based on user role"""
-    if role == "admin":
-        return {
-            "view_home": True,
-            "view_own_timesheets": True,
-            "clock_in_out": True,
-            "view_roster": True,
-            "request_time_off": True,
-            "view_own_pay": True,
-            "view_all_timesheets": True,
-            "edit_timesheets": True,
-            "approve_timesheets": True,
-            "manage_roster": True,
-            "view_reports": True,
-            "manage_users": True,
-            "manage_sites": True,
-            "export_payroll": True,
-            "manage_permissions": True,
-        }
-    elif role == "supervisor":
-        return {
-            "view_home": True,
-            "view_own_timesheets": True,
-            "clock_in_out": True,
-            "view_roster": True,
-            "request_time_off": True,
-            "view_own_pay": True,
-            "view_all_timesheets": True,
-            "edit_timesheets": True,
-            "approve_timesheets": True,
-            "manage_roster": True,
-            "view_reports": True,
-            "manage_users": False,
-            "manage_sites": False,
-            "export_payroll": False,
-            "manage_permissions": False,
-        }
-    else:  # employee / room attendant
-        return {
-            "view_home": True,
-            "view_own_timesheets": True,
-            "clock_in_out": True,
-            "view_roster": False,  # Can be enabled by admin
-            "request_time_off": False,  # Can be enabled by admin
-            "view_own_pay": False,  # Can be enabled by admin
-            "view_all_timesheets": False,
-            "edit_timesheets": False,
-            "approve_timesheets": False,
-            "manage_roster": False,
-            "view_reports": False,
-            "manage_users": False,
-            "manage_sites": False,
-            "export_payroll": False,
-            "manage_permissions": False,
-        }
+# =====================
+# CATEGORIES
+# =====================
+DOCUMENT_CATEGORIES = [
+    {
+        "id": "housekeeping",
+        "name": "Housekeeping SOPs",
+        "icon": "bed-outline",
+        "color": "#6366f1",
+        "description": "Standard operating procedures for housekeeping and room maintenance"
+    },
+    {
+        "id": "food_beverage",
+        "name": "Food & Beverage SOPs",
+        "icon": "restaurant-outline",
+        "color": "#ec4899",
+        "description": "Procedures for food handling, kitchen operations, and beverage service"
+    },
+    {
+        "id": "front_office",
+        "name": "Front Office SOPs",
+        "icon": "desktop-outline",
+        "color": "#f59e0b",
+        "description": "Check-in, check-out, reservations, and guest services procedures"
+    },
+    {
+        "id": "health_safety",
+        "name": "Health & Safety Compliance",
+        "icon": "medkit-outline",
+        "color": "#10b981",
+        "description": "Workplace health and safety standards and compliance checklists"
+    },
+    {
+        "id": "fire_safety",
+        "name": "Fire Safety",
+        "icon": "flame-outline",
+        "color": "#ef4444",
+        "description": "Fire prevention, evacuation procedures, and emergency protocols"
+    },
+    {
+        "id": "hr_employment",
+        "name": "HR & Employment",
+        "icon": "people-outline",
+        "color": "#8b5cf6",
+        "description": "Employment compliance, onboarding, training, and HR procedures"
+    },
+    {
+        "id": "general_operations",
+        "name": "General Operations",
+        "icon": "settings-outline",
+        "color": "#06b6d4",
+        "description": "General operational procedures, maintenance, and facility management"
+    },
+    {
+        "id": "guest_experience",
+        "name": "Guest Experience",
+        "icon": "star-outline",
+        "color": "#f97316",
+        "description": "Guest satisfaction, complaint handling, and service excellence standards"
+    }
+]
 
 # =====================
 # MODELS
 # =====================
 
-class UserRole(BaseModel):
-    id: str
-    name: str  # Room Attendant, Houseman, Supervisor, Public Area Attendant, Admin
-    
-class Site(BaseModel):
-    id: Optional[str] = None
-    name: str
-    address: str
-    gps_lat: float
-    gps_long: float
-    radius_meters: int = 100  # GPS validation radius
-
-class SiteCreate(BaseModel):
-    name: str
-    address: str
-    gps_lat: float
-    gps_long: float
-    radius_meters: int = 100
-
-class BankDetails(BaseModel):
-    bank_name: Optional[str] = None
-    account_name: Optional[str] = None
-    bsb: Optional[str] = None
-    account_number: Optional[str] = None
-
-class User(BaseModel):
-    id: Optional[str] = None
-    first_name: str
-    last_name: str
-    phone: str
-    email: EmailStr
-    role: str  # employee, supervisor, admin
-    job_title: str  # Room Attendant, Houseman, etc.
-    site_id: Optional[str] = None
-    award_level: int = 1
-    pin: str  # Mock PIN for authentication
-    status: str = "active"  # active, inactive
-    permissions: dict = {
-        "view_home": True,  # Everyone can see home
-        "view_own_timesheets": True,  # View own timesheet data
-        "clock_in_out": True,  # Can clock in/out
-        "view_roster": False,  # Can view roster schedule
-        "request_time_off": False,  # Can request time off
-        "view_own_pay": False,  # View own pay details
-        "view_all_timesheets": False,  # Supervisor: see all timesheets
-        "edit_timesheets": False,  # Supervisor: edit timesheets
-        "approve_timesheets": False,  # Supervisor: approve timesheets
-        "manage_roster": False,  # Supervisor: create/edit roster
-        "view_reports": False,  # Supervisor: view reports
-        "manage_users": False,  # Admin: manage employees
-        "manage_sites": False,  # Admin: manage sites
-        "export_payroll": False,  # Admin: export payroll
-        "manage_permissions": False,  # Admin: manage user permissions
-    }
-    bank_details: Optional[BankDetails] = None
-    created_at: Optional[datetime] = None
+class LoginRequest(BaseModel):
+    identifier: str
+    pin: str
 
 class UserCreate(BaseModel):
     first_name: str
     last_name: str
     phone: str
     email: EmailStr
-    role: str
-    job_title: str
-    site_id: Optional[str] = None
-    award_level: int = 1
-    pin: str
-    abn: Optional[str] = None
-    is_contractor: bool = False
+    role: str = "admin"
+    pin: str = "1234"
 
-class LoginRequest(BaseModel):
-    identifier: str  # phone or email
-    pin: str
-
-class Shift(BaseModel):
-    id: Optional[str] = None
-    employee_id: str
-    site_id: str
-    start_time: datetime
-    end_time: datetime
-    status: str = "scheduled"  # scheduled, in_progress, completed, cancelled
-    created_at: Optional[datetime] = None
-
-class ShiftCreate(BaseModel):
-    employee_id: str
-    site_id: str
-    start_time: datetime
-    end_time: datetime
-
-class Timesheet(BaseModel):
-    id: Optional[str] = None
-    shift_id: str
-    employee_id: str
-    site_id: str
-    clock_in: Optional[datetime] = None
-    clock_out: Optional[datetime] = None
-    gps_in_lat: Optional[float] = None
-    gps_in_long: Optional[float] = None
-    gps_out_lat: Optional[float] = None
-    gps_out_long: Optional[float] = None
-    break_start: Optional[datetime] = None
-    break_end: Optional[datetime] = None
-    break_minutes: int = 0
-    total_hours: float = 0.0
-    total_pay: float = 0.0
-    supervisor_id: Optional[str] = None
-    approval_status: str = "pending"  # pending, approved, rejected
-    notes: Optional[str] = None
-    employee_notes: Optional[str] = None
-    photo_base64: Optional[str] = None
-    created_at: Optional[datetime] = None
-
-class ClockInRequest(BaseModel):
-    employee_id: str
-    site_id: str
-    gps_lat: float
-    gps_long: float
-    local_timestamp: Optional[str] = None  # ISO datetime string from client
-
-class ClockOutRequest(BaseModel):
-    timesheet_id: str
-    gps_lat: float
-    gps_long: float
-    local_timestamp: Optional[str] = None  # ISO datetime string from client
-
-class BreakRequest(BaseModel):
-    timesheet_id: str
-    action: str  # start or end
-
-class ApprovalRequest(BaseModel):
-    timesheet_id: str
-    supervisor_id: str
-    status: str  # approved or rejected
-    notes: Optional[str] = None
-    signature: Optional[str] = None  # Base64 encoded signature image
-
-class TimesheetUpdateRequest(BaseModel):
-    employee_notes: Optional[str] = None
-    photo_base64: Optional[str] = None
-    manual_clock_in: Optional[str] = None  # ISO datetime string
-    manual_clock_out: Optional[str] = None  # ISO datetime string
-    manual_break_minutes: Optional[int] = None
-
-class LeaveRequest(BaseModel):
-    id: Optional[str] = None
-    employee_id: str
-    type: str  # annual, sick, unpaid
-    start_date: datetime
-    end_date: datetime
-    reason: Optional[str] = None
-    status: str = "pending"  # pending, approved, rejected
-    approved_by: Optional[str] = None
-    created_at: Optional[datetime] = None
-
-class LeaveRequestCreate(BaseModel):
-    employee_id: str
-    type: str
-    start_date: datetime
-    end_date: datetime
-    reason: Optional[str] = None
-
-class PayRate(BaseModel):
-    id: Optional[str] = None
-    award_level: int
-    weekday_rate: float
-    saturday_rate: float
-    sunday_rate: float
-    public_holiday_rate: float
-    overtime_rate: float
-
-class PayRateCreate(BaseModel):
-    award_level: int
-    weekday_rate: float
-    saturday_rate: float
-    sunday_rate: float
-    public_holiday_rate: float
-    overtime_rate: float
-
-class PayrollExportRequest(BaseModel):
-    start_date: datetime
-    end_date: datetime
-    site_id: Optional[str] = None
-    employee_id: Optional[str] = None  # Filter by specific employee
-
-# Roster models
-class RosterShift(BaseModel):
-    id: Optional[str] = None
-    employee_id: str
-    site_id: str
-    role: str  # job title
-    shift_type: str = "work"  # work, rdo, sick, annual, other
-    start_time: datetime
-    end_time: datetime
-    status: str = "scheduled"  # scheduled, completed, cancelled
-    created_by: str  # supervisor or admin id
-    notes: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-class RosterShiftCreate(BaseModel):
-    employee_id: str
-    site_id: str
-    role: str
-    shift_type: str = "work"  # work, rdo, sick, annual, other
-    start_time: datetime
-    end_time: datetime
-    notes: Optional[str] = None
-
-class EmployeeAvailability(BaseModel):
-    id: Optional[str] = None
-    employee_id: str
-    day_of_week: int  # 0=Monday, 6=Sunday
-    available: bool
-    start_time: Optional[str] = None  # "09:00"
-    end_time: Optional[str] = None  # "17:00"
-    created_at: Optional[datetime] = None
-
-class AvailabilityUpdate(BaseModel):
-    employee_id: str
-    availability: List[dict]  # [{ day: 0, available: true, start: "09:00", end: "17:00" }]
-
-class UnavailableDate(BaseModel):
-    id: Optional[str] = None
-    employee_id: str
-    date: datetime
-    reason: Optional[str] = None
-    created_at: Optional[datetime] = None
-
-class UnavailableDateCreate(BaseModel):
-    employee_id: str
-    date: datetime
-    reason: Optional[str] = None
-
-# Shift swap models
-class ShiftSwapRequest(BaseModel):
-    id: Optional[str] = None
-    shift_id: str
-    from_employee_id: str
-    to_employee_id: str
-    status: str = "pending"  # pending, approved, rejected
-    reason: Optional[str] = None
-    approved_by: Optional[str] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-class ShiftSwapCreate(BaseModel):
-    shift_id: str
-    from_employee_id: str
-    to_employee_id: str
-    reason: Optional[str] = None
-
-class ShiftSwapAction(BaseModel):
-    swap_id: str
-    action: str  # approve or reject
-    approved_by: str
-
-# Recurring shift template models
-class RecurringShiftTemplate(BaseModel):
-    id: Optional[str] = None
+class SiteCreate(BaseModel):
     name: str
-    employee_id: str
-    site_id: str
-    role: str
-    day_of_week: int  # 0=Monday, 6=Sunday
-    start_time: str  # "08:00"
-    end_time: str  # "16:00"
-    active: bool = True
-    created_by: str
-    created_at: Optional[datetime] = None
+    address: str = ""
 
-class RecurringTemplateCreate(BaseModel):
+class TemplateCreate(BaseModel):
     name: str
-    employee_id: str
-    site_id: str
-    role: str
-    day_of_week: int
-    start_time: str
-    end_time: str
+    category: str
+    description: str = ""
+    sections: list = []  # [{title, content, order}]
 
-# =====================
-# ROOM CLEANING MODELS
-# =====================
-
-class RoomType(BaseModel):
-    id: Optional[str] = None
-    site_id: Optional[str] = None  # Site-specific, null for global
-    name: str  # Standard, Suite, Apartment, Studio, etc.
-    # Time-based credits (in minutes) for each status
-    departure_minutes: int = 30  # Full checkout clean
-    linen_change_minutes: int = 20  # Linen change only
-    stayover_minutes: int = 15  # Light clean
-    description: Optional[str] = None
-    active: bool = True
-    created_at: Optional[datetime] = None
-
-class RoomTypeCreate(BaseModel):
+class DocumentCreate(BaseModel):
+    title: str
+    category: str
     site_id: Optional[str] = None
-    name: str
-    departure_minutes: int = 30
-    linen_change_minutes: int = 20
-    stayover_minutes: int = 15
-    description: Optional[str] = None
+    template_id: Optional[str] = None
+    content: str = ""
+    sections: list = []
+    status: str = "draft"
 
-class RoomCleaningEntry(BaseModel):
-    id: Optional[str] = None
-    timesheet_id: Optional[str] = None  # Link to timesheet if applicable
-    employee_id: str
-    site_id: str
-    date: str  # YYYY-MM-DD
-    room_type_id: str
-    room_type_name: str  # Denormalized for easy display
-    status: str  # departure, linen_change, stayover
-    count: int = 1  # Number of rooms cleaned
-    minutes_per_room: int = 30  # Time credit in minutes
-    total_minutes: int = 0  # Total time credit
-    notes: Optional[str] = None
-    created_at: Optional[datetime] = None
+class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    sections: Optional[list] = None
+    status: Optional[str] = None
 
-class RoomCleaningCreate(BaseModel):
-    employee_id: str
-    site_id: str
-    date: str
-    room_type_id: str
-    status: str  # departure, linen_change, stayover
-    count: int = 1
-    notes: Optional[str] = None
-
-# =====================
-# EMPLOYEE PAY RATES MODELS
-# =====================
-
-class EmployeePayRate(BaseModel):
-    id: Optional[str] = None
-    employee_id: str
-    employee_type: str = "cash"  # abn, cash
-    abn_number: Optional[str] = None  # For ABN contractors
-    weekday_rate: float = 0.0  # Per hour
-    saturday_rate: float = 0.0
-    sunday_rate: float = 0.0
-    public_holiday_rate: float = 0.0
-    credit_rate: float = 0.0  # $ per room credit
-    effective_from: Optional[datetime] = None
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
-
-class EmployeePayRateUpdate(BaseModel):
-    employee_type: str = "cash"
-    abn_number: Optional[str] = None
-    weekday_rate: float = 0.0
-    saturday_rate: float = 0.0
-    sunday_rate: float = 0.0
-    public_holiday_rate: float = 0.0
-    credit_rate: float = 0.0
+class GenerateRequest(BaseModel):
+    category: str
+    document_type: str  # "sop" or "checklist"
+    title: str
+    site_name: Optional[str] = None
+    specific_requirements: Optional[str] = ""
+    sections_count: int = 5
 
 # =====================
 # AUTH ENDPOINTS
@@ -534,7 +156,7 @@ class EmployeePayRateUpdate(BaseModel):
 
 @api_router.post("/auth/login")
 async def login(request: LoginRequest):
-    """Mock login with PIN"""
+    """Login with phone/email and PIN"""
     user = await db.users.find_one({
         "$or": [
             {"phone": request.identifier},
@@ -546,7 +168,6 @@ async def login(request: LoginRequest):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Check PIN (in production, use bcrypt)
     if user.get("pin") != request.pin:
         raise HTTPException(status_code=401, detail="Invalid PIN")
     
@@ -554,158 +175,53 @@ async def login(request: LoginRequest):
     return {
         "success": True,
         "user": user,
-        "token": f"mock_token_{user['id']}"
-    }
-
-@api_router.post("/auth/request-otp")
-async def request_otp(phone: str):
-    """Request OTP for login (Mock - prints to console)"""
-    from otp_service import generate_otp
-    
-    # Check if user exists
-    user = await db.users.find_one({"phone": phone, "status": "active"})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    otp = generate_otp(phone)
-    
-    return {
-        "success": True,
-        "message": f"OTP sent to {phone} (Check console for mock OTP)",
-        "otp_for_testing": otp  # Remove in production!
-    }
-
-@api_router.post("/auth/verify-otp")
-async def verify_otp_login(phone: str, otp: str):
-    """Verify OTP and login"""
-    from otp_service import verify_otp
-    
-    if not verify_otp(phone, otp):
-        raise HTTPException(status_code=401, detail="Invalid or expired OTP")
-    
-    user = await db.users.find_one({"phone": phone, "status": "active"})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user = serialize_doc(user)
-    return {
-        "success": True,
-        "user": user,
-        "token": f"otp_token_{user['id']}"
+        "token": f"token_{user['id']}"
     }
 
 @api_router.post("/auth/register")
-async def employee_self_register(registration: dict):
-    """Employee self-registration endpoint"""
-    # Check if this is an invitation-based registration
-    invitation_data = None
-    if registration.get("token"):
-        invitation = await db.invitations.find_one({"token": registration["token"]})
-        if not invitation:
-            raise HTTPException(status_code=404, detail="Invalid invitation token")
-        
-        if invitation.get("status") == "accepted":
-            raise HTTPException(status_code=400, detail="Invitation has already been used")
-        
-        if invitation.get("expires_at") and invitation["expires_at"] < datetime.utcnow():
-            raise HTTPException(status_code=400, detail="Invitation has expired")
-        
-        invitation_data = invitation
+async def register(registration: dict):
+    """Register a new user"""
+    # Check for existing user
+    existing = await db.users.find_one({
+        "$or": [
+            {"phone": registration.get("phone", "")},
+            {"email": registration.get("email", "")}
+        ]
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="User with this phone or email already exists")
     
-    # Validate required fields
-    required_fields = ["first_name", "last_name", "phone", "email", "pin"]
-    for field in required_fields:
-        if not registration.get(field):
-            raise HTTPException(status_code=400, detail=f"Missing required field: {field}")
-    
-    # Check if phone already exists
-    existing_user = await db.users.find_one({"phone": registration["phone"]})
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Phone number already registered")
-    
-    # Check if email already exists
-    existing_email = await db.users.find_one({"email": registration["email"]})
-    if existing_email:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Create user account
-    role = invitation_data.get("role", "employee") if invitation_data else "employee"
-    
-    # Get site_id from invitation or registration, or default to first available site
-    site_id = None
-    if invitation_data:
-        site_id = invitation_data.get("site_id")
-    elif registration.get("site_id"):
-        site_id = registration.get("site_id")
-    else:
-        # Assign to first available site for self-registering employees
-        default_site = await db.sites.find_one()
-        if default_site:
-            site_id = str(default_site["_id"])
-    
-    user_dict = {
-        "first_name": registration["first_name"],
-        "last_name": registration["last_name"],
-        "phone": registration["phone"],
-        "email": registration["email"],
-        "pin": registration["pin"],
-        "role": role,
-        "job_title": invitation_data.get("job_title", registration.get("job_title", "")) if invitation_data else registration.get("job_title", "Employee"),
-        "site_id": site_id,
-        "award_level": registration.get("award_level", 1),
-        "bank_details": None,
-        "is_contractor": False,
+    user_doc = {
+        "first_name": registration.get("first_name", ""),
+        "last_name": registration.get("last_name", ""),
+        "phone": registration.get("phone", ""),
+        "email": registration.get("email", ""),
+        "role": registration.get("role", "admin"),
+        "pin": registration.get("pin", "1234"),
         "status": "active",
-        "permissions": get_default_permissions(role),
-        "created_at": datetime.utcnow()
+        "created_at": datetime.utcnow(),
     }
     
-    result = await db.users.insert_one(user_dict)
-    user_dict["id"] = str(result.inserted_id)
-    del user_dict["_id"]
-    
-    # Mark invitation as accepted if it was used
-    if invitation_data:
-        await db.invitations.update_one(
-            {"_id": invitation_data["_id"]},
-            {"$set": {"status": "accepted", "accepted_at": datetime.utcnow()}}
-        )
+    result = await db.users.insert_one(user_doc)
+    user_doc["id"] = str(result.inserted_id)
     
     return {
         "success": True,
-        "message": "Registration successful! You can now login.",
-        "user": user_dict
+        "user": user_doc,
+        "token": f"token_{user_doc['id']}"
     }
 
 # =====================
 # USER ENDPOINTS
 # =====================
 
-@api_router.post("/users", response_model=User)
-async def create_user(user: UserCreate):
-    user_dict = user.model_dump()
-    user_dict["created_at"] = datetime.utcnow()
-    user_dict["status"] = "active"
-    
-    # Set default permissions based on role
-    role = user_dict.get("role", "employee")
-    user_dict["permissions"] = get_default_permissions(role)
-    
-    result = await db.users.insert_one(user_dict)
-    user_dict["id"] = str(result.inserted_id)
-    
-    return User(**user_dict)
-
 @api_router.get("/users")
-async def get_users(role: Optional[str] = None, site_id: Optional[str] = None):
-    query = {"status": "active"}
+async def get_users(role: Optional[str] = None):
+    query = {}
     if role:
         query["role"] = role
-    if site_id:
-        query["site_id"] = site_id
-    
     users = await db.users.find(query).to_list(1000)
-    return [serialize_doc(user) for user in users]
+    return [serialize_doc(u) for u in users]
 
 @api_router.get("/users/{user_id}")
 async def get_user(user_id: str):
@@ -716,2949 +232,467 @@ async def get_user(user_id: str):
 
 @api_router.put("/users/{user_id}")
 async def update_user(user_id: str, update_data: dict):
-    """Update employee details"""
-    user = await db.users.find_one({"_id": ObjectId(user_id)})
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Remove id from update_data if present
-    update_data.pop('id', None)
-    
-    # Update the user
-    await db.users.update_one(
+    update_data.pop("id", None)
+    update_data.pop("_id", None)
+    result = await db.users.update_one(
         {"_id": ObjectId(user_id)},
         {"$set": update_data}
     )
-    
-    updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
-    return {"success": True, "user": serialize_doc(updated_user)}
-
-@api_router.delete("/users/{user_id}")
-async def delete_user(user_id: str):
-    """Delete a user and all their associated data"""
-    try:
-        # Validate ObjectId format
-        try:
-            object_id = ObjectId(user_id)
-        except:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        user = await db.users.find_one({"_id": object_id})
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        # Delete user's timesheets
-        await db.timesheets.delete_many({"employee_id": user_id})
-        
-        # Delete user from roster shifts
-        await db.RosterShifts.update_many(
-            {"employee_id": user_id},
-            {"$set": {"employee_id": None, "employee_name": "Unassigned"}}
-        )
-        
-        # Delete the user
-        result = await db.users.delete_one({"_id": object_id})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        return {
-            "success": True,
-            "message": f"User {user.get('first_name')} {user.get('last_name')} deleted successfully"
-        }
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    return serialize_doc(user)
 
 # =====================
 # SITE ENDPOINTS
 # =====================
 
-@api_router.post("/sites", response_model=Site)
+@api_router.post("/sites")
 async def create_site(site: SiteCreate):
-    site_dict = site.model_dump()
-    result = await db.sites.insert_one(site_dict)
-    site_dict["id"] = str(result.inserted_id)
-    return Site(**site_dict)
+    site_doc = {
+        "name": site.name,
+        "address": site.address,
+        "created_at": datetime.utcnow()
+    }
+    result = await db.sites.insert_one(site_doc)
+    site_doc["id"] = str(result.inserted_id)
+    return serialize_doc(site_doc)
 
 @api_router.get("/sites")
 async def get_sites():
     sites = await db.sites.find().to_list(1000)
-    return [serialize_doc(site) for site in sites]
-
-@api_router.get("/sites/live-status")
-async def get_live_site_status():
-    """Get live status of all sites - who's working where right now"""
-    sites = await db.sites.find().to_list(100)
-    
-    site_status = []
-    for site in sites:
-        site_id = str(site["_id"])
-        
-        # Get active timesheets for this site
-        active_timesheets = await db.timesheets.find({
-            "site_id": site_id,
-            "clock_out": None
-        }).to_list(100)
-        
-        active_employees = []
-        for ts in active_timesheets:
-            user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
-            if user:
-                clock_in_time = ts["clock_in"]
-                hours_worked = (datetime.now() - clock_in_time).total_seconds() / 3600 if isinstance(clock_in_time, datetime) else 0
-                
-                active_employees.append({
-                    "id": ts["employee_id"],
-                    "name": f"{user['first_name']} {user['last_name']}",
-                    "clock_in": clock_in_time.strftime("%H:%M") if isinstance(clock_in_time, datetime) else str(clock_in_time),
-                    "hours_worked": round(hours_worked, 1),
-                    "job_title": user.get("job_title", "Employee")
-                })
-        
-        site_status.append({
-            "id": site_id,
-            "name": site["name"],
-            "address": site.get("address", ""),
-            "active_count": len(active_employees),
-            "active_employees": active_employees,
-            "coordinates": {
-                "lat": site.get("gps_lat"),
-                "long": site.get("gps_long")
-            }
-        })
-    
-    # Sort by active count (busiest first)
-    site_status.sort(key=lambda x: x["active_count"], reverse=True)
-    
-    return {
-        "success": True,
-        "timestamp": datetime.now().isoformat(),
-        "total_active": sum(s["active_count"] for s in site_status),
-        "sites": site_status
-    }
-
-@api_router.get("/sites/{site_id}")
-async def get_site(site_id: str):
-    site = await db.sites.find_one({"_id": ObjectId(site_id)})
-    if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
-    return serialize_doc(site)
+    return [serialize_doc(s) for s in sites]
 
 @api_router.delete("/sites/{site_id}")
 async def delete_site(site_id: str):
-    """Delete a site and handle associated data"""
-    try:
-        # Validate ObjectId format
-        try:
-            object_id = ObjectId(site_id)
-        except:
-            raise HTTPException(status_code=404, detail="Site not found")
-        
-        site = await db.sites.find_one({"_id": object_id})
-        if not site:
-            raise HTTPException(status_code=404, detail="Site not found")
-        
-        # Check if there are users assigned to this site
-        users_count = await db.users.count_documents({"site_id": site_id})
-        if users_count > 0:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Cannot delete site. {users_count} employee(s) are still assigned to this site. Please reassign them first."
-            )
-        
-        # Check if there are roster shifts for this site
-        shifts_count = await db.RosterShifts.count_documents({"site_id": site_id})
-        if shifts_count > 0:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Cannot delete site. {shifts_count} roster shift(s) exist for this site. Please remove them first."
-            )
-        
-        # Delete the site
-        result = await db.sites.delete_one({"_id": object_id})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Site not found")
-        
-        return {
-            "success": True,
-            "message": f"Site {site.get('name')} deleted successfully"
-        }
-    except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Failed to delete site: {str(e)}")
+    result = await db.sites.delete_one({"_id": ObjectId(site_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Site not found")
+    return {"success": True}
 
 # =====================
-# INVITATION ENDPOINTS
+# CATEGORIES ENDPOINT
 # =====================
 
-class InvitationCreate(BaseModel):
-    first_name: str
-    last_name: str
-    email: EmailStr
-    phone: str
-    role: str = "employee"
-    job_title: str
-    site_id: Optional[str] = None
+@api_router.get("/categories")
+async def get_categories():
+    return DOCUMENT_CATEGORIES
 
-class BulkRegistration(BaseModel):
-    employees: list
+# =====================
+# TEMPLATE ENDPOINTS
+# =====================
 
-@api_router.post("/users/fix-permissions")
-async def fix_user_permissions():
-    """
-    Fix permissions for ALL users to have the new permission structure
-    This is a migration endpoint - run once to update all users
-    """
-    updated_count = 0
-    
-    # Get all users
-    users = await db.users.find().to_list(None)
-    
-    for user in users:
-        role = user.get("role", "employee")
-        default_perms = get_default_permissions(role)
-        
-        # Always update to ensure new permission structure
-        await db.users.update_one(
-            {"_id": user["_id"]},
-            {"$set": {"permissions": default_perms}}
-        )
-        updated_count += 1
-    
-    return {
-        "success": True,
-        "updated_count": updated_count,
-        "message": f"Updated {updated_count} users with default permissions"
+@api_router.post("/templates")
+async def create_template(template: TemplateCreate):
+    template_doc = {
+        "name": template.name,
+        "category": template.category,
+        "description": template.description,
+        "sections": template.sections,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
     }
+    result = await db.sop_templates.insert_one(template_doc)
+    template_doc["id"] = str(result.inserted_id)
+    return serialize_doc(template_doc)
 
-@api_router.post("/users/bulk-register")
-async def bulk_register_employees(bulk_data: BulkRegistration):
-    """
-    Bulk register employees directly without invitation links
-    Admin can upload CSV and create all accounts at once
-    """
-    created_users = []
-    errors = []
-    
-    for idx, emp in enumerate(bulk_data.employees):
-        try:
-            # Check if user already exists
-            existing = await db.users.find_one({"phone": emp.get("phone")})
-            if existing:
-                errors.append(f"Row {idx+1}: Phone {emp.get('phone')} already exists")
-                continue
-            
-            # Create user with default PIN
-            default_pin = emp.get("pin", "1234")  # Use provided PIN or default
-            role = emp.get("role", "employee")
-            
-            user_dict = {
-                "first_name": emp.get("first_name"),
-                "last_name": emp.get("last_name"),
-                "phone": emp.get("phone"),
-                "email": emp.get("email", f"{emp.get('phone')}@temp.com"),
-                "pin": default_pin,
-                "role": role,
-                "job_title": emp.get("job_title", "Employee"),
-                "site_id": emp.get("site_id"),
-                "award_level": emp.get("award_level", 1),
-                "bank_details": None,
-                "is_contractor": False,
-                "status": "active",
-                "permissions": get_default_permissions(role),
-                "created_at": datetime.utcnow()
-            }
-            
-            result = await db.users.insert_one(user_dict)
-            user_dict["id"] = str(result.inserted_id)
-            created_users.append({
-                "name": f"{user_dict['first_name']} {user_dict['last_name']}",
-                "phone": user_dict["phone"],
-                "pin": default_pin,
-                "email": user_dict["email"],
-                "job_title": user_dict["job_title"]
-            })
-            
-        except Exception as e:
-            errors.append(f"Row {idx+1}: {str(e)}")
-    
-    return {
-        "success": True,
-        "created_count": len(created_users),
-        "error_count": len(errors),
-        "created_users": created_users,
-        "errors": errors,
-        "message": f"Successfully created {len(created_users)} accounts"
-    }
-
-@api_router.post("/invitations")
-async def create_invitation(invitation: InvitationCreate):
-    """Create an invitation for a new employee"""
-    # Generate a unique invitation token
-    import secrets
-    token = secrets.token_urlsafe(32)
-    
-    invitation_dict = invitation.model_dump()
-    invitation_dict["token"] = token
-    invitation_dict["status"] = "pending"  # pending, accepted, expired
-    invitation_dict["created_at"] = datetime.utcnow()
-    invitation_dict["expires_at"] = datetime.utcnow() + timedelta(days=7)  # 7 days to accept
-    
-    result = await db.invitations.insert_one(invitation_dict)
-    invitation_dict["id"] = str(result.inserted_id)
-    
-    # Send invitation email
-    app_url = os.getenv("APP_URL", "https://timemaster-93.preview.emergentagent.com")
-    invitation_link = f"{app_url}/register?token={token}"
-    
-    email_sent = await send_invitation_email(
-        invitation.email,
-        invitation.first_name,
-        invitation.last_name,
-        invitation.job_title,
-        invitation_link
-    )
-    
-    return {
-        "success": True,
-        "invitation_id": str(result.inserted_id),
-        "token": token,
-        "invitation_link": invitation_link,
-        "email_sent": email_sent,
-        "message": "Invitation created successfully" + (" and email sent!" if email_sent else " (email disabled)")
-    }
-
-async def send_invitation_email(email: str, first_name: str, last_name: str, job_title: str, invitation_link: str):
-    """Send invitation email to employee"""
-    try:
-        import smtplib
-        from email.mime.text import MIMEText
-        from email.mime.multipart import MIMEMultipart
-        
-        # Get SMTP settings from environment
-        smtp_enabled = os.getenv("SMTP_ENABLED", "false").lower() == "true"
-        if not smtp_enabled:
-            print("Email disabled: SMTP_ENABLED is not set to true")
-            return False
-        
-        smtp_host = os.getenv("SMTP_HOST")
-        smtp_port = int(os.getenv("SMTP_PORT", "587"))
-        smtp_username = os.getenv("SMTP_USERNAME")
-        smtp_password = os.getenv("SMTP_PASSWORD")
-        smtp_from = os.getenv("SMTP_FROM_EMAIL", smtp_username)
-        company_name = os.getenv("COMPANY_NAME", "Supreme Hospitality")
-        
-        if not all([smtp_host, smtp_username, smtp_password]):
-            print("Email disabled: SMTP credentials not configured")
-            return False
-        
-        # Create message
-        message = MIMEMultipart("alternative")
-        message["Subject"] = f"Join {company_name} - Complete Your Registration"
-        message["From"] = smtp_from
-        message["To"] = email
-        
-        # HTML email body
-        html_body = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ background-color: #4F46E5; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
-                .content {{ background-color: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
-                .button {{ display: inline-block; padding: 15px 30px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-                .footer {{ text-align: center; margin-top: 30px; font-size: 12px; color: #666; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>Welcome to {company_name}!</h1>
-                </div>
-                <div class="content">
-                    <p>Hi {first_name} {last_name},</p>
-                    
-                    <p>You've been invited to join {company_name} as a <strong>{job_title}</strong>!</p>
-                    
-                    <p>To complete your registration and start using the app, please click the button below:</p>
-                    
-                    <p style="text-align: center;">
-                        <a href="{invitation_link}" class="button">Complete Registration</a>
-                    </p>
-                    
-                    <p>Or copy and paste this link into your browser:</p>
-                    <p style="background-color: #e9e9e9; padding: 10px; word-break: break-all; font-family: monospace; font-size: 12px;">
-                        {invitation_link}
-                    </p>
-                    
-                    <p><strong>What's next?</strong></p>
-                    <ul>
-                        <li>Click the link above</li>
-                        <li>Your details will be pre-filled</li>
-                        <li>Set a secure 4-6 digit PIN</li>
-                        <li>Start clocking in and managing your shifts!</li>
-                    </ul>
-                    
-                    <p style="color: #666; font-size: 14px;"><em>This invitation link will expire in 7 days.</em></p>
-                </div>
-                <div class="footer">
-                    <p>If you didn't expect this invitation, please ignore this email.</p>
-                    <p>&copy; 2024 {company_name}. All rights reserved.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Attach HTML body
-        html_part = MIMEText(html_body, "html")
-        message.attach(html_part)
-        
-        # Send email - Handle both SSL (port 465) and TLS (port 587)
-        if smtp_port == 465:
-            # Use SMTP_SSL for port 465 (GoDaddy)
-            with smtplib.SMTP_SSL(smtp_host, smtp_port) as server:
-                server.login(smtp_username, smtp_password)
-                server.send_message(message)
-        else:
-            # Use SMTP with STARTTLS for port 587
-            with smtplib.SMTP(smtp_host, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_username, smtp_password)
-                server.send_message(message)
-        
-        print(f"✅ Invitation email sent successfully to {email}")
-        return True
-        
-    except Exception as e:
-        print(f"Failed to send invitation email: {str(e)}")
-        return False
-
-@api_router.get("/invitations/{token}")
-async def get_invitation(token: str):
-    """Get invitation details by token"""
-    invitation = await db.invitations.find_one({"token": token})
-    if not invitation:
-        raise HTTPException(status_code=404, detail="Invitation not found")
-    
-    # Check if invitation has expired
-    if invitation.get("status") == "accepted":
-        raise HTTPException(status_code=400, detail="Invitation has already been used")
-    
-    if invitation.get("expires_at") and invitation["expires_at"] < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Invitation has expired")
-    
-    return serialize_doc(invitation)
-
-# =====================
-# SHIFT ENDPOINTS
-# =====================
-
-@api_router.post("/shifts", response_model=Shift)
-async def create_shift(shift: ShiftCreate):
-    shift_dict = shift.model_dump()
-    shift_dict["status"] = "scheduled"
-    shift_dict["created_at"] = datetime.utcnow()
-    
-    result = await db.shifts.insert_one(shift_dict)
-    shift_dict["id"] = str(result.inserted_id)
-    
-    return Shift(**shift_dict)
-
-@api_router.get("/shifts")
-async def get_shifts(employee_id: Optional[str] = None, site_id: Optional[str] = None, status: Optional[str] = None):
+@api_router.get("/templates")
+async def get_templates(category: Optional[str] = None):
     query = {}
-    if employee_id:
-        query["employee_id"] = employee_id
-    if site_id:
-        query["site_id"] = site_id
-    if status:
-        query["status"] = status
-    
-    shifts = await db.shifts.find(query).sort("start_time", -1).to_list(1000)
-    return [serialize_doc(shift) for shift in shifts]
+    if category:
+        query["category"] = category
+    templates = await db.sop_templates.find(query).sort("created_at", -1).to_list(1000)
+    return [serialize_doc(t) for t in templates]
 
-@api_router.get("/shifts/{shift_id}")
-async def get_shift(shift_id: str):
-    shift = await db.shifts.find_one({"_id": ObjectId(shift_id)})
-    if not shift:
-        raise HTTPException(status_code=404, detail="Shift not found")
-    return serialize_doc(shift)
+@api_router.get("/templates/{template_id}")
+async def get_template(template_id: str):
+    template = await db.sop_templates.find_one({"_id": ObjectId(template_id)})
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return serialize_doc(template)
 
-# =====================
-# ROSTER ENDPOINTS
-# =====================
-
-@api_router.post("/roster/shifts")
-async def create_roster_shift(shift: RosterShiftCreate, created_by: str):
-    """Create a new roster shift (Admin/Supervisor only)"""
-    shift_dict = shift.model_dump()
-    shift_dict["created_by"] = created_by
-    shift_dict["status"] = "scheduled"
-    shift_dict["created_at"] = datetime.utcnow()
-    shift_dict["updated_at"] = datetime.utcnow()
-    
-    result = await db.roster_shifts.insert_one(shift_dict)
-    shift_dict["id"] = str(result.inserted_id)
-    
-    return RosterShift(**shift_dict)
-
-@api_router.get("/roster/shifts")
-async def get_roster_shifts(
-    employee_id: Optional[str] = None,
-    site_id: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-):
-    """Get roster shifts with optional filters"""
-    query = {}
-    
-    if employee_id:
-        query["employee_id"] = employee_id
-    if site_id:
-        query["site_id"] = site_id
-    
-    if start_date and end_date:
-        query["start_time"] = {
-            "$gte": datetime.fromisoformat(start_date.replace('Z', '+00:00')),
-            "$lte": datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-        }
-    
-    # Use aggregation pipeline to avoid N+1 query problem
-    pipeline = [
-        {"$match": query},
-        {
-            "$lookup": {
-                "from": "users",
-                "let": {"employee_id_str": {"$toString": "$employee_id"}},
-                "pipeline": [
-                    {"$addFields": {"user_id_str": {"$toString": "$_id"}}},
-                    {"$match": {"$expr": {"$eq": ["$user_id_str", "$$employee_id_str"]}}}
-                ],
-                "as": "employee"
-            }
-        },
-        {
-            "$lookup": {
-                "from": "sites",
-                "let": {"site_id_str": {"$toString": "$site_id"}},
-                "pipeline": [
-                    {"$addFields": {"site_id_str": {"$toString": "$_id"}}},
-                    {"$match": {"$expr": {"$eq": ["$site_id_str", "$$site_id_str"]}}}
-                ],
-                "as": "site"
-            }
-        },
-        {"$unwind": {"path": "$employee"}},
-        {"$unwind": {"path": "$site"}},
-        {
-            "$addFields": {
-                "employee_name": {
-                    "$concat": [
-                        {"$ifNull": ["$employee.first_name", ""]},
-                        " ",
-                        {"$ifNull": ["$employee.last_name", ""]}
-                    ]
-                },
-                "site_name": {"$ifNull": ["$site.name", ""]}
-            }
-        },
-        {"$sort": {"start_time": 1}},
-        {
-            "$project": {
-                "employee": 0,
-                "site": 0
-            }
-        }
-    ]
-    
-    shifts = await db.roster_shifts.aggregate(pipeline).to_list(1000)
-    
-    # Serialize the results
-    enriched_shifts = [serialize_doc(shift) for shift in shifts]
-    
-    return enriched_shifts
-
-@api_router.put("/roster/shifts/{shift_id}")
-async def update_roster_shift(shift_id: str, update_data: dict):
-    """Update roster shift"""
+@api_router.put("/templates/{template_id}")
+async def update_template(template_id: str, update_data: dict):
+    update_data.pop("id", None)
+    update_data.pop("_id", None)
     update_data["updated_at"] = datetime.utcnow()
-    
-    result = await db.roster_shifts.update_one(
-        {"_id": ObjectId(shift_id)},
-        {"$set": update_data}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Shift not found")
-    
-    shift = await db.roster_shifts.find_one({"_id": ObjectId(shift_id)})
-    return serialize_doc(shift)
-
-@api_router.delete("/roster/shifts/{shift_id}")
-async def delete_roster_shift(shift_id: str):
-    """Delete roster shift"""
-    result = await db.roster_shifts.delete_one({"_id": ObjectId(shift_id)})
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Shift not found")
-    
-    return {"success": True, "message": "Shift deleted"}
-
-# =====================
-# AVAILABILITY ENDPOINTS
-# =====================
-
-@api_router.post("/availability")
-async def set_availability(availability_update: AvailabilityUpdate):
-    """Set employee weekly availability"""
-    employee_id = availability_update.employee_id
-    
-    # Delete existing availability for this employee
-    await db.availability.delete_many({"employee_id": employee_id})
-    
-    # Insert new availability
-    for avail in availability_update.availability:
-        avail_dict = {
-            "employee_id": employee_id,
-            "day_of_week": avail["day"],
-            "available": avail["available"],
-            "start_time": avail.get("start_time"),
-            "end_time": avail.get("end_time"),
-            "created_at": datetime.utcnow()
-        }
-        await db.availability.insert_one(avail_dict)
-    
-    return {"success": True, "message": "Availability updated"}
-
-@api_router.get("/availability/{employee_id}")
-async def get_availability(employee_id: str):
-    """Get employee availability"""
-    availability = await db.availability.find({"employee_id": employee_id}).to_list(100)
-    return [serialize_doc(avail) for avail in availability]
-
-@api_router.post("/availability/unavailable-dates")
-async def add_unavailable_date(unavailable: UnavailableDateCreate):
-    """Mark a date as unavailable"""
-    unavailable_dict = unavailable.model_dump()
-    unavailable_dict["created_at"] = datetime.utcnow()
-    
-    result = await db.unavailable_dates.insert_one(unavailable_dict)
-    unavailable_dict["id"] = str(result.inserted_id)
-    
-    return UnavailableDate(**unavailable_dict)
-
-@api_router.get("/availability/unavailable-dates/{employee_id}")
-async def get_unavailable_dates(employee_id: str):
-    """Get employee unavailable dates"""
-    dates = await db.unavailable_dates.find({"employee_id": employee_id}).to_list(100)
-    return [serialize_doc(date) for date in dates]
-
-@api_router.delete("/availability/unavailable-dates/{date_id}")
-async def delete_unavailable_date(date_id: str):
-    """Remove unavailable date"""
-    result = await db.unavailable_dates.delete_one({"_id": ObjectId(date_id)})
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Date not found")
-    
-    return {"success": True, "message": "Date removed"}
-
-# =====================
-# SHIFT SWAP ENDPOINTS
-# =====================
-
-@api_router.post("/roster/shift-swaps")
-async def create_shift_swap_request(swap: ShiftSwapCreate):
-    """Create a shift swap request"""
-    # Verify shift exists
-    shift = await db.roster_shifts.find_one({"_id": ObjectId(swap.shift_id)})
-    if not shift:
-        raise HTTPException(status_code=404, detail="Shift not found")
-    
-    # Verify the shift belongs to the from_employee
-    if shift["employee_id"] != swap.from_employee_id:
-        raise HTTPException(status_code=403, detail="You can only swap your own shifts")
-    
-    swap_dict = swap.model_dump()
-    swap_dict["status"] = "pending"
-    swap_dict["created_at"] = datetime.utcnow()
-    swap_dict["updated_at"] = datetime.utcnow()
-    
-    result = await db.shift_swaps.insert_one(swap_dict)
-    swap_dict["id"] = str(result.inserted_id)
-    
-    return ShiftSwapRequest(**swap_dict)
-
-@api_router.get("/roster/shift-swaps")
-async def get_shift_swap_requests(
-    employee_id: Optional[str] = None,
-    status: Optional[str] = None
-):
-    """Get shift swap requests"""
-    query = {}
-    
-    if employee_id:
-        query["$or"] = [
-            {"from_employee_id": employee_id},
-            {"to_employee_id": employee_id}
-        ]
-    
-    if status:
-        query["status"] = status
-    
-    swaps = await db.shift_swaps.find(query).sort("created_at", -1).to_list(100)
-    
-    # Enrich with employee and shift details
-    enriched_swaps = []
-    for swap in swaps:
-        from_employee = await db.users.find_one({"_id": ObjectId(swap["from_employee_id"])})
-        to_employee = await db.users.find_one({"_id": ObjectId(swap["to_employee_id"])})
-        shift = await db.roster_shifts.find_one({"_id": ObjectId(swap["shift_id"])})
-        
-        swap_data = serialize_doc(swap)
-        if from_employee:
-            swap_data["from_employee_name"] = f"{from_employee.get('first_name', '')} {from_employee.get('last_name', '')}"
-        if to_employee:
-            swap_data["to_employee_name"] = f"{to_employee.get('first_name', '')} {to_employee.get('last_name', '')}"
-        if shift:
-            swap_data["shift_details"] = {
-                "start_time": shift["start_time"].isoformat(),
-                "end_time": shift["end_time"].isoformat(),
-                "role": shift["role"]
-            }
-        
-        enriched_swaps.append(swap_data)
-    
-    return enriched_swaps
-
-@api_router.post("/roster/shift-swaps/action")
-async def handle_shift_swap_action(action: ShiftSwapAction):
-    """Approve or reject a shift swap request (Supervisor/Admin only)"""
-    swap = await db.shift_swaps.find_one({"_id": ObjectId(action.swap_id)})
-    
-    if not swap:
-        raise HTTPException(status_code=404, detail="Swap request not found")
-    
-    if swap["status"] != "pending":
-        raise HTTPException(status_code=400, detail="Swap request already processed")
-    
-    # Update swap status
-    update_data = {
-        "status": action.action,  # 'approved' or 'rejected'
-        "approved_by": action.approved_by,
-        "updated_at": datetime.utcnow()
-    }
-    
-    await db.shift_swaps.update_one(
-        {"_id": ObjectId(action.swap_id)},
-        {"$set": update_data}
-    )
-    
-    # If approved, update the shift to new employee
-    if action.action == "approved":
-        await db.roster_shifts.update_one(
-            {"_id": ObjectId(swap["shift_id"])},
-            {"$set": {
-                "employee_id": swap["to_employee_id"],
-                "updated_at": datetime.utcnow()
-            }}
-        )
-    
-    return {"success": True, "message": f"Swap request {action.action}"}
-
-# =====================
-# RECURRING SHIFT TEMPLATES ENDPOINTS
-# =====================
-
-@api_router.post("/roster/templates")
-async def create_recurring_template(template: RecurringTemplateCreate, created_by: str):
-    """Create a recurring shift template"""
-    template_dict = template.model_dump()
-    template_dict["created_by"] = created_by
-    template_dict["active"] = True
-    template_dict["created_at"] = datetime.utcnow()
-    
-    result = await db.recurring_templates.insert_one(template_dict)
-    template_dict["id"] = str(result.inserted_id)
-    
-    return RecurringShiftTemplate(**template_dict)
-
-@api_router.get("/roster/templates")
-async def get_recurring_templates(
-    employee_id: Optional[str] = None,
-    active: Optional[bool] = None
-):
-    """Get recurring shift templates"""
-    query = {}
-    
-    if employee_id:
-        query["employee_id"] = employee_id
-    
-    if active is not None:
-        query["active"] = active
-    
-    # Use aggregation pipeline to avoid N+1 query problem
-    pipeline = [
-        {"$match": query},
-        {
-            "$lookup": {
-                "from": "users",
-                "let": {"employee_id_str": {"$toString": "$employee_id"}},
-                "pipeline": [
-                    {"$addFields": {"user_id_str": {"$toString": "$_id"}}},
-                    {"$match": {"$expr": {"$eq": ["$user_id_str", "$$employee_id_str"]}}}
-                ],
-                "as": "employee"
-            }
-        },
-        {
-            "$lookup": {
-                "from": "sites",
-                "let": {"site_id_str": {"$toString": "$site_id"}},
-                "pipeline": [
-                    {"$addFields": {"site_id_str": {"$toString": "$_id"}}},
-                    {"$match": {"$expr": {"$eq": ["$site_id_str", "$$site_id_str"]}}}
-                ],
-                "as": "site"
-            }
-        },
-        {"$unwind": {"path": "$employee"}},
-        {"$unwind": {"path": "$site"}},
-        {
-            "$addFields": {
-                "employee_name": {
-                    "$concat": [
-                        {"$ifNull": ["$employee.first_name", ""]},
-                        " ",
-                        {"$ifNull": ["$employee.last_name", ""]}
-                    ]
-                },
-                "site_name": {"$ifNull": ["$site.name", ""]}
-            }
-        },
-        {
-            "$project": {
-                "employee": 0,
-                "site": 0
-            }
-        }
-    ]
-    
-    templates = await db.recurring_templates.aggregate(pipeline).to_list(100)
-    
-    # Serialize the results
-    enriched_templates = [serialize_doc(template) for template in templates]
-    
-    return enriched_templates
-
-@api_router.put("/roster/templates/{template_id}")
-async def update_recurring_template(template_id: str, update_data: dict):
-    """Update or deactivate a recurring template"""
-    result = await db.recurring_templates.update_one(
+    result = await db.sop_templates.update_one(
         {"_id": ObjectId(template_id)},
         {"$set": update_data}
     )
-    
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="Template not found")
-    
-    template = await db.recurring_templates.find_one({"_id": ObjectId(template_id)})
+    template = await db.sop_templates.find_one({"_id": ObjectId(template_id)})
     return serialize_doc(template)
 
-@api_router.delete("/roster/templates/{template_id}")
-async def delete_recurring_template(template_id: str):
-    """Delete a recurring template"""
-    result = await db.recurring_templates.delete_one({"_id": ObjectId(template_id)})
-    
+@api_router.delete("/templates/{template_id}")
+async def delete_template(template_id: str):
+    result = await db.sop_templates.delete_one({"_id": ObjectId(template_id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Template not found")
-    
-    return {"success": True, "message": "Template deleted"}
-
-@api_router.post("/roster/templates/{template_id}/generate")
-async def generate_shifts_from_template(
-    template_id: str,
-    weeks: int = 4
-):
-    """Generate roster shifts from a template for the next N weeks"""
-    template = await db.recurring_templates.find_one({"_id": ObjectId(template_id)})
-    
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    
-    if not template.get("active", False):
-        raise HTTPException(status_code=400, detail="Template is not active")
-    
-    # Generate shifts for next N weeks
-    shifts_created = []
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    for week in range(weeks):
-        # Find the next occurrence of the day_of_week
-        days_ahead = template["day_of_week"] - today.weekday()
-        if days_ahead < 0:
-            days_ahead += 7
-        
-        shift_date = today + timedelta(days=days_ahead + (week * 7))
-        
-        # Parse time strings
-        start_hour, start_minute = map(int, template["start_time"].split(":"))
-        end_hour, end_minute = map(int, template["end_time"].split(":"))
-        
-        start_time = shift_date.replace(hour=start_hour, minute=start_minute)
-        end_time = shift_date.replace(hour=end_hour, minute=end_minute)
-        
-        # Check if shift already exists for this date
-        existing = await db.roster_shifts.find_one({
-            "employee_id": template["employee_id"],
-            "start_time": start_time
-        })
-        
-        if not existing:
-            shift = {
-                "employee_id": template["employee_id"],
-                "site_id": template["site_id"],
-                "role": template["role"],
-                "start_time": start_time,
-                "end_time": end_time,
-                "status": "scheduled",
-                "created_by": template["created_by"],
-                "notes": f"Generated from template: {template['name']}",
-                "template_id": str(template["_id"]),
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
-            }
-            
-            result = await db.roster_shifts.insert_one(shift)
-            shift["id"] = str(result.inserted_id)
-            shifts_created.append(serialize_doc(shift))
-    
-    return {
-        "success": True,
-        "shifts_created": len(shifts_created),
-        "shifts": shifts_created
-    }
+    return {"success": True}
 
 # =====================
-# TIMESHEET ENDPOINTS
+# DOCUMENT ENDPOINTS
 # =====================
 
-def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Calculate distance between two GPS coordinates using Haversine formula (in meters)"""
-    from math import radians, sin, cos, sqrt, atan2
-    
-    R = 6371000  # Earth's radius in meters
-    
-    lat1_rad = radians(lat1)
-    lat2_rad = radians(lat2)
-    delta_lat = radians(lat2 - lat1)
-    delta_lon = radians(lon2 - lon1)
-    
-    a = sin(delta_lat / 2) ** 2 + cos(lat1_rad) * cos(lat2_rad) * sin(delta_lon / 2) ** 2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-    
-    distance = R * c
-    return distance
-
-@api_router.post("/timesheets/clock-in")
-async def clock_in(request: ClockInRequest):
-    """Clock in - creates a new timesheet with geo-fencing and roster validation"""
-    # Check if already clocked in
-    existing = await db.timesheets.find_one({
-        "employee_id": request.employee_id,
-        "clock_out": None
-    })
-    
-    if existing:
-        raise HTTPException(status_code=400, detail="Already clocked in. Please clock out first.")
-    
-    # *** ROSTER VALIDATION (Optional) ***
-    # Check if employee has a rostered shift for current time
-    # Allow clock-in even without roster, but log a warning
-    current_time = datetime.utcnow()
-    rostered_shift = await db.roster_shifts.find_one({
-        "employee_id": request.employee_id,
-        "start_time": {"$lte": current_time},
-        "end_time": {"$gte": current_time},
-        "status": {"$in": ["scheduled", "published"]}
-    })
-    
-    # If strict roster validation is needed, uncomment below:
-    # if not rostered_shift:
-    #     raise HTTPException(
-    #         status_code=403, 
-    #         detail="You are not rostered to work at this time. Please check your roster or contact your supervisor."
-    #     )
-    
-    # Validate GPS and calculate distance from site
-    site = await db.sites.find_one({"_id": ObjectId(request.site_id)})
-    if not site:
-        raise HTTPException(status_code=404, detail="Site not found")
-    
-    # Calculate distance from site
-    distance = calculate_distance(
-        request.gps_lat, request.gps_long,
-        site["gps_lat"], site["gps_long"]
-    )
-    
-    # Check if within geo-fence (100m default)
-    radius = site.get("radius_meters", 100)
-    out_of_bounds = distance > radius
-    
-    # Use client-provided local timestamp if available, otherwise use server time
-    if request.local_timestamp:
-        try:
-            # Parse the ISO timestamp from client (already in local time)
-            now = datetime.fromisoformat(request.local_timestamp.replace('Z', ''))
-            logging.info(f"Using client timestamp for clock-in: {now}")
-        except Exception as e:
-            logging.error(f"Failed to parse client timestamp: {e}")
-            now = datetime.now()
-    else:
-        now = datetime.now()  # Fallback to server local time
-    
-    # Create timesheet linked to roster shift (if available)
-    timesheet = {
-        "employee_id": request.employee_id,
-        "site_id": request.site_id,
-        "roster_shift_id": str(rostered_shift["_id"]) if rostered_shift else None,
-        "clock_in": now,
-        "gps_in_lat": request.gps_lat,
-        "gps_in_long": request.gps_long,
-        "gps_in_distance": round(distance, 2),
-        "gps_in_out_of_bounds": out_of_bounds,
-        "break_minutes": 0,
-        "total_hours": 0.0,
-        "approval_status": "pending",
-        "created_at": now
+@api_router.post("/documents")
+async def create_document(doc: DocumentCreate):
+    doc_data = {
+        "title": doc.title,
+        "category": doc.category,
+        "site_id": doc.site_id,
+        "template_id": doc.template_id,
+        "content": doc.content,
+        "sections": doc.sections,
+        "status": doc.status,
+        "created_at": datetime.utcnow(),
+        "updated_at": datetime.utcnow(),
     }
-    
-    result = await db.timesheets.insert_one(timesheet)
-    timesheet["id"] = str(result.inserted_id)
-    
-    return {
-        "success": True, 
-        "timesheet": serialize_doc(timesheet),
-        "geo_fence_warning": out_of_bounds,
-        "distance_meters": round(distance, 2),
-        "allowed_radius": radius,
-        "rostered_shift": serialize_doc(rostered_shift) if rostered_shift else None,
-        "roster_warning": not rostered_shift  # Flag if clocking in without roster
-    }
+    result = await db.documents.insert_one(doc_data)
+    doc_data["id"] = str(result.inserted_id)
+    return serialize_doc(doc_data)
 
-@api_router.post("/timesheets/clock-out")
-async def clock_out(request: ClockOutRequest):
-    """Clock out - completes the timesheet with geo-fencing validation"""
-    timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
-    
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    if timesheet.get("clock_out"):
-        raise HTTPException(status_code=400, detail="Already clocked out")
-    
-    # Validate GPS for clock-out
-    site = await db.sites.find_one({"_id": ObjectId(timesheet["site_id"])})
-    if site:
-        distance = calculate_distance(
-            request.gps_lat, request.gps_long,
-            site["gps_lat"], site["gps_long"]
-        )
-        radius = site.get("radius_meters", 100)
-        out_of_bounds = distance > radius
-    else:
-        distance = 0
-        out_of_bounds = False
-    
-    # Calculate total hours using client timestamp if available
-    clock_in = timesheet["clock_in"]
-    
-    # Use client-provided local timestamp if available
-    if request.local_timestamp:
-        try:
-            clock_out_time = datetime.fromisoformat(request.local_timestamp.replace('Z', ''))
-            logging.info(f"Using client timestamp for clock-out: {clock_out_time}")
-        except Exception as e:
-            logging.error(f"Failed to parse client timestamp: {e}")
-            clock_out_time = datetime.now()
-    else:
-        clock_out_time = datetime.now()  # Fallback to server time
-    
-    total_seconds = (clock_out_time - clock_in).total_seconds()
-    total_hours = (total_seconds - (timesheet.get("break_minutes", 0) * 60)) / 3600
-    
-    # Check if this is a public holiday
-    is_holiday, holiday_name = is_public_holiday(clock_in)
-    
-    # Get user's pay rate
-    user = await db.users.find_one({"_id": ObjectId(timesheet["employee_id"])})
-    base_rate = 25.0  # Default rate
-    if user:
-        # Get pay rate from award level or job title
-        pay_rate_doc = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-        if pay_rate_doc:
-            base_rate = pay_rate_doc.get("hourly_rate", 25.0)
-    
-    # Calculate pay with holiday consideration
-    pay_calculation = calculate_pay_rate_with_holiday(base_rate, clock_in, total_hours)
-    
-    # Update timesheet
-    await db.timesheets.update_one(
-        {"_id": ObjectId(request.timesheet_id)},
-        {"$set": {
-            "clock_out": clock_out_time,
-            "gps_out_lat": request.gps_lat,
-            "gps_out_long": request.gps_long,
-            "gps_out_distance": round(distance, 2),
-            "gps_out_out_of_bounds": out_of_bounds,
-            "total_hours": round(total_hours, 2),
-            "is_public_holiday": is_holiday,
-            "holiday_name": holiday_name,
-            "pay_rate": pay_calculation["effective_rate"],
-            "pay_multiplier": pay_calculation["multiplier"],
-            "total_pay": pay_calculation["total_pay"]
-        }}
-    )
-    
-    updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
-    return {"success": True, "timesheet": serialize_doc(updated)}
-
-@api_router.post("/timesheets/break")
-async def manage_break(request: BreakRequest):
-    """Start or end break"""
-    timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
-    
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    if request.action == "start":
-        if timesheet.get("break_start"):
-            raise HTTPException(status_code=400, detail="Break already started")
-        
-        await db.timesheets.update_one(
-            {"_id": ObjectId(request.timesheet_id)},
-            {"$set": {"break_start": datetime.utcnow()}}
-        )
-    elif request.action == "end":
-        if not timesheet.get("break_start"):
-            raise HTTPException(status_code=400, detail="No break in progress")
-        
-        if timesheet.get("break_end"):
-            raise HTTPException(status_code=400, detail="Break already ended")
-        
-        break_start = timesheet["break_start"]
-        break_end = datetime.utcnow()
-        break_duration = (break_end - break_start).total_seconds() / 60
-        
-        await db.timesheets.update_one(
-            {"_id": ObjectId(request.timesheet_id)},
-            {"$set": {
-                "break_end": break_end,
-                "break_minutes": timesheet.get("break_minutes", 0) + int(break_duration)
-            }}
-        )
-    
-    updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
-    return {"success": True, "timesheet": serialize_doc(updated)}
-
-class ManualTimesheetRequest(BaseModel):
-    employee_id: str
-    site_id: Optional[str] = None
-    clock_in: Optional[str] = None  # ISO datetime string
-    clock_out: Optional[str] = None  # ISO datetime string
-    date: Optional[str] = None  # YYYY-MM-DD format
-    clock_in_time: Optional[str] = None  # HH:MM format
-    clock_out_time: Optional[str] = None  # HH:MM format
-    break_minutes: int = 0
-    notes: Optional[str] = None
-    image: Optional[str] = None  # Base64 encoded image
-
-@api_router.post("/timesheets/manual")
-async def create_manual_timesheet(request: ManualTimesheetRequest):
-    """Create a manual timesheet entry (requires approval)"""
-    try:
-        # Support two formats:
-        # 1. Full ISO datetime in clock_in/clock_out
-        # 2. Separate date + clock_in_time/clock_out_time
-        
-        if request.date and request.clock_in_time and request.clock_out_time:
-            # New format: date + time strings
-            clock_in = datetime.strptime(f"{request.date}T{request.clock_in_time}", "%Y-%m-%dT%H:%M")
-            clock_out = datetime.strptime(f"{request.date}T{request.clock_out_time}", "%Y-%m-%dT%H:%M")
-            
-            # Handle overnight shifts
-            if clock_out <= clock_in:
-                clock_out += timedelta(days=1)
-        elif request.clock_in and request.clock_out:
-            # Legacy format: full ISO datetime strings
-            clock_in_str = request.clock_in.replace('Z', '')
-            clock_out_str = request.clock_out.replace('Z', '')
-            
-            if '+' in clock_in_str:
-                clock_in_str = clock_in_str.split('+')[0]
-            if '+' in clock_out_str:
-                clock_out_str = clock_out_str.split('+')[0]
-                
-            clock_in = datetime.fromisoformat(clock_in_str)
-            clock_out = datetime.fromisoformat(clock_out_str)
-        else:
-            raise HTTPException(status_code=400, detail="Please provide date with times or full datetime strings")
-        
-        logging.info(f"Manual timesheet: clock_in={clock_in}, clock_out={clock_out}")
-    except Exception as e:
-        logging.error(f"Datetime parsing error: {str(e)}")
-        raise HTTPException(status_code=400, detail=f"Invalid datetime format: {str(e)}")
-    
-    if clock_out <= clock_in:
-        raise HTTPException(status_code=400, detail="Clock out must be after clock in")
-    
-    # Calculate total hours
-    total_seconds = (clock_out - clock_in).total_seconds()
-    total_hours = (total_seconds - (request.break_minutes * 60)) / 3600
-    total_hours = round(max(total_hours, 0), 2)
-    
-    timesheet = {
-        "employee_id": request.employee_id,
-        "site_id": request.site_id,
-        "clock_in": clock_in,
-        "clock_out": clock_out,
-        "break_minutes": request.break_minutes,
-        "total_hours": total_hours,
-        "approval_status": "pending",
-        "employee_notes": request.notes or "Manual entry",
-        "notes": request.notes or "Manual entry",
-        "manually_edited": True,
-        "is_manual_entry": True,
-        "gps_clock_in": None,
-        "gps_clock_out": None,
-        "created_at": datetime.utcnow()
-    }
-    
-    # Add image if provided
-    if request.image:
-        timesheet["image"] = request.image
-    
-    result = await db.timesheets.insert_one(timesheet)
-    
-    # Fetch the created timesheet and serialize it
-    created_timesheet = await db.timesheets.find_one({"_id": result.inserted_id})
-    
-    return {"success": True, "message": "Manual timesheet submitted for approval", "timesheet": serialize_doc(created_timesheet)}
-
-@api_router.delete("/timesheets/bulk-delete")
-async def bulk_delete_timesheets(status: str = "rejected"):
-    """Delete all timesheets with a specific status (admin only)"""
-    valid_statuses = ["rejected", "pending"]
-    if status not in valid_statuses:
-        raise HTTPException(status_code=400, detail=f"Status must be one of: {valid_statuses}")
-    
-    result = await db.timesheets.delete_many({"approval_status": status})
-    return {"success": True, "message": f"Deleted {result.deleted_count} {status} timesheets", "deleted_count": result.deleted_count}
-
-@api_router.delete("/timesheets/bulk-delete-out-of-bounds")
-async def bulk_delete_out_of_bounds_timesheets():
-    """Delete all out-of-bounds timesheets (admin only)"""
-    result = await db.timesheets.delete_many({"gps_in_out_of_bounds": True})
-    return {"success": True, "message": f"Deleted {result.deleted_count} out-of-bounds timesheets", "deleted_count": result.deleted_count}
-
-@api_router.get("/timesheets")
-async def get_timesheets(
-    employee_id: Optional[str] = None,
+@api_router.get("/documents")
+async def get_documents(
+    category: Optional[str] = None,
+    status: Optional[str] = None,
     site_id: Optional[str] = None,
-    approval_status: Optional[str] = None
+    search: Optional[str] = None,
 ):
     query = {}
-    if employee_id:
-        query["employee_id"] = employee_id
+    if category:
+        query["category"] = category
+    if status:
+        query["status"] = status
     if site_id:
         query["site_id"] = site_id
-    if approval_status:
-        query["approval_status"] = approval_status
+    if search:
+        query["title"] = {"$regex": search, "$options": "i"}
     
-    timesheets = await db.timesheets.find(query).sort("created_at", -1).to_list(1000)
-    
-    # Enrich timesheets with employee names
-    result = []
-    for ts in timesheets:
-        ts_dict = serialize_doc(ts)
-        # Look up employee name
-        try:
-            employee = await db.users.find_one({"_id": ObjectId(ts.get("employee_id"))})
-            if employee:
-                ts_dict["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}".strip()
-            else:
-                ts_dict["employee_name"] = "Unknown Employee"
-        except:
-            ts_dict["employee_name"] = "Unknown Employee"
-        result.append(ts_dict)
-    
-    return result
+    docs = await db.documents.find(query).sort("updated_at", -1).to_list(1000)
+    return [serialize_doc(d) for d in docs]
 
-@api_router.get("/timesheets/{timesheet_id}")
-async def get_timesheet(timesheet_id: str):
-    timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    return serialize_doc(timesheet)
+@api_router.get("/documents/{doc_id}")
+async def get_document(doc_id: str):
+    doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return serialize_doc(doc)
 
-@api_router.post("/timesheets/{timesheet_id}/update")
-async def update_timesheet(timesheet_id: str, request: TimesheetUpdateRequest):
-    """Update timesheet with employee notes, photo, or manual edits"""
-    timesheet = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
-    
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    update_data = {}
-    if request.employee_notes is not None:
-        update_data["employee_notes"] = request.employee_notes
-    if request.photo_base64 is not None:
-        update_data["photo_base64"] = request.photo_base64
-    
-    # Manual time edits - parse ISO datetime strings
-    manual_clock_in = None
-    manual_clock_out = None
-    
-    if request.manual_clock_in is not None:
-        try:
-            manual_clock_in = datetime.fromisoformat(request.manual_clock_in.replace('Z', '+00:00'))
-            update_data["clock_in"] = manual_clock_in
-            update_data["manually_edited"] = True
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid clock_in format: {str(e)}")
-        
-    if request.manual_clock_out is not None:
-        try:
-            manual_clock_out = datetime.fromisoformat(request.manual_clock_out.replace('Z', '+00:00'))
-            update_data["clock_out"] = manual_clock_out
-            update_data["manually_edited"] = True
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=f"Invalid clock_out format: {str(e)}")
-        
-    if request.manual_break_minutes is not None:
-        update_data["break_minutes"] = request.manual_break_minutes
-        update_data["manually_edited"] = True
-    
-    # Recalculate total hours if times changed
-    if manual_clock_in or manual_clock_out or request.manual_break_minutes is not None:
-        clock_in = manual_clock_in or timesheet.get("clock_in")
-        clock_out = manual_clock_out or timesheet.get("clock_out")
-        break_mins = request.manual_break_minutes if request.manual_break_minutes is not None else timesheet.get("break_minutes", 0)
-        
-        if clock_in and clock_out:
-            # Handle timezone-aware vs naive datetime comparison
-            if hasattr(clock_in, 'tzinfo') and clock_in.tzinfo is not None:
-                clock_in = clock_in.replace(tzinfo=None)
-            if hasattr(clock_out, 'tzinfo') and clock_out.tzinfo is not None:
-                clock_out = clock_out.replace(tzinfo=None)
-            
-            total_seconds = (clock_out - clock_in).total_seconds()
-            total_hours = (total_seconds - (break_mins * 60)) / 3600
-            update_data["total_hours"] = round(max(total_hours, 0), 2)
-    
-    if update_data:
-        await db.timesheets.update_one(
-            {"_id": ObjectId(timesheet_id)},
-            {"$set": update_data}
-        )
-    
-    updated = await db.timesheets.find_one({"_id": ObjectId(timesheet_id)})
-    return {"success": True, "timesheet": serialize_doc(updated)}
-
-@api_router.put("/timesheets/{timesheet_id}")
-async def update_timesheet(timesheet_id: str, request: dict = Body(...)):
-    """Update a timesheet entry"""
-    try:
-        object_id = ObjectId(timesheet_id)
-    except:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    timesheet = await db.timesheets.find_one({"_id": object_id})
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    # Allow editing any timesheet (including approved for corrections)
-    
-    update_data = {}
-    
-    # Update date and times if provided
-    if "date" in request and "clock_in_time" in request and "clock_out_time" in request:
-        date_str = request["date"]
-        clock_in_time = request["clock_in_time"]
-        clock_out_time = request["clock_out_time"]
-        
-        clock_in = datetime.strptime(f"{date_str}T{clock_in_time}", "%Y-%m-%dT%H:%M")
-        clock_out = datetime.strptime(f"{date_str}T{clock_out_time}", "%Y-%m-%dT%H:%M")
-        
-        # Handle overnight shifts
-        if clock_out <= clock_in:
-            clock_out += timedelta(days=1)
-        
-        break_minutes = int(request.get("break_minutes", 0))
-        total_hours = (clock_out - clock_in).total_seconds() / 3600 - (break_minutes / 60)
-        
-        update_data.update({
-            "clock_in": clock_in,
-            "clock_out": clock_out,
-            "break_minutes": break_minutes,
-            "total_hours": round(total_hours, 2),
-        })
-    
-    # Update notes if provided
-    if "notes" in request:
-        update_data["notes"] = request["notes"]
-    
-    # Update image if provided
-    if "image" in request:
-        update_data["image"] = request["image"]
-    
-    # Reset approval status when edited
-    update_data["approval_status"] = "pending"
-    
-    await db.timesheets.update_one({"_id": object_id}, {"$set": update_data})
-    
-    updated = await db.timesheets.find_one({"_id": object_id})
-    return {"success": True, "timesheet": serialize_doc(updated)}
-
-@api_router.put("/timesheets/{timesheet_id}/approve")
-async def approve_timesheet_by_id(timesheet_id: str, request: dict = Body(...)):
-    """Supervisor approves/rejects a specific timesheet"""
-    try:
-        object_id = ObjectId(timesheet_id)
-    except:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    timesheet = await db.timesheets.find_one({"_id": object_id})
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    status = request.get("status", "approved")
-    approved_by = request.get("approved_by")
-    rejection_reason = request.get("rejection_reason", "")
-    
-    # Calculate total pay when approving
-    total_pay = 0.0
-    if status == "approved" and timesheet.get("total_hours", 0) > 0:
-        employee = await db.users.find_one({"_id": ObjectId(timesheet["employee_id"])})
-        if employee:
-            pay_rate = await db.pay_rates.find_one({"award_level": employee.get("award_level", 1)})
-            if pay_rate:
-                clock_in = timesheet["clock_in"]
-                day_of_week = clock_in.weekday() if isinstance(clock_in, datetime) else 0
-                
-                if day_of_week == 5:
-                    rate = pay_rate["saturday_rate"]
-                elif day_of_week == 6:
-                    rate = pay_rate["sunday_rate"]
-                else:
-                    rate = pay_rate["weekday_rate"]
-                
-                total_pay = timesheet.get("total_hours", 0) * rate
-    
-    update_data = {
-        "approval_status": status,
-        "supervisor_id": approved_by,
-        "total_pay": round(total_pay, 2),
-        "approved_at": datetime.utcnow()
-    }
-    
-    if status == "rejected" and rejection_reason:
-        update_data["rejection_reason"] = rejection_reason
-    
-    await db.timesheets.update_one({"_id": object_id}, {"$set": update_data})
-    
-    updated = await db.timesheets.find_one({"_id": object_id})
-    return {"success": True, "timesheet": serialize_doc(updated)}
-
-@api_router.post("/timesheets/approve")
-async def approve_timesheet(request: ApprovalRequest):
-    """Supervisor approves/rejects timesheet"""
-    timesheet = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
-    
-    if not timesheet:
-        raise HTTPException(status_code=404, detail="Timesheet not found")
-    
-    # Calculate total pay when approving
-    total_pay = 0.0
-    if request.status == "approved" and timesheet.get("total_hours", 0) > 0:
-        # Get employee and pay rate
-        employee = await db.users.find_one({"_id": ObjectId(timesheet["employee_id"])})
-        if employee:
-            pay_rate = await db.pay_rates.find_one({"award_level": employee.get("award_level", 1)})
-            if pay_rate:
-                clock_in = timesheet["clock_in"]
-                day_of_week = clock_in.weekday()
-                
-                # Determine rate based on day
-                if day_of_week == 5:  # Saturday
-                    rate = pay_rate["saturday_rate"]
-                elif day_of_week == 6:  # Sunday
-                    rate = pay_rate["sunday_rate"]
-                else:
-                    rate = pay_rate["weekday_rate"]
-                
-                total_pay = timesheet.get("total_hours", 0) * rate
-    
-    update_data = {
-        "approval_status": request.status,
-        "supervisor_id": request.supervisor_id,
-        "notes": request.notes,
-        "total_pay": round(total_pay, 2)
-    }
-    
-    # Add signature if provided
-    if hasattr(request, 'signature') and request.signature:
-        update_data["supervisor_signature"] = request.signature
-    
-    await db.timesheets.update_one(
-        {"_id": ObjectId(request.timesheet_id)},
+@api_router.put("/documents/{doc_id}")
+async def update_document(doc_id: str, update_data: dict):
+    update_data.pop("id", None)
+    update_data.pop("_id", None)
+    update_data["updated_at"] = datetime.utcnow()
+    result = await db.documents.update_one(
+        {"_id": ObjectId(doc_id)},
         {"$set": update_data}
     )
-    
-    updated = await db.timesheets.find_one({"_id": ObjectId(request.timesheet_id)})
-    return {"success": True, "timesheet": serialize_doc(updated)}
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
+    return serialize_doc(doc)
 
-@api_router.delete("/timesheets/{timesheet_id}")
-async def delete_timesheet(timesheet_id: str):
-    """Delete a timesheet (for invalid/erroneous entries)"""
+@api_router.delete("/documents/{doc_id}")
+async def delete_document(doc_id: str):
+    result = await db.documents.delete_one({"_id": ObjectId(doc_id)})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"success": True}
+
+# =====================
+# AI DOCUMENT GENERATION
+# =====================
+
+@api_router.post("/documents/generate")
+async def generate_document(request: GenerateRequest):
+    """Generate an SOP or Compliance document using AI"""
     try:
-        # Validate ObjectId format
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        api_key = os.environ.get("EMERGENT_LLM_KEY", "")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="LLM API key not configured")
+        
+        session_id = f"sop_gen_{uuid.uuid4().hex[:12]}"
+        
+        # Build category display name
+        category_name = request.category
+        for cat in DOCUMENT_CATEGORIES:
+            if cat["id"] == request.category:
+                category_name = cat["name"]
+                break
+        
+        site_context = ""
+        if request.site_name:
+            site_context = f" for {request.site_name}"
+        
+        doc_type_label = "Standard Operating Procedure (SOP)" if request.document_type == "sop" else "Compliance Checklist"
+        
+        system_message = f"""You are an expert hospitality industry consultant specializing in creating professional {doc_type_label} documents for hotels and hospitality businesses.
+
+You create documents for Supreme Hospitality, a premium hospitality management company.
+
+Your documents must be:
+- Professional and industry-standard
+- Compliant with Australian hospitality regulations and Work Health & Safety (WHS) standards
+- Practical and actionable for hotel staff
+- Well-structured with clear sections, steps, and responsibilities
+
+Format your response as a JSON object with this exact structure:
+{{
+  "title": "Document title",
+  "sections": [
+    {{
+      "title": "Section title",
+      "content": "Section content with detailed steps, numbered lists, bullet points etc. Use markdown formatting.",
+      "order": 1
+    }}
+  ],
+  "summary": "A brief 1-2 sentence summary of this document"
+}}
+
+Include approximately {request.sections_count} sections. Each section should be comprehensive with actionable steps.
+{"For checklists, format content as checkbox items using - [ ] prefix for each item." if request.document_type == "checklist" else "For SOPs, include numbered steps, responsibilities, and any relevant safety notes."}"""
+        
+        user_prompt = f"""Create a professional {doc_type_label} document{site_context}.
+
+Category: {category_name}
+Title: {request.title}
+{"Additional Requirements: " + request.specific_requirements if request.specific_requirements else ""}
+
+Generate a comprehensive, industry-standard document with detailed, actionable content. Return ONLY the JSON object, no additional text."""
+
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=session_id,
+            system_message=system_message
+        )
+        chat.with_model("openai", "gpt-4.1")
+        
+        user_message = UserMessage(text=user_prompt)
+        response = await chat.send_message(user_message)
+        
+        # Parse the JSON response
+        import json
+        
+        # Clean response - remove markdown code blocks if present
+        clean_response = response.strip()
+        if clean_response.startswith("```json"):
+            clean_response = clean_response[7:]
+        if clean_response.startswith("```"):
+            clean_response = clean_response[3:]
+        if clean_response.endswith("```"):
+            clean_response = clean_response[:-3]
+        clean_response = clean_response.strip()
+        
         try:
-            object_id = ObjectId(timesheet_id)
-        except:
-            raise HTTPException(status_code=404, detail="Timesheet not found")
+            parsed = json.loads(clean_response)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, create a structured document from raw text
+            parsed = {
+                "title": request.title,
+                "sections": [
+                    {"title": "Generated Content", "content": response, "order": 1}
+                ],
+                "summary": f"AI-generated {doc_type_label} for {category_name}"
+            }
         
-        timesheet = await db.timesheets.find_one({"_id": object_id})
-        if not timesheet:
-            raise HTTPException(status_code=404, detail="Timesheet not found")
+        # Save the generated document
+        doc_data = {
+            "title": parsed.get("title", request.title),
+            "category": request.category,
+            "site_id": None,
+            "template_id": None,
+            "content": parsed.get("summary", ""),
+            "sections": parsed.get("sections", []),
+            "status": "draft",
+            "document_type": request.document_type,
+            "ai_generated": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+        }
         
-        # Delete the timesheet
-        result = await db.timesheets.delete_one({"_id": object_id})
-        
-        if result.deleted_count == 0:
-            raise HTTPException(status_code=404, detail="Timesheet not found")
+        result = await db.documents.insert_one(doc_data)
+        doc_data["id"] = str(result.inserted_id)
         
         return {
             "success": True,
-            "message": "Timesheet deleted successfully"
+            "document": serialize_doc(doc_data)
         }
+        
+    except HTTPException:
+        raise
     except Exception as e:
-        if isinstance(e, HTTPException):
-            raise e
-        raise HTTPException(status_code=500, detail=f"Failed to delete timesheet: {str(e)}")
+        logger.error(f"AI Generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate document: {str(e)}")
 
 # =====================
-# DASHBOARD ENDPOINTS
+# DASHBOARD STATS
 # =====================
 
-@api_router.get("/dashboard/supervisor")
-async def supervisor_dashboard(site_id: Optional[str] = None):
-    """Get supervisor dashboard data"""
-    query = {}
-    if site_id:
-        query["site_id"] = site_id
+@api_router.get("/dashboard/stats")
+async def get_dashboard_stats():
+    """Get dashboard statistics"""
+    total_documents = await db.documents.count_documents({})
+    published_documents = await db.documents.count_documents({"status": "published"})
+    draft_documents = await db.documents.count_documents({"status": "draft"})
+    total_templates = await db.sop_templates.count_documents({})
     
-    # Active shifts (clocked in)
-    active_query = {**query, "clock_out": None}
-    active_timesheets = await db.timesheets.find(active_query).to_list(1000)
+    # Get category counts
+    category_counts = {}
+    for cat in DOCUMENT_CATEGORIES:
+        count = await db.documents.count_documents({"category": cat["id"]})
+        category_counts[cat["id"]] = count
     
-    # Pending approvals
-    pending_query = {**query, "approval_status": "pending", "clock_out": {"$ne": None}}
-    pending_timesheets = await db.timesheets.find(pending_query).to_list(1000)
-    
-    # Enrich with employee names
-    async def enrich_timesheet(ts):
-        ts_dict = serialize_doc(ts)
-        try:
-            employee = await db.users.find_one({"_id": ObjectId(ts.get("employee_id"))})
-            if employee:
-                ts_dict["employee_name"] = f"{employee.get('first_name', '')} {employee.get('last_name', '')}".strip()
-            else:
-                ts_dict["employee_name"] = "Unknown Employee"
-        except:
-            ts_dict["employee_name"] = "Unknown Employee"
-        return ts_dict
-    
-    enriched_active = [await enrich_timesheet(ts) for ts in active_timesheets]
-    enriched_pending = [await enrich_timesheet(ts) for ts in pending_timesheets]
+    # Recent documents
+    recent_docs = await db.documents.find().sort("updated_at", -1).to_list(5)
     
     return {
-        "active_employees": len(active_timesheets),
-        "pending_approvals": len(pending_timesheets),
-        "active_timesheets": enriched_active,
-        "pending_timesheets": enriched_pending
+        "total_documents": total_documents,
+        "published_documents": published_documents,
+        "draft_documents": draft_documents,
+        "total_templates": total_templates,
+        "category_counts": category_counts,
+        "recent_documents": [serialize_doc(d) for d in recent_docs]
     }
 
 # =====================
-# LEAVE REQUEST ENDPOINTS
+# DOCUMENT EXPORT (HTML)
 # =====================
 
-@api_router.post("/leave-requests", response_model=LeaveRequest)
-async def create_leave_request(leave: LeaveRequestCreate):
-    leave_dict = leave.model_dump()
-    leave_dict["status"] = "pending"
-    leave_dict["created_at"] = datetime.utcnow()
-    
-    result = await db.leave_requests.insert_one(leave_dict)
-    leave_dict["id"] = str(result.inserted_id)
-    
-    return LeaveRequest(**leave_dict)
-
-@api_router.get("/leave-requests")
-async def get_leave_requests(employee_id: Optional[str] = None, status: Optional[str] = None):
-    query = {}
-    if employee_id:
-        query["employee_id"] = employee_id
-    if status:
-        query["status"] = status
-    
-    leaves = await db.leave_requests.find(query).sort("created_at", -1).to_list(1000)
-    return [serialize_doc(leave) for leave in leaves]
-
-@api_router.post("/leave-requests/approve")
-async def approve_leave_request(request: ApprovalRequest):
-    """Approve or reject leave request"""
-    leave = await db.leave_requests.find_one({"_id": ObjectId(request.timesheet_id)})
-    
-    if not leave:
-        raise HTTPException(status_code=404, detail="Leave request not found")
-    
-    await db.leave_requests.update_one(
-        {"_id": ObjectId(request.timesheet_id)},
-        {"$set": {
-            "status": request.status,
-            "approved_by": request.supervisor_id,
-            "notes": request.notes
-        }}
-    )
-    
-    updated = await db.leave_requests.find_one({"_id": ObjectId(request.timesheet_id)})
-    return {"success": True, "leave_request": serialize_doc(updated)}
-
-# =====================
-# PAY RATE ENDPOINTS
-# =====================
-
-@api_router.post("/pay-rates", response_model=PayRate)
-async def create_pay_rate(rate: PayRateCreate):
-    rate_dict = rate.model_dump()
-    result = await db.pay_rates.insert_one(rate_dict)
-    rate_dict["id"] = str(result.inserted_id)
-    return PayRate(**rate_dict)
-
-@api_router.get("/pay-rates")
-async def get_pay_rates(award_level: Optional[int] = None):
-    query = {}
-    if award_level:
-        query["award_level"] = award_level
-    
-    rates = await db.pay_rates.find(query).to_list(1000)
-    return [serialize_doc(rate) for rate in rates]
-
-@api_router.put("/pay-rates/{award_level}")
-async def update_pay_rate(award_level: int, rate: PayRateCreate):
-    """Update pay rate for a specific award level - upsert if doesn't exist"""
-    rate_dict = rate.model_dump()
-    
-    # Find existing rate by award_level
-    existing = await db.pay_rates.find_one({"award_level": award_level})
-    
-    if existing:
-        # Update existing rate
-        await db.pay_rates.update_one(
-            {"award_level": award_level},
-            {"$set": rate_dict}
-        )
-        updated = await db.pay_rates.find_one({"award_level": award_level})
-        return {"success": True, "message": f"Pay rate for Level {award_level} updated", "rate": serialize_doc(updated)}
-    else:
-        # Create new rate
-        result = await db.pay_rates.insert_one(rate_dict)
-        rate_dict["id"] = str(result.inserted_id)
-        return {"success": True, "message": f"Pay rate for Level {award_level} created", "rate": rate_dict}
-
-# =====================
-# PAYROLL EXPORT ENDPOINT
-# =====================
-
-@api_router.post("/payroll/export")
-async def export_payroll(request: PayrollExportRequest):
-    """Export payroll data to CSV format with site location"""
-    import csv
-    from io import StringIO
-    
-    query = {
-        "clock_out": {"$ne": None},
-        "approval_status": "approved",
-        "clock_in": {
-            "$gte": request.start_date,
-            "$lte": request.end_date
-        }
-    }
-    
-    if request.site_id:
-        query["site_id"] = request.site_id
-    
-    if request.employee_id:
-        query["employee_id"] = request.employee_id
-    
-    timesheets = await db.timesheets.find(query).to_list(1000)
-    
-    # Get employee, site and pay rate info
-    csv_data = []
-    for ts in timesheets:
-        user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
-        if not user:
-            continue
-        
-        # Get site info
-        site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])}) if ts.get("site_id") else None
-        site_name = site["name"] if site else "Unknown Site"
-        site_address = site.get("address", "N/A") if site else "N/A"
-        
-        pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-        
-        # Calculate pay based on day of week
-        clock_in = ts["clock_in"]
-        day_of_week = clock_in.weekday()  # 0=Monday, 6=Sunday
-        
-        base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
-        if day_of_week == 5:  # Saturday
-            rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
-        elif day_of_week == 6:  # Sunday
-            rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
-        else:
-            rate = base_rate
-        
-        # Check for public holiday bonus
-        if ts.get("is_public_holiday"):
-            rate = base_rate * 2.5
-        
-        total_pay = ts["total_hours"] * rate
-        
-        csv_data.append({
-            "Employee ID": ts["employee_id"][-6:],
-            "Name": f"{user['first_name']} {user['last_name']}",
-            "Phone": user.get("phone", "N/A"),
-            "Site": site_name,
-            "Site Address": site_address,
-            "Date": clock_in.strftime("%Y-%m-%d"),
-            "Day": clock_in.strftime("%A"),
-            "Clock In": clock_in.strftime("%H:%M"),
-            "Clock Out": ts["clock_out"].strftime("%H:%M"),
-            "Total Hours": f"{ts['total_hours']:.2f}",
-            "Break (min)": ts["break_minutes"],
-            "Rate": f"${rate:.2f}",
-            "Total Pay": f"${total_pay:.2f}",
-            "Award Level": user.get("award_level", 1),
-            "Holiday": "Yes" if ts.get("is_public_holiday") else "No"
-        })
-    
-    # Convert to CSV string
-    output = StringIO()
-    if csv_data:
-        writer = csv.DictWriter(output, fieldnames=csv_data[0].keys())
-        writer.writeheader()
-        writer.writerows(csv_data)
-    
-    return {
-        "success": True,
-        "csv_data": output.getvalue(),
-        "record_count": len(csv_data),
-        "total_hours": sum([float(row["Total Hours"]) for row in csv_data]),
-        "total_pay": sum([float(row["Total Pay"].replace("$", "")) for row in csv_data])
-    }
-
-@api_router.post("/payroll/employee-report/{employee_id}")
-async def get_employee_payroll_report(employee_id: str, request: PayrollExportRequest):
-    """Get individual employee payroll report with site details"""
-    import csv
-    from io import StringIO
-    
-    # Get employee info
-    try:
-        user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    except:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    query = {
-        "employee_id": employee_id,
-        "clock_out": {"$ne": None},
-        "approval_status": "approved",
-        "clock_in": {
-            "$gte": request.start_date,
-            "$lte": request.end_date
-        }
-    }
-    
-    timesheets = await db.timesheets.find(query).sort("clock_in", 1).to_list(1000)
-    
-    # Get pay rate
-    pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-    base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
-    
-    # Build report data
-    report_data = []
-    total_hours = 0
-    total_pay = 0
-    sites_worked = set()
-    
-    for ts in timesheets:
-        # Get site info
-        site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])}) if ts.get("site_id") else None
-        site_name = site["name"] if site else "Unknown Site"
-        site_address = site.get("address", "N/A") if site else "N/A"
-        sites_worked.add(site_name)
-        
-        clock_in = ts["clock_in"]
-        day_of_week = clock_in.weekday()
-        
-        # Calculate rate
-        if ts.get("is_public_holiday"):
-            rate = base_rate * 2.5
-            rate_type = "Public Holiday (2.5x)"
-        elif day_of_week == 6:  # Sunday
-            rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
-            rate_type = "Sunday (2x)"
-        elif day_of_week == 5:  # Saturday
-            rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
-            rate_type = "Saturday (1.5x)"
-        else:
-            rate = base_rate
-            rate_type = "Weekday"
-        
-        hours = ts["total_hours"]
-        pay = hours * rate
-        total_hours += hours
-        total_pay += pay
-        
-        report_data.append({
-            "date": clock_in.strftime("%Y-%m-%d"),
-            "day": clock_in.strftime("%A"),
-            "site_name": site_name,
-            "site_address": site_address,
-            "clock_in": clock_in.strftime("%H:%M"),
-            "clock_out": ts["clock_out"].strftime("%H:%M"),
-            "break_minutes": ts["break_minutes"],
-            "hours": round(hours, 2),
-            "rate_type": rate_type,
-            "rate": round(rate, 2),
-            "pay": round(pay, 2),
-            "is_holiday": ts.get("is_public_holiday", False),
-            "holiday_name": ts.get("holiday_name", "")
-        })
-    
-    # Generate CSV
-    output = StringIO()
-    if report_data:
-        fieldnames = ["Date", "Day", "Site", "Site Address", "Clock In", "Clock Out", "Break (min)", "Hours", "Rate Type", "Rate", "Pay"]
-        writer = csv.DictWriter(output, fieldnames=fieldnames)
-        writer.writeheader()
-        for row in report_data:
-            writer.writerow({
-                "Date": row["date"],
-                "Day": row["day"],
-                "Site": row["site_name"],
-                "Site Address": row["site_address"],
-                "Clock In": row["clock_in"],
-                "Clock Out": row["clock_out"],
-                "Break (min)": row["break_minutes"],
-                "Hours": row["hours"],
-                "Rate Type": row["rate_type"],
-                "Rate": f"${row['rate']:.2f}",
-                "Pay": f"${row['pay']:.2f}"
-            })
-    
-    return {
-        "success": True,
-        "employee": {
-            "id": employee_id,
-            "name": f"{user['first_name']} {user['last_name']}",
-            "phone": user.get("phone", ""),
-            "email": user.get("email", ""),
-            "job_title": user.get("job_title", ""),
-            "award_level": user.get("award_level", 1),
-            "base_rate": base_rate
-        },
-        "period": {
-            "start": request.start_date.strftime("%Y-%m-%d"),
-            "end": request.end_date.strftime("%Y-%m-%d")
-        },
-        "summary": {
-            "total_shifts": len(report_data),
-            "total_hours": round(total_hours, 2),
-            "total_pay": round(total_pay, 2),
-            "sites_worked": list(sites_worked)
-        },
-        "timesheets": report_data,
-        "csv_data": output.getvalue()
-    }
-
-@api_router.get("/payroll/employee-weekly/{employee_id}")
-async def get_employee_weekly_timesheet(employee_id: str, week_start: str):
-    """Get employee weekly timesheet breakdown (Monday to Sunday) like Employment Hero"""
-    from datetime import timedelta
-    
-    # Get employee info
-    try:
-        user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    except:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    # Parse week start date
-    try:
-        week_start_date = datetime.fromisoformat(week_start.replace('Z', ''))
-    except:
-        raise HTTPException(status_code=400, detail="Invalid week_start date format")
-    
-    # Calculate week end (Sunday)
-    week_end_date = week_start_date + timedelta(days=6, hours=23, minutes=59, seconds=59)
-    
-    # Get pay rate
-    pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-    base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
-    sat_rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
-    sun_rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
-    
-    # Get timesheets for this week
-    query = {
-        "employee_id": employee_id,
-        "clock_out": {"$ne": None},
-        "clock_in": {
-            "$gte": week_start_date,
-            "$lte": week_end_date
-        }
-    }
-    
-    timesheets = await db.timesheets.find(query).sort("clock_in", 1).to_list(100)
-    
-    # Initialize days of the week
-    days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    weekly_breakdown = []
-    total_hours = 0
-    total_pay = 0
-    
-    for i, day_name in enumerate(days):
-        day_date = week_start_date + timedelta(days=i)
-        day_entries = []
-        day_hours = 0
-        day_pay = 0
-        
-        # Find timesheets for this day
-        for ts in timesheets:
-            ts_date = ts["clock_in"].date() if isinstance(ts["clock_in"], datetime) else datetime.fromisoformat(str(ts["clock_in"])).date()
-            if ts_date == day_date.date():
-                # Get site info
-                site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])}) if ts.get("site_id") else None
-                site_name = site["name"] if site else "Unknown"
-                
-                hours = ts.get("total_hours", 0)
-                
-                # Calculate rate for this day
-                if ts.get("is_public_holiday"):
-                    rate = base_rate * 2.5
-                    rate_type = "Holiday"
-                elif i == 5:  # Saturday
-                    rate = sat_rate
-                    rate_type = "Saturday"
-                elif i == 6:  # Sunday
-                    rate = sun_rate
-                    rate_type = "Sunday"
-                else:
-                    rate = base_rate
-                    rate_type = "Weekday"
-                
-                pay = hours * rate
-                day_hours += hours
-                day_pay += pay
-                
-                day_entries.append({
-                    "id": str(ts["_id"]),
-                    "clock_in": ts["clock_in"].strftime("%H:%M") if isinstance(ts["clock_in"], datetime) else ts["clock_in"],
-                    "clock_out": ts["clock_out"].strftime("%H:%M") if isinstance(ts["clock_out"], datetime) else ts["clock_out"],
-                    "break_minutes": ts.get("break_minutes", 0),
-                    "hours": round(hours, 2),
-                    "site": site_name,
-                    "rate": round(rate, 2),
-                    "rate_type": rate_type,
-                    "pay": round(pay, 2),
-                    "status": ts.get("approval_status", "pending"),
-                    "is_manual": ts.get("is_manual_entry", False)
-                })
-        
-        total_hours += day_hours
-        total_pay += day_pay
-        
-        weekly_breakdown.append({
-            "day": day_name,
-            "date": day_date.strftime("%Y-%m-%d"),
-            "date_formatted": day_date.strftime("%d %b"),
-            "entries": day_entries,
-            "total_hours": round(day_hours, 2),
-            "total_pay": round(day_pay, 2),
-            "has_entries": len(day_entries) > 0
-        })
-    
-    return {
-        "success": True,
-        "employee": {
-            "id": employee_id,
-            "name": f"{user['first_name']} {user['last_name']}",
-            "phone": user.get("phone", ""),
-            "job_title": user.get("job_title", ""),
-            "award_level": user.get("award_level", 1)
-        },
-        "week": {
-            "start": week_start_date.strftime("%Y-%m-%d"),
-            "end": week_end_date.strftime("%Y-%m-%d"),
-            "label": f"{week_start_date.strftime('%d %b')} - {week_end_date.strftime('%d %b %Y')}"
-        },
-        "rates": {
-            "weekday": base_rate,
-            "saturday": sat_rate,
-            "sunday": sun_rate
-        },
-        "breakdown": weekly_breakdown,
-        "summary": {
-            "total_hours": round(total_hours, 2),
-            "total_pay": round(total_pay, 2),
-            "days_worked": sum(1 for d in weekly_breakdown if d["has_entries"])
-        }
-    }
-
-@api_router.post("/payroll/export-excel")
-async def export_payroll_excel(request: PayrollExportRequest):
-    """Export payroll data to Excel format"""
-    from fastapi.responses import Response
-    from excel_export import create_payroll_excel
-    
-    query = {
-        "clock_out": {"$ne": None},
-        "approval_status": "approved",
-        "clock_in": {
-            "$gte": request.start_date,
-            "$lte": request.end_date
-        }
-    }
-    
-    if request.site_id:
-        query["site_id"] = request.site_id
-    
-    timesheets = await db.timesheets.find(query).to_list(1000)
-    
-    # Enrich with employee and site data
-    enriched_data = []
-    for ts in timesheets:
-        user = await db.users.find_one({"_id": ObjectId(ts["employee_id"])})
-        site = await db.sites.find_one({"_id": ObjectId(ts["site_id"])})
-        pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-        
-        if not user:
-            continue
-        
-        # Calculate pay
-        clock_in = ts["clock_in"]
-        day_of_week = clock_in.weekday()
-        base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
-        
-        if day_of_week == 5:
-            rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
-        elif day_of_week == 6:
-            rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
-        else:
-            rate = base_rate
-        
-        total_pay = ts["total_hours"] * rate
-        
-        enriched_data.append({
-            "employee_id": ts["employee_id"][-6:],
-            "employee_name": f"{user['first_name']} {user['last_name']}",
-            "site_name": site["name"] if site else "Unknown",
-            "clock_in": clock_in.isoformat(),
-            "clock_out": ts["clock_out"].isoformat() if ts.get("clock_out") else "",
-            "total_hours": ts["total_hours"],
-            "break_minutes": ts["break_minutes"],
-            "pay_rate": rate,
-            "total_pay": total_pay,
-            "approval_status": ts["approval_status"],
-            "supervisor_notes": ts.get("supervisor_notes", "")
-        })
-    
-    excel_bytes = create_payroll_excel(
-        enriched_data,
-        request.start_date.isoformat(),
-        request.end_date.isoformat()
-    )
-    
-    return Response(
-        content=excel_bytes,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": f"attachment; filename=payroll_{request.start_date.strftime('%Y%m%d')}.xlsx"
-        }
-    )
-
-@api_router.post("/contracts/send-email")
-async def send_contract_email_endpoint(employee_id: str, contract_type: str):
-    """Send employment contract via email (Mock)"""
-    from otp_service import send_contract_email
-    
-    user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    success = send_contract_email(
-        user["email"],
-        f"{user['first_name']} {user['last_name']}",
-        contract_type
-    )
-    
-    return {
-        "success": success,
-        "message": f"Contract email sent to {user['email']} (Check console - MOCK)"
-    }
-
-@api_router.post("/contracts/sign")
-async def sign_contract(employee_id: str, contract_type: str, signature_base64: str):
-    """Save digital signature for contract"""
-    
-    # Create or update contract document
-    contract_doc = {
-        "employee_id": employee_id,
-        "contract_type": contract_type,
-        "signature_base64": signature_base64,
-        "signed_at": datetime.utcnow(),
-        "status": "signed"
-    }
-    
-    # Check if contract already exists
-    existing = await db.contracts.find_one({
-        "employee_id": employee_id,
-        "contract_type": contract_type
-    })
-    
-    if existing:
-        await db.contracts.update_one(
-            {"_id": existing["_id"]},
-            {"$set": contract_doc}
-        )
-    else:
-        await db.contracts.insert_one(contract_doc)
-    
-    return {
-        "success": True,
-        "message": "Contract signed successfully"
-    }
-
-@api_router.post("/invoices/send-email")
-async def send_invoice_email_endpoint(employee_id: str, period: str, total_amount: float):
-    """Send invoice via email to ABN contractor (Mock)"""
-    from otp_service import send_invoice_email
-    
-    user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    if not user.get("is_contractor"):
-        raise HTTPException(status_code=400, detail="Employee is not an ABN contractor")
-    
-    import random
-    invoice_data = {
-        "invoice_number": f"INV-{random.randint(10000, 99999)}",
-        "total": total_amount,
-        "period": period,
-        "abn": user.get("abn", "")
-    }
-    
-    success = send_invoice_email(user["email"], invoice_data)
-    
-    return {
-        "success": success,
-        "message": f"Invoice email sent to {user['email']} (Check console - MOCK)",
-        "invoice_number": invoice_data["invoice_number"]
-    }
-
-# =====================
-# EARNINGS ENDPOINT
-# =====================
-
-@api_router.get("/earnings/summary")
-async def get_earnings_summary():
-    """Get earnings summary for all employees"""
-    employees = await db.users.find({"role": {"$ne": "admin"}}).to_list(1000)
-    
-    earnings_data = []
-    for emp in employees:
-        # Get approved timesheets
-        timesheets = await db.timesheets.find({
-            "employee_id": str(emp["_id"]),
-            "approval_status": "approved",
-            "clock_out": {"$ne": None}
-        }).to_list(1000)
-        
-        total_hours = 0
-        total_pay = 0
-        
-        # Get pay rate for employee
-        pay_rate = await db.pay_rates.find_one({"award_level": emp.get("award_level", 1)})
-        base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
-        
-        for ts in timesheets:
-            hours = ts.get("total_hours", 0)
-            total_hours += hours
-            
-            # Calculate pay based on day
-            clock_in = ts["clock_in"]
-            day_of_week = clock_in.weekday()
-            
-            if day_of_week == 5:  # Saturday
-                rate = pay_rate["saturday_rate"] if pay_rate else base_rate * 1.5
-            elif day_of_week == 6:  # Sunday
-                rate = pay_rate["sunday_rate"] if pay_rate else base_rate * 2.0
-            else:
-                rate = base_rate
-            
-            total_pay += hours * rate
-        
-        earnings_data.append({
-            "employee_id": str(emp["_id"]),
-            "name": f"{emp['first_name']} {emp['last_name']}",
-            "job_title": emp.get("job_title", ""),
-            "award_level": emp.get("award_level", 1),
-            "total_hours": round(total_hours, 2),
-            "total_pay": round(total_pay, 2),
-            "shift_count": len(timesheets)
-        })
-    
-    # Sort by total_pay descending
-    earnings_data.sort(key=lambda x: x["total_pay"], reverse=True)
-    
-    return {
-        "employees": earnings_data,
-        "total_employees": len(earnings_data),
-        "total_hours": sum([e["total_hours"] for e in earnings_data]),
-        "total_pay": sum([e["total_pay"] for e in earnings_data])
-    }
-
-# =====================
-# CONTRACT & INVOICE ENDPOINTS
-# =====================
-
-@api_router.post("/contracts/send")
-async def send_contract(employee_id: str, contract_type: str = "employment"):
-    """Send employment contract to employee"""
-    user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    # In production, integrate with DocuSign, HelloSign, etc.
-    # For now, create a contract record
-    contract = {
-        "employee_id": employee_id,
-        "employee_name": f"{user['first_name']} {user['last_name']}",
-        "employee_email": user['email'],
-        "contract_type": contract_type,
-        "status": "sent",
-        "sent_date": datetime.utcnow(),
-        "contract_url": f"https://contracts.supremehospitality.com/{employee_id}/{contract_type}.pdf"  # Mock URL
-    }
-    
-    result = await db.contracts.insert_one(contract)
-    contract["id"] = str(result.inserted_id)
-    
-    return {
-        "success": True,
-        "message": f"Contract sent to {user['email']}",
-        "contract": serialize_doc(contract)
-    }
-
-@api_router.get("/contracts")
-async def get_contracts(employee_id: Optional[str] = None, status: Optional[str] = None):
-    """Get all contracts"""
-    query = {}
-    if employee_id:
-        query["employee_id"] = employee_id
-    if status:
-        query["status"] = status
-    
-    contracts = await db.contracts.find(query).sort("sent_date", -1).to_list(1000)
-    return [serialize_doc(contract) for contract in contracts]
-
-@api_router.post("/invoices/generate")
-async def generate_invoice(employee_id: str, start_date: datetime, end_date: datetime):
-    """Generate invoice for ABN contractors"""
-    user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    # Get approved timesheets for the period
-    timesheets = await db.timesheets.find({
-        "employee_id": employee_id,
-        "approval_status": "approved",
-        "clock_in": {"$gte": start_date, "$lte": end_date}
-    }).to_list(1000)
-    
-    # Calculate totals
-    total_hours = sum([ts.get("total_hours", 0) for ts in timesheets])
-    pay_rate_doc = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-    hourly_rate = pay_rate_doc["weekday_rate"] if pay_rate_doc else 25.0
-    
-    # For ABN, usually a flat rate or negotiated rate
-    total_amount = total_hours * hourly_rate
-    gst = total_amount * 0.1  # 10% GST
-    total_with_gst = total_amount + gst
-    
-    # Create invoice
-    invoice = {
-        "employee_id": employee_id,
-        "employee_name": f"{user['first_name']} {user['last_name']}",
-        "employee_email": user['email'],
-        "abn": user.get("abn", "N/A"),
-        "start_date": start_date,
-        "end_date": end_date,
-        "total_hours": round(total_hours, 2),
-        "hourly_rate": hourly_rate,
-        "subtotal": round(total_amount, 2),
-        "gst": round(gst, 2),
-        "total": round(total_with_gst, 2),
-        "status": "generated",
-        "generated_date": datetime.utcnow(),
-        "invoice_number": f"INV-{datetime.utcnow().strftime('%Y%m%d')}-{employee_id[-4:]}"
-    }
-    
-    result = await db.invoices.insert_one(invoice)
-    invoice["id"] = str(result.inserted_id)
-    
-    return {
-        "success": True,
-        "message": "Invoice generated successfully",
-        "invoice": serialize_doc(invoice)
-    }
-
-@api_router.get("/invoices")
-async def get_invoices(employee_id: Optional[str] = None, status: Optional[str] = None):
-    """Get all invoices"""
-    query = {}
-    if employee_id:
-        query["employee_id"] = employee_id
-    if status:
-        query["status"] = status
-    
-    invoices = await db.invoices.find(query).sort("generated_date", -1).to_list(1000)
-    return [serialize_doc(invoice) for invoice in invoices]
-
-# =====================
-# TEMPLATE PREVIEW ENDPOINTS
-# =====================
-
-@api_router.get("/templates/contract/preview")
-async def preview_contract():
-    """View the employment contract template"""
-    from fastapi.responses import HTMLResponse
-    template_path = Path(__file__).parent / "templates" / "employment_contract.html"
-    
-    if template_path.exists():
-        with open(template_path, 'r') as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    else:
-        raise HTTPException(status_code=404, detail="Template not found")
-
-@api_router.get("/templates/invoice/preview")
-async def preview_invoice():
-    """View the ABN invoice template"""
-    from fastapi.responses import HTMLResponse
-    template_path = Path(__file__).parent / "templates" / "abn_invoice.html"
-    
-    if template_path.exists():
-        with open(template_path, 'r') as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    else:
-        raise HTTPException(status_code=404, detail="Template not found")
-
-# =====================
-# SMART FEATURES
-# =====================
-
-@api_router.get("/employee/smart-dashboard/{employee_id}")
-async def get_employee_smart_dashboard(employee_id: str):
-    """Get smart dashboard data for employee - weekly stats, earnings preview, alerts"""
-    from datetime import timedelta
-    
-    # Get employee
-    try:
-        user = await db.users.find_one({"_id": ObjectId(employee_id)})
-    except Exception as e:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="Employee not found")
-    
-    now = datetime.now()
-    
-    # Calculate this week's stats (Monday to now)
-    week_start = now - timedelta(days=now.weekday())
-    week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
-    
-    week_timesheets = await db.timesheets.find({
-        "employee_id": employee_id,
-        "clock_in": {"$gte": week_start},
-        "clock_out": {"$ne": None}
-    }).to_list(100)
-    
-    week_hours = sum(ts.get("total_hours", 0) for ts in week_timesheets)
-    
-    # Get pay rate
-    pay_rate = await db.pay_rates.find_one({"award_level": user.get("award_level", 1)})
-    base_rate = pay_rate["weekday_rate"] if pay_rate else 25.0
-    
-    # Calculate week earnings (simplified)
-    week_earnings = week_hours * base_rate
-    
-    # Overtime check (38 hours standard week in Australia)
-    OVERTIME_THRESHOLD = 38
-    overtime_hours = max(0, week_hours - OVERTIME_THRESHOLD)
-    approaching_overtime = week_hours >= (OVERTIME_THRESHOLD - 5)  # Within 5 hours of overtime
-    
-    # Get next rostered shift
-    next_shift = await db.roster_shifts.find_one({
-        "employee_id": employee_id,
-        "start_time": {"$gte": now},
-        "status": {"$in": ["scheduled", "published"]}
-    }, sort=[("start_time", 1)])
-    
-    next_shift_info = None
-    if next_shift:
-        site = await db.sites.find_one({"_id": ObjectId(next_shift["site_id"])}) if next_shift.get("site_id") else None
-        next_shift_info = {
-            "date": next_shift["start_time"].strftime("%a, %d %b"),
-            "time": f"{next_shift['start_time'].strftime('%H:%M')} - {next_shift['end_time'].strftime('%H:%M')}",
-            "site": site["name"] if site else "Unknown",
-            "starts_in_hours": round((next_shift["start_time"] - now).total_seconds() / 3600, 1)
-        }
-    
-    # Calculate punctuality score (last 30 days)
-    thirty_days_ago = now - timedelta(days=30)
-    recent_timesheets = await db.timesheets.find({
-        "employee_id": employee_id,
-        "clock_in": {"$gte": thirty_days_ago},
-        "clock_out": {"$ne": None}
-    }).to_list(100)
-    
-    # Simple punctuality calculation based on rostered vs actual times
-    punctuality_score = 95  # Default good score
-    total_shifts = len(recent_timesheets)
-    
-    # Get streak (consecutive days worked)
-    streak = 0
-    check_date = now.date()
-    for i in range(30):
-        day_start = datetime.combine(check_date, datetime.min.time())
-        day_end = day_start + timedelta(days=1)
-        day_work = await db.timesheets.find_one({
-            "employee_id": employee_id,
-            "clock_in": {"$gte": day_start, "$lt": day_end},
-            "clock_out": {"$ne": None}
-        })
-        if day_work:
-            streak += 1
-            check_date -= timedelta(days=1)
-        else:
+@api_router.get("/documents/{doc_id}/export")
+async def export_document(doc_id: str):
+    """Export document as branded HTML"""
+    doc = await db.documents.find_one({"_id": ObjectId(doc_id)})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    doc = serialize_doc(doc)
+    
+    # Build HTML
+    sections_html = ""
+    for i, section in enumerate(doc.get("sections", [])):
+        content = section.get("content", "").replace("\n", "<br>")
+        sections_html += f"""
+        <div class="section">
+            <h2>{i+1}. {section.get('title', 'Section')}</h2>
+            <div class="section-content">{content}</div>
+        </div>"""
+    
+    # Get category name
+    category_name = doc.get("category", "")
+    for cat in DOCUMENT_CATEGORIES:
+        if cat["id"] == doc.get("category"):
+            category_name = cat["name"]
             break
     
-    # Alerts
-    alerts = []
-    if approaching_overtime:
-        alerts.append({
-            "type": "warning",
-            "icon": "time",
-            "title": "Approaching Overtime",
-            "message": f"You've worked {week_hours:.1f}h this week. Overtime starts at {OVERTIME_THRESHOLD}h."
+    created_date = ""
+    if doc.get("created_at"):
+        if isinstance(doc["created_at"], datetime):
+            created_date = doc["created_at"].strftime("%d %B %Y")
+        else:
+            created_date = str(doc["created_at"])
+    
+    html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{doc.get('title', 'Document')}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1f2937; line-height: 1.6; background: #f9fafb; }}
+        .header {{ background: linear-gradient(135deg, #0f0f23, #1a1a3e); color: white; padding: 40px 32px; text-align: center; }}
+        .header h1 {{ font-size: 28px; margin-bottom: 8px; font-weight: 800; }}
+        .header .brand {{ font-size: 18px; color: #a5b4fc; margin-bottom: 4px; }}
+        .header .meta {{ font-size: 14px; color: #c7d2fe; }}
+        .badge {{ display: inline-block; background: rgba(99,102,241,0.3); color: #c7d2fe; padding: 4px 12px; border-radius: 12px; font-size: 12px; margin-top: 12px; }}
+        .content {{ max-width: 800px; margin: 0 auto; padding: 32px 24px; }}
+        .section {{ background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 4px solid #6366f1; }}
+        .section h2 {{ font-size: 18px; color: #6366f1; margin-bottom: 12px; font-weight: 700; }}
+        .section-content {{ font-size: 14px; color: #374151; }}
+        .footer {{ text-align: center; padding: 24px; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; margin-top: 32px; }}
+        .footer .confidential {{ color: #ef4444; font-weight: 600; margin-bottom: 4px; }}
+        @media print {{
+            body {{ background: white; }}
+            .section {{ box-shadow: none; border: 1px solid #e5e7eb; page-break-inside: avoid; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="brand">SUPREME HOSPITALITY</div>
+        <h1>{doc.get('title', 'Document')}</h1>
+        <div class="meta">{category_name} | {created_date}</div>
+        <span class="badge">{doc.get('document_type', 'SOP').upper()}</span>
+    </div>
+    <div class="content">
+        {sections_html}
+    </div>
+    <div class="footer">
+        <div class="confidential">CONFIDENTIAL — SUPREME HOSPITALITY</div>
+        <div>This document is the property of Supreme Hospitality. Unauthorized distribution is prohibited.</div>
+        <div>Generated on {created_date}</div>
+    </div>
+</body>
+</html>"""
+    
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html)
+
+# =====================
+# SEED DATA
+# =====================
+
+@api_router.post("/seed")
+async def seed_data():
+    """Seed initial data for the app"""
+    # Check if admin exists
+    admin = await db.users.find_one({"phone": "0457802302"})
+    if not admin:
+        await db.users.insert_one({
+            "first_name": "John",
+            "last_name": "Admin",
+            "phone": "0457802302",
+            "email": "admin@supremehospitality.com.au",
+            "role": "admin",
+            "pin": "1234",
+            "status": "active",
+            "created_at": datetime.utcnow(),
         })
     
-    if next_shift_info and next_shift_info["starts_in_hours"] <= 24:
-        alerts.append({
-            "type": "info",
-            "icon": "calendar",
-            "title": "Upcoming Shift",
-            "message": f"Your next shift is {next_shift_info['date']} at {next_shift_info['time']}"
+    admin2 = await db.users.find_one({"phone": "0433708550"})
+    if not admin2:
+        await db.users.insert_one({
+            "first_name": "Happy",
+            "last_name": "Kafle",
+            "phone": "0433708550",
+            "email": "happy@supremehospitality.com.au",
+            "role": "admin",
+            "pin": "1234",
+            "status": "active",
+            "created_at": datetime.utcnow(),
         })
     
-    # Check for pending timesheets needing attention
-    pending_count = await db.timesheets.count_documents({
-        "employee_id": employee_id,
-        "approval_status": "pending"
-    })
-    if pending_count > 0:
-        alerts.append({
-            "type": "info",
-            "icon": "document-text",
-            "title": "Pending Approvals",
-            "message": f"You have {pending_count} timesheet(s) awaiting approval"
-        })
-    
-    return {
-        "success": True,
-        "employee_name": f"{user['first_name']} {user['last_name']}",
-        "this_week": {
-            "hours_worked": round(week_hours, 2),
-            "earnings_estimate": round(week_earnings, 2),
-            "shifts_completed": len(week_timesheets),
-            "overtime_hours": round(overtime_hours, 2),
-            "approaching_overtime": approaching_overtime
-        },
-        "next_shift": next_shift_info,
-        "performance": {
-            "punctuality_score": punctuality_score,
-            "current_streak": streak,
-            "total_shifts_30d": total_shifts
-        },
-        "alerts": alerts
-    }
+    return {"success": True, "message": "Seed data created"}
 
 # =====================
-# ROOM TYPES ENDPOINTS
+# ROOT
 # =====================
 
-@api_router.get("/room-types")
-async def get_room_types(site_id: Optional[str] = None):
-    """Get all room types, optionally filtered by site"""
-    query = {"active": True}
-    if site_id:
-        query["$or"] = [{"site_id": site_id}, {"site_id": None}]
-    
-    room_types = await db.room_types.find(query).to_list(100)
-    return [serialize_doc(rt) for rt in room_types]
-
-@api_router.post("/room-types")
-async def create_room_type(room_type: RoomTypeCreate):
-    """Create a new room type (Admin only)"""
-    rt_dict = room_type.model_dump()
-    rt_dict["active"] = True
-    rt_dict["created_at"] = datetime.utcnow()
-    
-    result = await db.room_types.insert_one(rt_dict)
-    rt_dict["id"] = str(result.inserted_id)
-    
-    return {"success": True, "room_type": serialize_doc(rt_dict)}
-
-@api_router.put("/room-types/{room_type_id}")
-async def update_room_type(room_type_id: str, room_type: RoomTypeCreate):
-    """Update a room type"""
-    update_data = room_type.model_dump()
-    
-    result = await db.room_types.update_one(
-        {"_id": ObjectId(room_type_id)},
-        {"$set": update_data}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Room type not found")
-    
-    return {"success": True, "message": "Room type updated"}
-
-@api_router.delete("/room-types/{room_type_id}")
-async def delete_room_type(room_type_id: str):
-    """Soft delete a room type"""
-    result = await db.room_types.update_one(
-        {"_id": ObjectId(room_type_id)},
-        {"$set": {"active": False}}
-    )
-    
-    if result.modified_count == 0:
-        raise HTTPException(status_code=404, detail="Room type not found")
-    
-    return {"success": True, "message": "Room type deleted"}
-
-# =====================
-# ROOM CLEANING ENDPOINTS
-# =====================
-
-@api_router.get("/room-cleaning")
-async def get_room_cleaning_entries(
-    employee_id: Optional[str] = None,
-    site_id: Optional[str] = None,
-    date: Optional[str] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-):
-    """Get room cleaning entries with filters"""
-    query = {}
-    if employee_id:
-        query["employee_id"] = employee_id
-    if site_id:
-        query["site_id"] = site_id
-    if date:
-        query["date"] = date
-    if start_date and end_date:
-        query["date"] = {"$gte": start_date, "$lte": end_date}
-    
-    entries = await db.room_cleaning.find(query).sort("created_at", -1).to_list(500)
-    return [serialize_doc(entry) for entry in entries]
-
-@api_router.post("/room-cleaning")
-async def create_room_cleaning_entry(entry: RoomCleaningCreate):
-    """Add a room cleaning entry"""
-    # Get room type to fetch minutes
-    room_type = await db.room_types.find_one({"_id": ObjectId(entry.room_type_id)})
-    if not room_type:
-        raise HTTPException(status_code=404, detail="Room type not found")
-    
-    # Get minutes based on status
-    if entry.status == "departure":
-        minutes_per_room = room_type.get("departure_minutes", 30)
-    elif entry.status == "linen_change":
-        minutes_per_room = room_type.get("linen_change_minutes", 20)
-    else:  # stayover
-        minutes_per_room = room_type.get("stayover_minutes", 15)
-    
-    total_minutes = minutes_per_room * entry.count
-    
-    entry_dict = entry.model_dump()
-    entry_dict["room_type_name"] = room_type.get("name", "Unknown")
-    entry_dict["minutes_per_room"] = minutes_per_room
-    entry_dict["total_minutes"] = total_minutes
-    entry_dict["created_at"] = datetime.utcnow()
-    
-    result = await db.room_cleaning.insert_one(entry_dict)
-    entry_dict["id"] = str(result.inserted_id)
-    
-    return {"success": True, "entry": serialize_doc(entry_dict)}
-
-@api_router.delete("/room-cleaning/{entry_id}")
-async def delete_room_cleaning_entry(entry_id: str):
-    """Delete a room cleaning entry"""
-    result = await db.room_cleaning.delete_one({"_id": ObjectId(entry_id)})
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Entry not found")
-    
-    return {"success": True, "message": "Entry deleted"}
-
-# =====================
-# EMPLOYEE PAY RATES ENDPOINTS
-# =====================
-
-@api_router.get("/employee-pay-rates")
-async def get_all_employee_pay_rates():
-    """Get all employee pay rates"""
-    rates = await db.employee_pay_rates.find().to_list(500)
-    return [serialize_doc(rate) for rate in rates]
-
-@api_router.get("/employee-pay-rates/{employee_id}")
-async def get_employee_pay_rate(employee_id: str):
-    """Get pay rate for a specific employee"""
-    rate = await db.employee_pay_rates.find_one({"employee_id": employee_id})
-    if not rate:
-        # Return default rates
-        return {
-            "employee_id": employee_id,
-            "employee_type": "cash",
-            "weekday_rate": 0,
-            "saturday_rate": 0,
-            "sunday_rate": 0,
-            "public_holiday_rate": 0,
-            "credit_rate": 0
-        }
-    return serialize_doc(rate)
-
-@api_router.put("/employee-pay-rates/{employee_id}")
-async def update_employee_pay_rate(employee_id: str, rate: EmployeePayRateUpdate):
-    """Set or update pay rate for an employee (Admin only)"""
-    rate_dict = rate.model_dump()
-    rate_dict["employee_id"] = employee_id
-    rate_dict["updated_at"] = datetime.utcnow()
-    
-    result = await db.employee_pay_rates.update_one(
-        {"employee_id": employee_id},
-        {"$set": rate_dict, "$setOnInsert": {"created_at": datetime.utcnow()}},
-        upsert=True
-    )
-    
-    return {"success": True, "message": "Pay rate updated"}
-
-# =====================
-# WAGE CALCULATION ENDPOINTS
-# =====================
-
-@api_router.get("/wages/calculate/{employee_id}")
-async def calculate_wages(
-    employee_id: str,
-    period: str = "daily",  # daily, weekly, fortnightly
-    date: Optional[str] = None  # For daily, specific date
-):
-    """Calculate wages for an employee"""
-    # Get employee pay rates
-    pay_rate = await db.employee_pay_rates.find_one({"employee_id": employee_id})
-    if not pay_rate:
-        pay_rate = {
-            "weekday_rate": 0,
-            "saturday_rate": 0,
-            "sunday_rate": 0,
-            "public_holiday_rate": 0,
-            "credit_rate": 0
-        }
-    
-    # Calculate date range
-    now = datetime.utcnow()
-    if date:
-        target_date = datetime.strptime(date, "%Y-%m-%d")
-    else:
-        target_date = now
-    
-    if period == "daily":
-        start_date = target_date.strftime("%Y-%m-%d")
-        end_date = start_date
-    elif period == "weekly":
-        # Start of week (Monday)
-        start_of_week = target_date - timedelta(days=target_date.weekday())
-        start_date = start_of_week.strftime("%Y-%m-%d")
-        end_date = (start_of_week + timedelta(days=6)).strftime("%Y-%m-%d")
-    else:  # fortnightly
-        # Last 14 days
-        start_date = (target_date - timedelta(days=13)).strftime("%Y-%m-%d")
-        end_date = target_date.strftime("%Y-%m-%d")
-    
-    # Get timesheets for the period
-    timesheets = await db.timesheets.find({
-        "employee_id": employee_id,
-        "approval_status": "approved",
-        "clock_in": {"$ne": None}
-    }).to_list(500)
-    
-    # Filter by date range
-    time_wages = 0
-    total_hours = 0
-    time_breakdown = []
-    
-    for ts in timesheets:
-        if ts.get("clock_in"):
-            ts_date = ts["clock_in"].strftime("%Y-%m-%d")
-            if start_date <= ts_date <= end_date:
-                hours = ts.get("total_hours", 0)
-                total_hours += hours
-                
-                # Determine day type
-                ts_datetime = ts["clock_in"]
-                day_of_week = ts_datetime.weekday()
-                is_ph, ph_name = is_public_holiday(ts_datetime)
-                
-                if is_ph:
-                    rate = pay_rate.get("public_holiday_rate", 0)
-                    day_type = f"Public Holiday ({ph_name})"
-                elif day_of_week == 5:  # Saturday
-                    rate = pay_rate.get("saturday_rate", 0)
-                    day_type = "Saturday"
-                elif day_of_week == 6:  # Sunday
-                    rate = pay_rate.get("sunday_rate", 0)
-                    day_type = "Sunday"
-                else:
-                    rate = pay_rate.get("weekday_rate", 0)
-                    day_type = "Weekday"
-                
-                day_pay = hours * rate
-                time_wages += day_pay
-                
-                time_breakdown.append({
-                    "date": ts_date,
-                    "hours": hours,
-                    "day_type": day_type,
-                    "rate": rate,
-                    "pay": round(day_pay, 2)
-                })
-    
-    # Get room cleaning entries for the period
-    room_entries = await db.room_cleaning.find({
-        "employee_id": employee_id,
-        "date": {"$gte": start_date, "$lte": end_date}
-    }).to_list(500)
-    
-    # Calculate room credits in hours (minutes / 60)
-    total_room_minutes = sum(entry.get("total_minutes", 0) for entry in room_entries)
-    total_room_hours = total_room_minutes / 60
-    credit_rate = pay_rate.get("credit_rate", 0)  # $ per hour of room credits
-    room_wages = total_room_hours * credit_rate
-    
-    room_breakdown = []
-    for entry in room_entries:
-        entry_minutes = entry.get("total_minutes", 0)
-        room_breakdown.append({
-            "date": entry.get("date"),
-            "room_type": entry.get("room_type_name"),
-            "status": entry.get("status"),
-            "count": entry.get("count"),
-            "minutes": entry_minutes,
-            "hours": round(entry_minutes / 60, 2),
-            "pay": round((entry_minutes / 60) * credit_rate, 2)
-        })
-    
-    total_wages = time_wages + room_wages
-    
-    # Calculate efficiency (room credit hours vs actual hours)
-    efficiency = 0
-    if total_hours > 0:
-        efficiency = round((total_room_hours / total_hours) * 100, 1)
-    
-    return {
-        "success": True,
-        "employee_id": employee_id,
-        "period": period,
-        "start_date": start_date,
-        "end_date": end_date,
-        "employee_type": pay_rate.get("employee_type", "cash"),
-        "time_based": {
-            "total_hours": round(total_hours, 2),
-            "total_wages": round(time_wages, 2),
-            "breakdown": time_breakdown
-        },
-        "room_credits": {
-            "total_minutes": total_room_minutes,
-            "total_hours": round(total_room_hours, 2),
-            "credit_rate": credit_rate,
-            "total_wages": round(room_wages, 2),
-            "breakdown": room_breakdown
-        },
-        "comparison": {
-            "actual_hours": round(total_hours, 2),
-            "expected_hours": round(total_room_hours, 2),
-            "difference_hours": round(total_hours - total_room_hours, 2),
-            "efficiency_percent": efficiency
-        },
-        "total_wages": round(total_wages, 2)
-    }
-
-# Comparison endpoint - Room Credits vs Actual Hours
-@api_router.get("/productivity/{employee_id}")
-async def get_productivity_comparison(
-    employee_id: str,
-    date: Optional[str] = None,  # Specific date, defaults to today
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None
-):
-    """Compare room cleaning credits (expected time) vs actual timesheet hours"""
-    
-    # Determine date range
-    if date:
-        query_start = date
-        query_end = date
-    elif start_date and end_date:
-        query_start = start_date
-        query_end = end_date
-    else:
-        # Default to today
-        today = datetime.utcnow().strftime("%Y-%m-%d")
-        query_start = today
-        query_end = today
-    
-    # Get room cleaning entries
-    room_entries = await db.room_cleaning.find({
-        "employee_id": employee_id,
-        "date": {"$gte": query_start, "$lte": query_end}
-    }).to_list(500)
-    
-    # Get timesheets for the same period
-    timesheets = await db.timesheets.find({
-        "employee_id": employee_id,
-        "clock_in": {"$ne": None}
-    }).to_list(500)
-    
-    # Calculate room credit hours (expected)
-    total_room_minutes = sum(entry.get("total_minutes", 0) for entry in room_entries)
-    expected_hours = total_room_minutes / 60
-    
-    # Calculate actual timesheet hours
-    actual_hours = 0
-    daily_breakdown = {}
-    
-    for ts in timesheets:
-        if ts.get("clock_in"):
-            ts_date = ts["clock_in"].strftime("%Y-%m-%d")
-            if query_start <= ts_date <= query_end:
-                hours = ts.get("total_hours", 0)
-                actual_hours += hours
-                
-                if ts_date not in daily_breakdown:
-                    daily_breakdown[ts_date] = {"actual": 0, "expected": 0, "rooms": []}
-                daily_breakdown[ts_date]["actual"] += hours
-    
-    # Add room entries to daily breakdown
-    for entry in room_entries:
-        entry_date = entry.get("date")
-        if entry_date not in daily_breakdown:
-            daily_breakdown[entry_date] = {"actual": 0, "expected": 0, "rooms": []}
-        
-        entry_hours = entry.get("total_minutes", 0) / 60
-        daily_breakdown[entry_date]["expected"] += entry_hours
-        daily_breakdown[entry_date]["rooms"].append({
-            "room_type": entry.get("room_type_name"),
-            "status": entry.get("status"),
-            "count": entry.get("count"),
-            "minutes": entry.get("total_minutes", 0)
-        })
-    
-    # Calculate efficiency
-    efficiency = 0
-    if actual_hours > 0:
-        efficiency = round((expected_hours / actual_hours) * 100, 1)
-    
-    # Determine status
-    if efficiency >= 100:
-        status = "excellent"
-        message = "Working efficiently - exceeding room targets"
-    elif efficiency >= 80:
-        status = "good"
-        message = "Good performance"
-    elif efficiency >= 60:
-        status = "average"
-        message = "Room for improvement"
-    else:
-        status = "below_target"
-        message = "Below target - review workload"
-    
-    return {
-        "success": True,
-        "employee_id": employee_id,
-        "date_range": {"start": query_start, "end": query_end},
-        "actual_hours": round(actual_hours, 2),
-        "expected_hours_from_rooms": round(expected_hours, 2),
-        "difference": round(actual_hours - expected_hours, 2),
-        "efficiency_percent": efficiency,
-        "status": status,
-        "message": message,
-        "daily_breakdown": [
-            {
-                "date": date,
-                "actual_hours": round(data["actual"], 2),
-                "expected_hours": round(data["expected"], 2),
-                "difference": round(data["actual"] - data["expected"], 2),
-                "rooms": data["rooms"]
-            }
-            for date, data in sorted(daily_breakdown.items())
-        ]
-    }
-
-# Root endpoint
 @api_router.get("/")
 async def root():
-    return {"message": "Supreme Hospitality Services Timesheet API", "version": "1.0.0"}
+    return {
+        "message": "Supreme Hospitality SOPs & Compliance Generator API",
+        "version": "2.0.0"
+    }
 
-# Include the router in the main app
+# Include the router
 app.include_router(api_router)
 
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -3667,12 +701,39 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+@app.on_event("startup")
+async def startup_event():
+    """Seed data on startup"""
+    try:
+        admin = await db.users.find_one({"phone": "0457802302"})
+        if not admin:
+            await db.users.insert_one({
+                "first_name": "John",
+                "last_name": "Admin",
+                "phone": "0457802302",
+                "email": "admin@supremehospitality.com.au",
+                "role": "admin",
+                "pin": "1234",
+                "status": "active",
+                "created_at": datetime.utcnow(),
+            })
+            logger.info("Admin user seeded")
+        
+        admin2 = await db.users.find_one({"phone": "0433708550"})
+        if not admin2:
+            await db.users.insert_one({
+                "first_name": "Happy",
+                "last_name": "Kafle",
+                "phone": "0433708550",
+                "email": "happy@supremehospitality.com.au",
+                "role": "admin",
+                "pin": "1234",
+                "status": "active",
+                "created_at": datetime.utcnow(),
+            })
+            logger.info("Admin user 2 seeded")
+    except Exception as e:
+        logger.error(f"Startup seed error: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

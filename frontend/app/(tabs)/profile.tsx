@@ -1,436 +1,176 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
+  StyleSheet,
   Alert,
-  ActivityIndicator,
-  Platform,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
+  Image,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../store/authStore';
-import { getTimesheets } from '../../utils/api';
-import { colors } from '../../constants/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
+import { useAuthStore } from '../../store/authStore';
 
 export default function ProfileScreen() {
-  const { user, logout, setUser } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [showBankModal, setShowBankModal] = useState(false);
-  const [bankName, setBankName] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [bsb, setBsb] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [savingBank, setSavingBank] = useState(false);
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const timesheets = await getTimesheets(user?.id);
-      
-      const totalHours = timesheets.reduce((sum: number, ts: any) => sum + ts.total_hours, 0);
-      const approvedCount = timesheets.filter((ts: any) => ts.approval_status === 'approved').length;
-      const pendingCount = timesheets.filter((ts: any) => ts.approval_status === 'pending').length;
-      const thisMonth = timesheets.filter((ts: any) => {
-        const date = new Date(ts.clock_in);
-        const now = new Date();
-        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-      });
-      const monthHours = thisMonth.reduce((sum: number, ts: any) => sum + ts.total_hours, 0);
-      
-      setStats({
-        totalShifts: timesheets.length,
-        totalHours: totalHours.toFixed(1),
-        approvedShifts: approvedCount,
-        pendingShifts: pendingCount,
-        monthlyHours: monthHours.toFixed(1),
-        avgHoursPerShift: timesheets.length > 0 ? (totalHours / timesheets.length).toFixed(1) : '0',
-      });
-    } catch (error) {
-      console.error('Failed to fetch stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { user, logout } = useAuthStore();
 
   const handleLogout = () => {
-    // Platform-specific alert handling
-    if (typeof window !== 'undefined' && Platform.OS === 'web') {
-      // Use browser confirm dialog for web
-      if (window.confirm('Are you sure you want to logout?')) {
-        logout();
-      }
-    } else {
-      // Use React Native Alert for mobile
-      Alert.alert(
-        'Confirm Logout',
-        'Are you sure you want to logout?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Logout',
-            style: 'destructive',
-            onPress: () => {
-              logout();
-            },
-          },
-        ]
-      );
-    }
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          router.replace('/(auth)/login');
+        },
+      },
+    ]);
   };
 
-  const handleOpenBankModal = () => {
-    // Pre-fill with existing data if available
-    if (user?.bank_details) {
-      setBankName(user.bank_details.bank_name || '');
-      setAccountName(user.bank_details.account_name || '');
-      setBsb(user.bank_details.bsb || '');
-      setAccountNumber(user.bank_details.account_number || '');
-    }
-    setShowBankModal(true);
-  };
-
-  const handleSaveBankDetails = async () => {
-    if (!accountName || !bsb || !accountNumber) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-
-    // Validate BSB format (6 digits)
-    if (!/^\d{6}$/.test(bsb.replace('-', ''))) {
-      Alert.alert('Error', 'BSB must be 6 digits (e.g., 123-456)');
-      return;
-    }
-
-    // Validate account number (basic check)
-    if (!/^\d+$/.test(accountNumber)) {
-      Alert.alert('Error', 'Account number must contain only digits');
-      return;
-    }
-
-    try {
-      setSavingBank(true);
-      const response = await axios.put(
-        `${process.env.EXPO_PUBLIC_BACKEND_URL}/api/users/${user?.id}`,
-        {
-          bank_details: {
-            bank_name: bankName,
-            account_name: accountName,
-            bsb: bsb,
-            account_number: accountNumber,
-          }
-        }
-      );
-
-      // Update local user state
-      const updatedUser = response.data.user;
-      setUser(updatedUser, user?.token || '');
-
-      Alert.alert('Success', 'Bank details saved successfully');
-      setShowBankModal(false);
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.detail || 'Failed to save bank details');
-    } finally {
-      setSavingBank(false);
-    }
+  const getInitials = () => {
+    const first = user?.first_name?.[0] || '';
+    const last = user?.last_name?.[0] || '';
+    return (first + last).toUpperCase() || '?';
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user?.first_name?.[0]}{user?.last_name?.[0]}
-            </Text>
-          </View>
-        </View>
-        <Text style={styles.name}>{user?.first_name} {user?.last_name}</Text>
-        <Text style={styles.role}>{user?.job_title}</Text>
-        <View style={styles.roleBadge}>
-          <Text style={styles.roleBadgeText}>{user?.role.toUpperCase()}</Text>
-        </View>
-      </View>
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📊 Your Statistics</Text>
-            
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Ionicons name="calendar" size={28} color={colors.primary} />
-                <Text style={styles.statValue}>{stats?.totalShifts}</Text>
-                <Text style={styles.statLabel}>Total Shifts</Text>
-              </View>
-              
-              <View style={styles.statCard}>
-                <Ionicons name="time" size={28} color={colors.success} />
-                <Text style={styles.statValue}>{stats?.totalHours}</Text>
-                <Text style={styles.statLabel}>Total Hours</Text>
-              </View>
-            </View>
-
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Ionicons name="checkmark-circle" size={28} color={colors.success} />
-                <Text style={styles.statValue}>{stats?.approvedShifts}</Text>
-                <Text style={styles.statLabel}>Approved</Text>
-              </View>
-              
-              <View style={styles.statCard}>
-                <Ionicons name="hourglass" size={28} color={colors.warning} />
-                <Text style={styles.statValue}>{stats?.pendingShifts}</Text>
-                <Text style={styles.statLabel}>Pending</Text>
-              </View>
-            </View>
-
-            <View style={styles.highlightCard}>
-              <View style={styles.highlightRow}>
-                <Ionicons name="trending-up" size={24} color={colors.primary} />
-                <View style={styles.highlightInfo}>
-                  <Text style={styles.highlightLabel}>This Month</Text>
-                  <Text style={styles.highlightValue}>{stats?.monthlyHours} hours</Text>
-                </View>
-              </View>
-              
-              <View style={styles.highlightRow}>
-                <Ionicons name="stats-chart" size={24} color={colors.gold} />
-                <View style={styles.highlightInfo}>
-                  <Text style={styles.highlightLabel}>Average per Shift</Text>
-                  <Text style={styles.highlightValue}>{stats?.avgHoursPerShift} hours</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>👤 Account Details</Text>
-            
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Ionicons name="mail" size={20} color={colors.text.secondary} />
-                <Text style={styles.infoLabel}>Email</Text>
-                <Text style={styles.infoValue}>{user?.email}</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Ionicons name="call" size={20} color={colors.text.secondary} />
-                <Text style={styles.infoLabel}>Phone</Text>
-                <Text style={styles.infoValue}>{user?.phone}</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Ionicons name="briefcase" size={20} color={colors.text.secondary} />
-                <Text style={styles.infoLabel}>Job Title</Text>
-                <Text style={styles.infoValue}>{user?.job_title}</Text>
-              </View>
-              
-              {user?.abn && (
-                <View style={styles.infoRow}>
-                  <Ionicons name="document-text" size={20} color={colors.text.secondary} />
-                  <Text style={styles.infoLabel}>ABN</Text>
-                  <Text style={styles.infoValue}>{user?.abn}</Text>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>🏦 Bank Details</Text>
-              <TouchableOpacity 
-                style={styles.editButton}
-                onPress={handleOpenBankModal}
-              >
-                <Ionicons name="create-outline" size={20} color={colors.primary} />
-                <Text style={styles.editButtonText}>Edit</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.infoCard}>
-              {user?.bank_details ? (
-                <>
-                  <View style={styles.infoRow}>
-                    <Ionicons name="business" size={20} color={colors.text.secondary} />
-                    <Text style={styles.infoLabel}>Bank Name</Text>
-                    <Text style={styles.infoValue}>{user?.bank_details?.bank_name || 'Not provided'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Ionicons name="person" size={20} color={colors.text.secondary} />
-                    <Text style={styles.infoLabel}>Account Name</Text>
-                    <Text style={styles.infoValue}>{user?.bank_details?.account_name || 'Not provided'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Ionicons name="card" size={20} color={colors.text.secondary} />
-                    <Text style={styles.infoLabel}>BSB</Text>
-                    <Text style={styles.infoValue}>{user?.bank_details?.bsb || 'Not provided'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Ionicons name="keypad" size={20} color={colors.text.secondary} />
-                    <Text style={styles.infoLabel}>Account Number</Text>
-                    <Text style={styles.infoValue}>
-                      {user?.bank_details?.account_number 
-                        ? `****${user.bank_details.account_number.slice(-4)}` 
-                        : 'Not provided'}
-                    </Text>
-                  </View>
-                </>
-              ) : (
-                <View style={styles.emptyBankDetails}>
-                  <Ionicons name="information-circle" size={48} color={colors.gray[300]} />
-                  <Text style={styles.emptyText}>No bank details added</Text>
-                  <Text style={styles.emptySubtext}>Add your bank details to receive salary payments</Text>
-                  <TouchableOpacity 
-                    style={styles.addBankButton}
-                    onPress={handleOpenBankModal}
-                  >
-                    <Ionicons name="add-circle" size={20} color={colors.white} />
-                    <Text style={styles.addBankButtonText}>Add Bank Details</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>ℹ️ App Information</Text>
-            
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Ionicons name="business" size={20} color={colors.text.secondary} />
-                <Text style={styles.infoLabel}>Company</Text>
-                <Text style={styles.infoValue}>Supreme Hospitality</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Ionicons name="code-working" size={20} color={colors.text.secondary} />
-                <Text style={styles.infoLabel}>Version</Text>
-                <Text style={styles.infoValue}>1.0.0</Text>
-              </View>
-              
-              <View style={styles.infoRow}>
-                <Ionicons name="shield-checkmark" size={20} color={colors.text.secondary} />
-                <Text style={styles.infoLabel}>Security</Text>
-                <Text style={styles.infoValue}>GPS Verified</Text>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out" size={24} color={colors.error} />
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        </>
-      )}
-
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>Made with ❤️ for Supreme Hospitality</Text>
-        <Text style={styles.footerSubtext}>© 2024 All rights reserved</Text>
-      </View>
-
-      {/* Bank Details Modal */}
-      <Modal
-        visible={showBankModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowBankModal(false)}
+    <ScrollView
+      style={[styles.container, { paddingTop: insets.top }]}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Profile Header */}
+      <LinearGradient
+        colors={['#0f0f23', '#1a1a3e']}
+        style={styles.headerGradient}
       >
-        <KeyboardAvoidingView 
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Bank Details</Text>
-              <TouchableOpacity onPress={() => setShowBankModal(false)}>
-                <Ionicons name="close" size={28} color={colors.text.primary} />
-              </TouchableOpacity>
+        <View style={styles.avatarContainer}>
+          <LinearGradient
+            colors={['#6366f1', '#8b5cf6']}
+            style={styles.avatar}
+          >
+            <Text style={styles.avatarText}>{getInitials()}</Text>
+          </LinearGradient>
+        </View>
+        <Text style={styles.userName}>
+          {user?.first_name} {user?.last_name}
+        </Text>
+        <Text style={styles.userRole}>{user?.role || 'Admin'}</Text>
+        <View style={styles.brandBadge}>
+          <Image
+            source={require('../../assets/logo.jpg')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
+          <Text style={styles.brandText}>Supreme Hospitality</Text>
+        </View>
+      </LinearGradient>
+
+      {/* Info Cards */}
+      <View style={styles.infoSection}>
+        <Text style={styles.sectionTitle}>Account Information</Text>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: '#eef2ff' }]}>
+              <Ionicons name="person-outline" size={18} color="#6366f1" />
             </View>
-
-            <ScrollView style={styles.modalBody}>
-              <Text style={styles.inputLabel}>Bank Name (Optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., ANZ, CommBank, Westpac"
-                value={bankName}
-                onChangeText={setBankName}
-              />
-
-              <Text style={styles.inputLabel}>Account Name *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Full name on account"
-                value={accountName}
-                onChangeText={setAccountName}
-              />
-
-              <Text style={styles.inputLabel}>BSB *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="123-456"
-                value={bsb}
-                onChangeText={setBsb}
-                keyboardType="numeric"
-                maxLength={7}
-              />
-
-              <Text style={styles.inputLabel}>Account Number *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter account number"
-                value={accountNumber}
-                onChangeText={setAccountNumber}
-                keyboardType="numeric"
-                secureTextEntry
-              />
-
-              <Text style={styles.helperText}>
-                * Required fields. Your bank details are stored securely and used only for salary payments.
-              </Text>
-            </ScrollView>
-
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setShowBankModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.saveButton, savingBank && styles.saveButtonDisabled]}
-                onPress={handleSaveBankDetails}
-                disabled={savingBank}
-              >
-                {savingBank ? (
-                  <ActivityIndicator color={colors.white} />
-                ) : (
-                  <Text style={styles.saveButtonText}>Save</Text>
-                )}
-              </TouchableOpacity>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Full Name</Text>
+              <Text style={styles.infoValue}>{user?.first_name} {user?.last_name}</Text>
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+
+          <View style={styles.infoDivider} />
+
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: '#ecfdf5' }]}>
+              <Ionicons name="call-outline" size={18} color="#10b981" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>{user?.phone || 'Not set'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoDivider} />
+
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: '#fef3c7' }]}>
+              <Ionicons name="mail-outline" size={18} color="#f59e0b" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>{user?.email || 'Not set'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoDivider} />
+
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: '#fce7f3' }]}>
+              <Ionicons name="shield-checkmark-outline" size={18} color="#ec4899" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Role</Text>
+              <Text style={styles.infoValue}>
+                {(user?.role || 'admin').charAt(0).toUpperCase() + (user?.role || 'admin').slice(1)}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* App Info */}
+      <View style={styles.infoSection}>
+        <Text style={styles.sectionTitle}>About</Text>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: '#eef2ff' }]}>
+              <Ionicons name="information-circle-outline" size={18} color="#6366f1" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>App Version</Text>
+              <Text style={styles.infoValue}>2.0.0</Text>
+            </View>
+          </View>
+
+          <View style={styles.infoDivider} />
+
+          <View style={styles.infoRow}>
+            <View style={[styles.infoIcon, { backgroundColor: '#ecfdf5' }]}>
+              <Ionicons name="sparkles-outline" size={18} color="#10b981" />
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>AI Engine</Text>
+              <Text style={styles.infoValue}>GPT-4.1 Powered</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Sign Out */}
+      <View style={styles.logoutSection}>
+        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color="#ef4444" />
+          <Text style={styles.logoutText}>Sign Out</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>© 2026 Supreme Hospitality Services</Text>
+        <Text style={styles.footerSubText}>SOPs & Compliance Document Generator</Text>
+      </View>
+
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
@@ -438,13 +178,17 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#f8fafc',
   },
-  header: {
-    backgroundColor: colors.primary,
-    padding: 32,
-    paddingTop: 60,
+  scrollContent: {
+    paddingBottom: 20,
+  },
+  headerGradient: {
     alignItems: 'center',
+    paddingTop: 32,
+    paddingBottom: 28,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   avatarContainer: {
     marginBottom: 16,
@@ -452,331 +196,129 @@ const styles = StyleSheet.create({
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.white,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: colors.gold,
   },
   avatarText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: colors.primary,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#ffffff',
   },
-  name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.white,
+  userName: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#ffffff',
     marginBottom: 4,
   },
-  role: {
-    fontSize: 16,
-    color: colors.white,
-    opacity: 0.9,
-    marginBottom: 8,
-  },
-  roleBadge: {
-    backgroundColor: colors.gold,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  roleBadgeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: colors.white,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text.primary,
+  userRole: {
+    fontSize: 14,
+    color: '#a5b4fc',
+    fontWeight: '500',
+    textTransform: 'capitalize',
     marginBottom: 16,
   },
-  statsGrid: {
+  brandBadge: {
     flexDirection: 'row',
-    gap: 12,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  brandLogo: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+  },
+  brandText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+    fontWeight: '500',
+  },
+  infoSection: {
+    paddingHorizontal: 16,
+    marginTop: 24,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
     marginBottom: 12,
   },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.white,
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: colors.text.secondary,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  highlightCard: {
-    backgroundColor: colors.white,
-    padding: 16,
-    borderRadius: 12,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  highlightRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  highlightInfo: {
-    flex: 1,
-  },
-  highlightLabel: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    marginBottom: 2,
-  },
-  highlightValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
   infoCard: {
-    backgroundColor: colors.white,
-    padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[100],
-    gap: 12,
+    padding: 14,
+  },
+  infoIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoContent: {
+    flex: 1,
+    marginLeft: 14,
   },
   infoLabel: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    flex: 1,
+    fontSize: 12,
+    color: '#9ca3af',
+    marginBottom: 2,
   },
   infoValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  helpCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.white,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  helpInfo: {
-    flex: 1,
-  },
-  helpTitle: {
     fontSize: 15,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 4,
+    fontWeight: '500',
+    color: '#111827',
   },
-  helpText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 18,
+  infoDivider: {
+    height: 1,
+    backgroundColor: '#f3f4f6',
+    marginHorizontal: 14,
   },
-  logoutButton: {
+  logoutSection: {
+    paddingHorizontal: 16,
+    marginTop: 24,
+  },
+  logoutBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
-    margin: 16,
-    padding: 16,
+    paddingVertical: 14,
     borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.error,
-    gap: 12,
+    backgroundColor: '#fef2f2',
+    borderWidth: 1,
+    borderColor: '#fecaca',
+    gap: 8,
   },
   logoutText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.error,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.primary + '10',
-  },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
-  emptyBankDetails: {
-    alignItems: 'center',
-    padding: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  addBankButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-  },
-  addBankButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: colors.white,
+    color: '#ef4444',
   },
   footer: {
-    padding: 24,
     alignItems: 'center',
+    marginTop: 32,
+    paddingHorizontal: 16,
   },
   footerText: {
-    fontSize: 13,
-    color: colors.text.secondary,
-    marginBottom: 4,
-  },
-  footerSubtext: {
-    fontSize: 11,
-    color: colors.text.secondary,
-    opacity: 0.7,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.gray[200],
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.text.primary,
-  },
-  modalBody: {
-    padding: 20,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  input: {
-    backgroundColor: colors.gray[50],
-    borderWidth: 1,
-    borderColor: colors.gray[200],
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    color: colors.text.primary,
-  },
-  helperText: {
     fontSize: 12,
-    color: colors.text.secondary,
-    marginTop: 16,
-    lineHeight: 18,
+    color: '#9ca3af',
   },
-  modalFooter: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.gray[200],
-  },
-  cancelButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.gray[300],
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.secondary,
-  },
-  saveButton: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 10,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-  },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.white,
+  footerSubText: {
+    fontSize: 11,
+    color: '#d1d5db',
+    marginTop: 2,
   },
 });

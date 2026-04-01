@@ -37,7 +37,7 @@ SMTP_USERNAME=your-email@gmail.com
 SMTP_PASSWORD=abcd efgh ijkl mnop    # Your 16-char app password
 SMTP_FROM_EMAIL=your-email@gmail.com
 COMPANY_NAME=Supreme Hospitality
-APP_URL=https://timemaster-93.preview.emergentagent.com
+APP_URL=https://supreme-sop-gen.preview.emergentagent.com
 ```
 
 ### Step 3: Restart Backend
@@ -102,7 +102,7 @@ SMTP_USERNAME=your-email@outlook.com
 SMTP_PASSWORD=your-password
 SMTP_FROM_EMAIL=your-email@outlook.com
 COMPANY_NAME=Supreme Hospitality
-APP_URL=https://timemaster-93.preview.emergentagent.com
+APP_URL=https://supreme-sop-gen.preview.emergentagent.com
 ```
 
 ### Using SendGrid (Recommended for Production):
@@ -118,7 +118,7 @@ SMTP_USERNAME=apikey
 SMTP_PASSWORD=your-sendgrid-api-key
 SMTP_FROM_EMAIL=noreply@yourdomain.com
 COMPANY_NAME=Supreme Hospitality
-APP_URL=https://timemaster-93.preview.emergentagent.com
+APP_URL=https://supreme-sop-gen.preview.emergentagent.com
 ```
 
 ---
