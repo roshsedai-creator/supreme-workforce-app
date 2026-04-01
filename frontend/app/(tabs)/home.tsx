@@ -132,7 +132,7 @@ export default function HomeScreen() {
       >
         <View style={styles.headerTop}>
           <View>
-            <Text style={styles.brandLabel}>SUPREME HOSPITALITY SERVICES</Text>
+            <Text style={styles.brandLabel}>SUPREME COMPLIANCE</Text>
             <Text style={styles.greeting}>
               Welcome, {user?.first_name || 'User'}
             </Text>

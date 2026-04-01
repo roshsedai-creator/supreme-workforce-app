@@ -201,7 +201,7 @@ export default function DocumentsScreen() {
               <Ionicons name="close" size={24} color="#fff" />
             </TouchableOpacity>
             <View style={styles.viewerHeaderCenter}>
-              <Text style={styles.viewerBrand}>SUPREME HOSPITALITY SERVICES</Text>
+              <Text style={styles.viewerBrand}>SUPREME COMPLIANCE</Text>
               <Text style={styles.viewerTitle} numberOfLines={2}>{selectedDoc.title}</Text>
               <View style={styles.viewerMeta}>
                 <View style={[styles.viewerBadge, { backgroundColor: (cat?.color || '#7B2D8E') + '30' }]}>

@@ -123,8 +123,8 @@ export default function LoginScreen() {
               </LinearGradient>
             </View>
             
-            <Text style={styles.brandName}>Supreme Hospitality Services</Text>
-            <Text style={styles.tagline}>SOPs & Compliance Generator</Text>
+            <Text style={styles.brandName}>Supreme Compliance</Text>
+            <Text style={styles.tagline}>SOPs & Compliance Document Generator</Text>
             
             {/* Feature Badges */}
             <View style={styles.badgeRow}>
@@ -250,7 +250,7 @@ export default function LoginScreen() {
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>© 2026 Supreme Hospitality Services</Text>
+            <Text style={styles.footerText}>© 2026 Supreme Compliance</Text>
             <Text style={styles.versionText}>v2.0.0 — SOPs & Compliance Generator</Text>
           </View>
         </ScrollView>

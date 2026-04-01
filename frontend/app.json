@@ -1,54 +1,38 @@
 {
   "expo": {
-    "name": "Supreme SOP Generator",
+    "name": "Supreme Compliance",
     "slug": "supreme-sop-gen",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "supremeworkforce",
+    "version": "2.0.0",
+    "orientation": "default",
+    "icon": "./assets/supreme-logo.png",
+    "scheme": "supremecompliance",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/images/splash-image.png",
+      "image": "./assets/supreme-logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "backgroundColor": "#0a0a14"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.supremehospitality.workforce",
-      "buildNumber": "1.0.0",
-      "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to verify you're at the work site when clocking in/out.",
-        "NSCameraUsageDescription": "This app needs access to your camera to take photos for timesheet verification.",
-        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to attach proof for timesheets."
-      }
+      "bundleIdentifier": "com.supremehospitality.compliance"
     },
     "android": {
-      "package": "com.supremehospitality.workforce",
+      "package": "com.supremehospitality.compliance",
       "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#1a1a2e"
+        "foregroundImage": "./assets/supreme-logo.png",
+        "backgroundColor": "#0a0a14"
       },
-      "permissions": [
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.CAMERA",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.RECORD_AUDIO"
-      ],
       "edgeToEdgeEnabled": true
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png",
-      "name": "Supreme Hospitality Services — SOP Generator",
-      "shortName": "Supreme SOPs",
-      "description": "Supreme Hospitality Services — SOPs & Compliance Document Generator for Outsourced Housekeeping",
+      "favicon": "./assets/supreme-logo.png",
+      "name": "Supreme Compliance",
+      "shortName": "Supreme Compliance",
+      "description": "Supreme Hospitality Services — SOPs & Compliance Document Generator",
       "backgroundColor": "#0a0a14",
       "themeColor": "#7B2D8E",
       "orientation": "any",
@@ -60,25 +44,12 @@
     "plugins": [
       "expo-router",
       [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Supreme Workforce to use your location to verify work site attendance."
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow Supreme Workforce to access your photos to attach proof for timesheets.",
-          "cameraPermission": "Allow Supreme Workforce to access your camera to take photos for timesheet verification."
-        }
-      ],
-      [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-image.png",
+          "image": "./assets/supreme-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#1a1a2e"
+          "backgroundColor": "#0a0a14"
         }
       ],
       "expo-font",

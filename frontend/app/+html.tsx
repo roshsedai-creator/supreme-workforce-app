@@ -13,11 +13,11 @@ export default function Root({ children }: { children: React.ReactNode }) {
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Supreme SOPs" />
-        <meta name="application-name" content="Supreme SOPs" />
+        <meta name="apple-mobile-web-app-title" content="Supreme Compliance" />
+        <meta name="application-name" content="Supreme Compliance" />
         <meta name="theme-color" content="#7B2D8E" />
         <meta name="msapplication-TileColor" content="#7B2D8E" />
-        <meta name="description" content="Supreme Hospitality Services — SOPs & Compliance Document Generator" />
+        <meta name="description" content="Supreme Compliance — SOPs & Compliance Document Generator" />
 
         {/* Apple Touch Icon */}
         <link rel="apple-touch-icon" href="/assets/supreme-logo.png" />

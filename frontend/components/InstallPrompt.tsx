@@ -78,7 +78,7 @@ export default function InstallPrompt() {
             />
           </View>
           <View style={styles.bannerText}>
-            <Text style={styles.bannerTitle}>Install Supreme SOPs</Text>
+            <Text style={styles.bannerTitle}>Install Supreme Compliance</Text>
             <Text style={styles.bannerSubtitle}>Add to home screen for quick access</Text>
           </View>
         </View>

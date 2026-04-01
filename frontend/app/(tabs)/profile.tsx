@@ -68,7 +68,7 @@ export default function ProfileScreen() {
             style={styles.brandLogo}
             resizeMode="contain"
           />
-          <Text style={styles.brandText}>Supreme Hospitality Services</Text>
+          <Text style={styles.brandText}>Supreme Compliance</Text>
         </View>
       </LinearGradient>
 
@@ -166,8 +166,8 @@ export default function ProfileScreen() {
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.footerText}>© 2026 Supreme Hospitality Services Pty Ltd</Text>
-        <Text style={styles.footerSubText}>SOPs & Compliance Document Generator</Text>
+        <Text style={styles.footerText}>© 2026 Supreme Compliance</Text>
+        <Text style={styles.footerSubText}>Outsourced Housekeeping SOPs & Compliance</Text>
       </View>
 
       <View style={{ height: 30 }} />
